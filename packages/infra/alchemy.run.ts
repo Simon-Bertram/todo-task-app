@@ -30,6 +30,7 @@ export const server = Worker("server", {
     DB: db,
   },
   main: "../../apps/server/src/index.ts",
+  name: "todo-server",
 });
 
 export type ServerEnv = InferEnv<typeof server>;
@@ -50,6 +51,7 @@ export default Stack(
         PUBLIC_SERVER_URL: serverWorker.url.as<string>(),
         SESSION: KV.Namespace("session"),
       },
+      name: "todo-web",
       rootDir: "../../apps/web",
     });
 
