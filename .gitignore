@@ -2,6 +2,8 @@
 node_modules
 .pnp
 .pnp.js
+# pnpm content-addressable store (must never be committed)
+.pnpm-store/
 
 # Build outputs
 dist

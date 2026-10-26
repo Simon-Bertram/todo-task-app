@@ -1,0 +1,69 @@
+# --- Dependency directories (Let Docker install these fresh)  ---
+node_modules
+**/node_modules
+.pnpm-store
+
+# --- Build outputs & Tooling Caches  ---
+dist
+.next
+.turbo
+.turbo/cache
+out
+build
+.eslintcache
+.stylelintcache
+.prettiercache
+.biome
+.vite
+
+# --- Secrets and Local Config  ---
+.env
+.env.*
+!.env.example
+.npmrc
+.pnpm-debug.log
+# Security: Block common local key/cert formats
+*.pem
+*.key
+*.crt
+*.pfx
+secrets/
+credentials/
+
+# --- Debug and Log files  ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# --- Version Control  ---
+.git
+.gitignore
+.github
+.svn
+.hg
+
+# --- OS Metadata & IDE Settings  ---
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.swp
+*.swo
+.project
+.settings
+
+# --- Cloudflare / Alchemy Specifics  ---
+.wrangler
+.wrangler/tmp
+.wrangler/dist
+.wrangler/local-state
+.dev.vars
+.alchemy
+
+# --- Documentation & Metadata ---
+README.md
+CONTRIBUTING.md
+LICENSE
+CHANGELOG.md

@@ -1,0 +1,59 @@
+{
+    "name": "todo-task-manager",
+    "build": {
+      "dockerfile": "Dockerfile",
+      "context": "..",
+      "target": "dev"
+    },
+    "remoteUser": "node",
+    "features": {
+      "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "containerEnv": {
+      // Alchemy + Wrangler: Cloudflare API (set on the host or in CI)
+      "CLOUDFLARE_ACCOUNT_ID": "${localEnv:CLOUDFLARE_ACCOUNT_ID}",
+      "CLOUDFLARE_API_TOKEN": "${localEnv:CLOUDFLARE_API_TOKEN}",
+      // Required to encrypt/decrypt alchemy.secret.env in .alchemy state; same value everywhere you deploy
+      "ALCHEMY_PASSWORD": "${localEnv:ALCHEMY_PASSWORD}"
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "astro-build.astro-vscode", // CRITICAL for .astro file support
+          "drizzle-team.drizzle-studio", // Visualizes your D1 data via Drizzle
+          "unifiedjs.vscode-mdx", // Better support if your blog/site uses MDX
+          "dbaeumer.vscode-eslint",
+          "esbenp.prettier-vscode",
+          "bradlc.vscode-tailwindcss",
+          "cloudflare.wrangler-vscode",
+          "tamasfe.even-better-toml",
+          "irongeek.vscode-env"
+        ]
+      }
+    },
+    "mounts": [
+      // Persist node_modules to a volume for faster I/O
+      "source=${localWorkspaceFolderBasename}-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+      // Shared pnpm store across all your projects
+      "source=pnpm-store,target=/home/node/.local/share/pnpm/store,type=volume",
+      // CRITICAL: Persists local D1 database and Cloudflare state
+      "source=wrangler-local-state,target=${containerWorkspaceFolder}/.wrangler,type=volume",
+      // CRITICAL: Persists Alchemy infrastructure state
+      "source=alchemy-state,target=${containerWorkspaceFolder}/.alchemy,type=volume",
+      // Persist Alchemy Configure credentials
+      "source=alchemy-home-config,target=/home/node/.alchemy,type=volume"
+    ],
+    // Named volumes init as root:root; chown after mounts exist (image USER/chown cannot)
+    "postCreateCommand": "sudo chown -R node:node ${containerWorkspaceFolder}/node_modules ${containerWorkspaceFolder}/.wrangler ${containerWorkspaceFolder}/.alchemy /home/node/.local /home/node/.alchemy",
+    "forwardPorts": [4321, 3000],
+    "portsAttributes": {
+      "4321": {
+        "label": "web",
+        "onAutoForward": "openBrowser"
+      },
+      "3000": {
+        "label": "server",
+        "onAutoForward": "silent"
+      }
+    }
+  }

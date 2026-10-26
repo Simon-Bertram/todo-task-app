@@ -1,126 +1,90 @@
-# Ultracite Code Standards
+# Agent Guidance — Todo Task App
 
-This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
+Always-on entrypoint for AI agents. Product detail lives in [docs/PRD.md](docs/PRD.md). Full Ultracite standards live in [`.agents/skills/ultracite/`](.agents/skills/ultracite/).
 
-## Quick Reference
-
-- **Format code**: `pnpm exec ultracite fix`
-- **Check for issues**: `pnpm exec ultracite check`
-- **Diagnose setup**: `pnpm exec ultracite doctor`
-
-Biome (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
+**Stack authority:** This Better-T-Stack monorepo is source of truth. Do **not** migrate toward embedded Hono-in-Astro, Lucia, or a single Worker. Implement PRD *product* features on the current architecture.
 
 ---
 
-## Core Principles
+## Product (V1)
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+Edge-first personal task manager emphasizing intentional daily execution via the **Eisenhower Matrix** and a **time-budgeted Today view**.
 
-### Type Safety & Explicitness
+- **Audience:** Overloaded professionals / indie hackers who need visual prioritization and realistic daily capacity.
+- **Tenancy:** Multi-user with workspace readiness. Scope all data by `user_id`. Optional future `workspace_id` only—do not build multi-tenant workspaces in V1.
+- **Sync:** Optimistic UI + `visibilitychange` / window-focus revalidation. No WebSockets or Durable Objects in V1.
+- **Priorities:** `is_urgent` / `is_important` are 0–3 integers. Quadrants use threshold ≥ 2 (Q1–Q4).
+- **Today capacity:** Default 300 minutes (5h), user-configurable 2–8 hours. Live workload bar (green &lt; 75%, amber 75–100%, red &gt; 100%). Support 1-3-5 recommended filter.
+- **UX:** Mobile-first (44×44px hit targets; bottom sheets on mobile). Island JS payload budget &lt; 35KB gzipped.
 
-- Use explicit types for function parameters and return values when they enhance clarity
-- Prefer `unknown` over `any` when the type is genuinely unknown
-- Use const assertions (`as const`) for immutable values and literal types
-- Leverage TypeScript's type narrowing instead of type assertions
-- Use meaningful variable names instead of magic numbers - extract constants with descriptive names
-
-### Modern JavaScript/TypeScript
-
-- Use arrow functions for callbacks and short functions
-- Prefer `for...of` loops over `.forEach()` and indexed `for` loops
-- Use optional chaining (`?.`) and nullish coalescing (`??`) for safer property access
-- Prefer template literals over string concatenation
-- Use destructuring for object and array assignments
-- Use `const` by default, `let` only when reassignment is needed, never `var`
-
-### Async & Promises
-
-- Always `await` promises in async functions - don't forget to use the return value
-- Use `async/await` syntax instead of promise chains for better readability
-- Handle errors appropriately in async code with try-catch blocks
-- Don't use async functions as Promise executors
-
-### React & JSX
-
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
-
-### Error Handling & Debugging
-
-- Remove `console.log`, `debugger`, and `alert` statements from production code
-- Throw `Error` objects with descriptive messages, not strings or other values
-- Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
-- Prefer early returns over nested conditionals for error cases
-
-### Code Organization
-
-- Keep functions focused and under reasonable cognitive complexity limits
-- Extract complex conditions into well-named boolean variables
-- Use early returns to reduce nesting
-- Prefer simple conditionals over nested ternary operators
-- Group related code together and separate concerns
-
-### Security
-
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
-- Validate and sanitize user input
-
-### Performance
-
-- Avoid spread syntax in accumulators within loops
-- Use top-level regex literals instead of creating them in loops
-- Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
-
-### Framework-Specific Guidance
-
-**Next.js:**
-
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
-
-**React 19+:**
-
-- Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
+Read [docs/PRD.md](docs/PRD.md) before implementing features (DnD, recurrence, capacity engine, schema).
 
 ---
 
-## Testing
+## Architecture (actual)
 
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
+| Path | Role |
+|------|------|
+| `apps/web` | Astro SSR + Tailwind. Prefer **Preact** (`@astrojs/preact`) for interactive islands; vanilla `<script>` only for tiny toggles. Add Preact when first needed. |
+| `apps/server` | Hono Cloudflare Worker: Better Auth at `/api/auth/*`, oRPC at `/rpc` |
+| `packages/api` | oRPC routers, Zod, `publicProcedure` / `protectedProcedure` |
+| `packages/db` | Drizzle ORM + D1 schema and migrations |
+| `packages/auth` | Better Auth server config (not Lucia) |
+| `packages/infra` | Alchemy IaC: D1, web Worker, server Worker (no `wrangler.toml`) |
+| `packages/config` | Shared TypeScript base config |
 
-## When Biome Can't Help
-
-Biome will catch most mechanical issues automatically. Focus your attention on:
-
-1. **Business logic correctness** - Biome can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
-4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
+Dev: web `http://localhost:4321`, API `http://localhost:3000`. Cross-origin cookies are intentional.
 
 ---
 
-Most formatting and common issues are automatically fixed by Biome. Run `pnpm exec ultracite fix` before committing to ensure compliance.
+## Where to edit (and in which order)
+
+Default vertical slice for feature work:
+
+1. **`packages/db`** — schema + relations + `pnpm run db:generate`
+2. **`packages/api`** — oRPC procedures + Zod (always session-scoped via `protectedProcedure`)
+3. **`apps/server`** — only if changing Hono mounts, middleware, or Worker bindings usage
+4. **`apps/web`** — pages, layouts, Preact islands, `src/lib/orpc.ts` / auth client
+5. **`packages/infra`** — only if adding Cloudflare resources or bindings; then update env schemas (`.env.schema` + `pnpm run env:generate`)
+
+Shortcuts:
+
+- **UI-only** (copy, layout, static): `apps/web` alone.
+- **API contract change:** `packages/api` → web client.
+- **New CF binding/resource:** `packages/infra` + env schemas → consumers.
+- **Auth config:** `packages/auth` (+ Better Auth skills); never invent a parallel `users` table—extend Better Auth’s `user` (e.g. `daily_capacity_minutes`) carefully.
+
+Every query/mutation must enforce user session boundaries (`user_id` = session user).
+
+---
+
+## Skill and docs routing
+
+Read the matching skill **before** coding that area:
+
+| Area | Read first |
+|------|------------|
+| Product / domain rules | [docs/PRD.md](docs/PRD.md) |
+| Lint / format / code standards | [`.agents/skills/ultracite/SKILL.md`](.agents/skills/ultracite/SKILL.md) and [`references/code-standards.md`](.agents/skills/ultracite/references/code-standards.md) |
+| Hono API Worker | [`.agents/skills/hono/SKILL.md`](.agents/skills/hono/SKILL.md); Cloudflare `workers-best-practices` skill |
+| Auth | [`.agents/skills/better-auth-best-practices/SKILL.md`](.agents/skills/better-auth-best-practices/SKILL.md); security / email-password skills as needed |
+| D1 / Drizzle | `packages/db`; drizzle-kit skill under `packages/db/node_modules/drizzle-kit/skills/drizzle/`; Cloudflare `cloudflare` skill D1 references |
+| Turborepo / monorepo tasks | [`.agents/skills/turborepo/SKILL.md`](.agents/skills/turborepo/SKILL.md) |
+| Hosting / bindings | [`packages/infra/alchemy.run.ts`](packages/infra/alchemy.run.ts) first. Alchemy owns provisioning; use `wrangler` skill only for CLI/debug patterns |
+| Perf budgets | Cloudflare `web-perf` skill when optimizing load / island size |
+
+MCP (see [`.cursor/mcp.json`](.cursor/mcp.json)): `astro-docs`, `cloudflare-docs`, `better-auth`, `context7`, `better-t-stack`.
+
+---
+
+## Ultracite (quick reference)
+
+This project uses **Ultracite** (Biome) for formatting and linting.
+
+- Format: `pnpm exec ultracite fix` (or `pnpm fix`)
+- Check: `pnpm exec ultracite check` (or `pnpm check`)
+- Diagnose: `pnpm exec ultracite doctor`
+
+Core principles: accessible, performant, type-safe, maintainable. Prefer explicit types, `unknown` over `any`, `const`, early returns, semantic HTML/ARIA, no `console.log` in production code. For Astro/Preact islands, keep hooks top-level and use stable `key`s.
+
+Do not duplicate full standards here—follow [`.agents/skills/ultracite/references/code-standards.md`](.agents/skills/ultracite/references/code-standards.md). Run `pnpm exec ultracite fix` before committing.
