@@ -1,6 +1,5 @@
 import {
   D1,
-  Images,
   type InferEnv,
   KV,
   providers,
@@ -48,7 +47,6 @@ export default Stack(
         port: 4321,
       },
       env: {
-        IMAGES: Images(),
         PUBLIC_SERVER_URL: serverWorker.url.as<string>(),
         SESSION: KV.Namespace("session"),
       },

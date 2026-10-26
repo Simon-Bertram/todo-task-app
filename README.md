@@ -63,19 +63,20 @@ Run standalone Node/Bun tools that use Varlock from the owning app directory so 
 ### Alchemy
 
 - Target: web on Cloudflare + server on Cloudflare
+- **Full local setup (API token, “already connected”, Unauthorized):** [docs/ALCHEMY_SETUP.md](docs/ALCHEMY_SETUP.md)
 - Configure provider accounts: `cd packages/infra && pnpm exec alchemy profile edit`
-- Dev: pnpm run dev
-- Deploy: pnpm run deploy
-- Destroy: pnpm run destroy
+- If Cloudflare is already linked and you need a new API token: `pnpm exec alchemy profile edit --reconfigure Cloudflare` (not `--add`; there is no `alchemy configure`)
+- Dev: `pnpm run dev`
+- Deploy: `pnpm run deploy`
+- Destroy: `pnpm run destroy`
 
-`alchemy profile edit` stores the selected Axiom, Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; no provider-specific setup command is required by this scaffold.
+`alchemy profile edit` stores credentials under `~/.alchemy`. Env vars `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` override the profile for Cloudflare when both are set.
 
 Deploys are staged and default to a personal `dev_<username>` stage. For production, run the deploy with an explicit stage from `packages/infra`:
 
 ```bash
 cd packages/infra && pnpm exec alchemy deploy --stage production
 ```
-
 ### Production origins
 
 - Required after the first deploy: set `CORS_ORIGIN` in `apps/server/.env` to the exact deployed web origin, such as `https://app.example.com`, then deploy the server again.
