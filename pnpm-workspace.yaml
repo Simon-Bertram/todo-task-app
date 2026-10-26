@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+allowBuilds:
+  esbuild: true
+  sharp: true
+  msgpackr-extract: true
+  workerd: true
+catalog:
+  zod: ^4.5.4
+  typescript: ^6.0.3
+  "@types/node": ^26.4.1
+  varlock: 1.23.0
+  "@cloudflare/workers-types": ^5.20260906.1
+  "@orpc/server": ^1.15.6
+  "@orpc/openapi": ^1.15.6
+  "@orpc/zod": ^1.15.6
+  better-auth: 1.7.12
+  "@orpc/client": ^1.15.6
+  drizzle-orm: 1.0.0-rc.5

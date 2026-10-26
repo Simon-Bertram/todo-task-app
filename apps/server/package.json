@@ -1,0 +1,31 @@
+{
+  "name": "server",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -b ../../packages/api && tsdown",
+    "check-types": "tsc -b ../../packages/api && tsc --noEmit",
+    "compile": "bun build --compile --no-compile-autoload-dotenv --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+    "env:generate": "varlock codegen"
+  },
+  "dependencies": {
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "@todo-task-app/api": "workspace:*",
+    "@todo-task-app/auth": "workspace:*",
+    "@todo-task-app/db": "workspace:*",
+    "better-auth": "catalog:",
+    "hono": "^4.13.7",
+    "varlock": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@todo-task-app/config": "workspace:*",
+    "@todo-task-app/infra": "workspace:*",
+    "@types/node": "catalog:",
+    "tsdown": "^0.23.0",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "todo-task-app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev:web": "turbo run dev:bare -F web --",
+    "dev:server": "turbo run dev:bare -F hono --",
+    "db:generate": "turbo run db:generate -F @todo-task-app/db --",
+    "deploy": "turbo run deploy -F @todo-task-app/infra --",
+    "destroy": "turbo run destroy -F @todo-task-app/infra --",
+    "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
+    "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
+    "check": "ultracite check",
+    "fix": "ultracite fix"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@cloudflare/workers-types": "catalog:",
+    "@todo-task-app/config": "workspace:*",
+    "@types/node": "catalog:",
+    "turbo": "^2.11.7",
+    "typescript": "catalog:",
+    "ultracite": "8.0.0",
+    "varlock": "catalog:"
+  },
+  "packageManager": "pnpm@12.15.0"
+}

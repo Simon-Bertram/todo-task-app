@@ -1,0 +1,25 @@
+{
+  "name": "@todo-task-app/api",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "check-types": "tsc -b"
+  },
+  "dependencies": {
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "@todo-task-app/auth": "workspace:*",
+    "@todo-task-app/db": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@todo-task-app/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

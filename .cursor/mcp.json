@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "better-t-stack": {
+      "command": "pnpm",
+      "args": ["dlx", "create-better-t-stack@latest", "mcp"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "cloudflare-docs": {
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
+    "astro-docs": {
+      "url": "https://mcp.docs.astro.build/mcp"
+    },
+    "better-auth": {
+      "url": "https://mcp.better-auth.com/mcp"
+    }
+  }
+}

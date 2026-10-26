@@ -1,0 +1,29 @@
+{
+  "name": "web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc -b ../../packages/api && astro check",
+    "astro": "astro",
+    "dev:bare": "astro dev",
+    "env:generate": "varlock codegen"
+  },
+  "dependencies": {
+    "@orpc/client": "catalog:",
+    "@todo-task-app/api": "workspace:*",
+    "astro": "^7.3.1",
+    "better-auth": "catalog:",
+    "varlock": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@alchemy.run/frontend-frameworks": "2.0.0-beta.84",
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "catalog:",
+    "@tailwindcss/vite": "^4.3.3",
+    "@todo-task-app/config": "workspace:*",
+    "tailwindcss": "^4.3.3",
+    "typescript": "catalog:"
+  }
+}
