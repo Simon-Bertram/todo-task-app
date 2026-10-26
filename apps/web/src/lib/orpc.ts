@@ -5,13 +5,14 @@ import type { AppRouterClient } from "@todo-task-app/api/routers/index";
 import { ENV } from "../env.public";
 
 export const link = new RPCLink({
-  url: `${ENV.PUBLIC_SERVER_URL.replace(/\/$/, "")}/rpc`,
   fetch(url, options) {
     return fetch(url, {
       ...options,
       credentials: "include",
     });
   },
+  origin: ENV.PUBLIC_SERVER_URL.replace(/\/$/, ""),
+  url: "/rpc",
 });
 
 export const orpc: AppRouterClient = createORPCClient(link);

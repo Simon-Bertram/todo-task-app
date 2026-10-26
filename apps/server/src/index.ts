@@ -1,8 +1,9 @@
+import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
-import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
+import { OpenAPIReferenceHandlerPlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
+import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { appRouter } from "@todo-task-app/api/routers/index";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -18,24 +19,34 @@ app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: ENV.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "OPTIONS"],
     credentials: true,
-  }),
+    origin: ENV.CORS_ORIGIN,
+  })
 );
 
-app.on(["POST", "GET"], "/api/auth/*", async (c) => (await createAuth()).handler(c.req.raw));
+app.on(["POST", "GET"], "/api/auth/*", async (c) =>
+  (await createAuth()).handler(c.req.raw)
+);
+
+const openAPIGenerator = new OpenAPIGenerator({
+  converters: [new ZodToJsonSchemaConverter()],
+});
 
 export const apiHandler = new OpenAPIHandler(appRouter, {
-  plugins: [
-    new OpenAPIReferencePlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
-    }),
-  ],
   interceptors: [
     onError((error) => {
       console.error(error);
+    }),
+  ],
+  plugins: [
+    new OpenAPIReferenceHandlerPlugin({
+      provider: "scalar",
+      spec: () =>
+        openAPIGenerator.generate(appRouter, {
+          base: { info: { title: "Todo Task App", version: "0.0.0" } },
+        }),
     }),
   ],
 });
@@ -52,8 +63,8 @@ app.use("/*", async (c, next) => {
   const context = await createContext({ context: c });
 
   const rpcResult = await rpcHandler.handle(c.req.raw, {
+    context,
     prefix: "/rpc",
-    context: context,
   });
 
   if (rpcResult.matched) {
@@ -61,8 +72,8 @@ app.use("/*", async (c, next) => {
   }
 
   const apiResult = await apiHandler.handle(c.req.raw, {
+    context,
     prefix: "/api-reference",
-    context: context,
   });
 
   if (apiResult.matched) {
@@ -72,8 +83,6 @@ app.use("/*", async (c, next) => {
   await next();
 });
 
-app.get("/", (c) => {
-  return c.text("OK");
-});
+app.get("/", (c) => c.text("OK"));
 
 export default app;
