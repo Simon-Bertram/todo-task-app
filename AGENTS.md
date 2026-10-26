@@ -66,6 +66,7 @@ Read the matching skill **before** coding that area:
 |------|------------|
 | Product / domain rules | [docs/PRD.md](docs/PRD.md) |
 | Lint / format / code standards | [`.agents/skills/ultracite/SKILL.md`](.agents/skills/ultracite/SKILL.md) and [`references/code-standards.md`](.agents/skills/ultracite/references/code-standards.md) |
+| oRPC (procedures, routers, clients) | [`.agents/skills/orpc/SKILL.md`](.agents/skills/orpc/SKILL.md). For OpenAPI/REST handlers also [`.agents/skills/orpc-openapi/SKILL.md`](.agents/skills/orpc-openapi/SKILL.md). **Version guard:** catalog `@orpc/*` is **1.x** (not v2). Prefer patterns in [`packages/api`](packages/api) and [`apps/server/src/index.ts`](apps/server/src/index.ts); verify APIs via skill doc links / [orpc.dev/llms.txt](https://orpc.dev/llms.txt). Do **not** rewrite call sites to v2-only APIs unless the catalog is upgraded. Use [`orpc-migrate`](.agents/skills/orpc-migrate/SKILL.md) only for a deliberate v1→v2 upgrade, not day-to-day features. Contract-first: [`orpc-contract`](.agents/skills/orpc-contract/SKILL.md) when relevant. |
 | Hono API Worker | [`.agents/skills/hono/SKILL.md`](.agents/skills/hono/SKILL.md); Cloudflare `workers-best-practices` skill |
 | Auth | [`.agents/skills/better-auth-best-practices/SKILL.md`](.agents/skills/better-auth-best-practices/SKILL.md); security / email-password skills as needed |
 | D1 / Drizzle | `packages/db`; drizzle-kit skill under `packages/db/node_modules/drizzle-kit/skills/drizzle/`; Cloudflare `cloudflare` skill D1 references |
@@ -73,7 +74,7 @@ Read the matching skill **before** coding that area:
 | Hosting / bindings | [`packages/infra/alchemy.run.ts`](packages/infra/alchemy.run.ts) first. Alchemy owns provisioning; use `wrangler` skill only for CLI/debug patterns |
 | Perf budgets | Cloudflare `web-perf` skill when optimizing load / island size |
 
-MCP (see [`.cursor/mcp.json`](.cursor/mcp.json)): `astro-docs`, `cloudflare-docs`, `better-auth`, `context7`, `better-t-stack`.
+Docs MCPs (see [`.cursor/mcp.json`](.cursor/mcp.json)): `astro-docs`, `cloudflare-docs`, `better-auth`, `context7`, `better-t-stack`. No app-runtime oRPC MCP server.
 
 ---
 
