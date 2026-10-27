@@ -1,36 +1,58 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import type { Database } from "@todo-task-app/db";
-import * as schema from "@todo-task-app/db/schema/auth";
+import {
+  account,
+  session,
+  user,
+  verification,
+} from "@todo-task-app/db/schema/auth";
 import { betterAuth } from "better-auth";
 
-export type AuthConfig = {
-  BETTER_AUTH_URL: string;
+export interface AuthConfig {
   BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
   CORS_ORIGIN: string;
+}
+
+const schema = {
+  account,
+  session,
+  user,
+  verification,
 };
 
 export function createAuth(
   env: AuthConfig,
   database: Database,
-  desktopOrigins: readonly string[] = [],
+  desktopOrigins: readonly string[] = []
 ) {
   return betterAuth({
+    advanced: {
+      defaultCookieAttributes: {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+      },
+    },
+    baseURL: env.BETTER_AUTH_URL,
     database: drizzleAdapter(database, {
       provider: "sqlite",
       schema,
     }),
-    trustedOrigins: [env.CORS_ORIGIN, ...desktopOrigins],
     emailAndPassword: { enabled: true },
+    plugins: [],
     secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-    advanced: {
-      defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
-        httpOnly: true,
+    trustedOrigins: [env.CORS_ORIGIN, ...desktopOrigins],
+    user: {
+      additionalFields: {
+        dailyCapacityMinutes: {
+          defaultValue: 300,
+          input: false,
+          required: false,
+          type: "number",
+        },
       },
     },
-    plugins: [],
   });
 }
 
