@@ -35,6 +35,18 @@ export const server = Worker("server", {
 
 export type ServerEnv = InferEnv<typeof server>;
 
+/**
+ * Web Worker bindings. Declared as a mirror of the Website.Astro `env`
+ * below so apps/web can InferEnv-type `cloudflare:workers` without
+ * depending on the Stack yield order (PUBLIC_SERVER_URL needs the
+ * deployed server URL).
+ */
+export type WebEnv = InferEnv<{
+  PUBLIC_SERVER_URL: string;
+  SERVER: typeof server;
+  SESSION: ReturnType<typeof KV.Namespace>;
+}>;
+
 export default Stack(
   "todo-task-app",
   {
@@ -49,6 +61,7 @@ export default Stack(
       },
       env: {
         PUBLIC_SERVER_URL: serverWorker.url.as<string>(),
+        SERVER: serverWorker,
         SESSION: KV.Namespace("session"),
       },
       name: "todo-web",

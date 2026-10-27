@@ -29,6 +29,7 @@
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.3.3",
     "@todo-task-app/config": "workspace:*",
+    "@todo-task-app/infra": "workspace:*",
     "tailwindcss": "^4.3.3",
     "typescript": "catalog:",
     "vitest": "catalog:"

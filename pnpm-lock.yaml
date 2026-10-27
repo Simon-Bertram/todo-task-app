@@ -334,6 +334,9 @@ importers:
       '@todo-task-app/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@todo-task-app/infra':
+        specifier: workspace:*
+        version: link:../../packages/infra
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3

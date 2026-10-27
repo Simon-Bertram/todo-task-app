@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createORPCClient, ORPCError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import type { AppRouterClient } from "@todo-task-app/api/routers/index";
@@ -17,7 +18,9 @@ function createServerClient(request: Request): AppRouterClient {
 
   const link = new RPCLink({
     fetch(requestUrl, init) {
-      return globalThis.fetch(requestUrl, {
+      // Use the SERVER service binding — global fetch to another same-zone
+      // workers.dev Worker is blocked (Cloudflare error 1042).
+      return env.SERVER.fetch(requestUrl, {
         ...init,
         headers: {
           ...init?.headers,
