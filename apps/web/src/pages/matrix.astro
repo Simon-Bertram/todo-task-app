@@ -2,32 +2,42 @@
 import MobileMatrix from "../components/islands/mobile-matrix";
 import MatrixDesktop from "../components/matrix/matrix-desktop.astro";
 import AppShell from "../layouts/app-shell.astro";
+import { loadAppBoardData } from "../lib/orpc.server";
 import {
-  dailyCapacityMinutes,
+  DEFAULT_DAILY_CAPACITY_MINUTES,
   getTasksByQuadrant,
   getTodayPlannedMinutes,
   getTodayTasks,
-  mockProjects,
-  mockTasks,
-} from "../lib/mock-data";
+} from "../lib/task-helpers";
 
-const tasksByQuadrant = getTasksByQuadrant();
-const plannedMinutes = getTodayPlannedMinutes();
-const todayCount = getTodayTasks().length;
-const backlogCount = mockTasks.filter((task) => !task.isCompleted).length;
+const data = await loadAppBoardData(Astro.request);
+if (data === "unauthorized") {
+  return Astro.redirect("/login");
+}
+
+const { tasks, projects } = data;
+const tasksByQuadrant = getTasksByQuadrant(tasks);
+const plannedMinutes = getTodayPlannedMinutes(tasks);
+const todayCount = getTodayTasks(tasks).length;
+const backlogCount = tasks.filter((task) => !task.isCompleted).length;
 ---
 
-<AppShell mobileTitle="APEX / Matrix" title="Matrix · APEX">
+<AppShell
+  mobileTitle="APEX / Matrix"
+  projects={projects}
+  tasks={tasks}
+  title="Matrix · APEX"
+>
   <div class="px-4 py-4 lg:px-0 lg:py-0">
     <MobileMatrix
       backlogCount={backlogCount}
-      budgetMinutes={dailyCapacityMinutes}
+      budgetMinutes={DEFAULT_DAILY_CAPACITY_MINUTES}
       plannedMinutes={plannedMinutes}
-      projects={mockProjects}
+      projects={projects}
       tasksByQuadrant={tasksByQuadrant}
       todayCount={todayCount}
       client:load
     />
   </div>
-  <MatrixDesktop />
+  <MatrixDesktop projects={projects} tasks={tasks} />
 </AppShell>

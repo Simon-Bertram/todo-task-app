@@ -1,16 +1,22 @@
 ---
+import { formatMinutes, QUADRANT_META } from "../../lib/quadrant";
 import {
-  dailyCapacityMinutes,
+  DEFAULT_DAILY_CAPACITY_MINUTES,
   getTaskQuadrant,
   getTodayPlannedMinutes,
   getTodayTasks,
-} from "../../lib/mock-data";
-import { formatMinutes, QUADRANT_META } from "../../lib/quadrant";
+  type Task,
+} from "../../lib/task-helpers";
 import CapacityBar from "../ui/capacity-bar.astro";
 
-const todayTasks = getTodayTasks();
-const plannedMinutes = getTodayPlannedMinutes();
-const budgetMinutes = dailyCapacityMinutes;
+interface Props {
+  tasks: Task[];
+}
+
+const { tasks } = Astro.props;
+const todayTasks = getTodayTasks(tasks);
+const plannedMinutes = getTodayPlannedMinutes(tasks);
+const budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES;
 ---
 
 <aside
@@ -21,7 +27,7 @@ const budgetMinutes = dailyCapacityMinutes;
     <h2 class="font-semibold text-sm text-text-primary">Today's Runway</h2>
     <p class="mt-1 font-mono text-text-muted text-xs">
       {todayTasks.length}
-      staged · mock preview
+      staged
     </p>
   </div>
 

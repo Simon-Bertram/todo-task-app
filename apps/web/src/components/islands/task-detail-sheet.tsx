@@ -1,22 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import type { MockProject, MockTask } from "../../lib/mock-data";
+import { orpc } from "../../lib/orpc";
 import {
   capacityTone,
   formatMinutes,
   getQuadrant,
   QUADRANT_META,
 } from "../../lib/quadrant";
+import type { Project, Task } from "../../lib/task-helpers";
 
 interface Props {
   budgetMinutes: number;
   plannedMinutes: number;
-  projects: MockProject[];
-  tasks: MockTask[];
+  projects: Project[];
+  tasks: Task[];
 }
 
 const ETC_PRESETS = [15, 30, 60, 90, 120] as const;
 const RATING = [0, 1, 2, 3] as const;
-const RECURRENCE = ["None", "Daily", "Weekdays", "Weekly"] as const;
+const RECURRENCE = [
+  { label: "None", value: null },
+  { label: "Daily", value: "DAILY" },
+  { label: "Weekdays", value: "WEEKDAYS" },
+  { label: "Weekly", value: "WEEKLY" },
+] as const;
+
+type RecurrenceValue = (typeof RECURRENCE)[number]["value"];
 
 export default function TaskDetailSheet({
   tasks,
@@ -25,6 +33,11 @@ export default function TaskDetailSheet({
   budgetMinutes,
 }: Props) {
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const baseTask = useMemo(
     () => tasks.find((task) => task.id === taskId) ?? null,
     [taskId, tasks]
@@ -33,8 +46,7 @@ export default function TaskDetailSheet({
   const [isUrgent, setIsUrgent] = useState(0);
   const [isImportant, setIsImportant] = useState(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
-  const [recurrence, setRecurrence] =
-    useState<(typeof RECURRENCE)[number]>("None");
+  const [recurrence, setRecurrence] = useState<RecurrenceValue>(null);
   const [isToday, setIsToday] = useState(false);
 
   useEffect(() => {
@@ -43,6 +55,8 @@ export default function TaskDetailSheet({
       const button = target?.closest?.(".task-open") as HTMLElement | null;
       const id = button?.dataset.taskId;
       if (id) {
+        setError(null);
+        setConfirmDelete(false);
         setTaskId(id);
       }
     }
@@ -61,16 +75,50 @@ export default function TaskDetailSheet({
     setIsImportant(baseTask.isImportant);
     setEstimatedMinutes(baseTask.estimatedMinutes);
     setIsToday(baseTask.isToday);
-    setRecurrence("None");
+    setRecurrence(
+      RECURRENCE.find((rule) => rule.value === baseTask.recurrenceRule)
+        ?.value ?? null
+    );
   }, [baseTask]);
 
   const close = useCallback(() => {
     setTaskId(null);
+    setError(null);
+    setConfirmDelete(false);
   }, []);
 
-  const markToday = useCallback(() => {
+  const markToday = useCallback(async () => {
+    if (!baseTask || isSaving || isDeleting) {
+      return;
+    }
     setIsToday(true);
-  }, []);
+    setIsSaving(true);
+    setError(null);
+    try {
+      await orpc.tasks.update({
+        estimatedMinutes,
+        id: baseTask.id,
+        isImportant,
+        isToday: true,
+        isUrgent,
+        recurrenceRule: recurrence,
+      });
+      setTaskId(null);
+      location.reload();
+    } catch {
+      setError("Could not update Today status. Try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    baseTask,
+    estimatedMinutes,
+    isDeleting,
+    isImportant,
+    isSaving,
+    isUrgent,
+    recurrence,
+  ]);
 
   const onEtcClick = useCallback((event: Event) => {
     const button = event.currentTarget as HTMLButtonElement;
@@ -79,13 +127,67 @@ export default function TaskDetailSheet({
 
   const onRecurrenceClick = useCallback((event: Event) => {
     const button = event.currentTarget as HTMLButtonElement;
-    const value = button.dataset.recurrence as
-      | (typeof RECURRENCE)[number]
-      | undefined;
-    if (value) {
-      setRecurrence(value);
+    const raw = button.dataset.recurrence;
+    if (raw === "null" || raw === undefined || raw === "") {
+      setRecurrence(null);
+      return;
     }
+    setRecurrence(raw as Exclude<RecurrenceValue, null>);
   }, []);
+
+  const onSave = useCallback(async () => {
+    if (!baseTask || isSaving) {
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      await orpc.tasks.update({
+        estimatedMinutes,
+        id: baseTask.id,
+        isImportant,
+        isToday,
+        isUrgent,
+        recurrenceRule: recurrence,
+      });
+      setTaskId(null);
+      location.reload();
+    } catch {
+      setError("Could not save task. Try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    baseTask,
+    estimatedMinutes,
+    isImportant,
+    isSaving,
+    isToday,
+    isUrgent,
+    recurrence,
+  ]);
+
+  const onDelete = useCallback(async () => {
+    if (!baseTask || isDeleting) {
+      return;
+    }
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await orpc.tasks.delete({ id: baseTask.id });
+      setTaskId(null);
+      setConfirmDelete(false);
+      location.reload();
+    } catch {
+      setError("Could not delete task. Try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [baseTask, confirmDelete, isDeleting]);
 
   if (!baseTask) {
     return null;
@@ -101,6 +203,13 @@ export default function TaskDetailSheet({
   const overBy = projectedPlanned - budgetMinutes;
   const showOverWarning = !isToday && overBy > 0;
   const tone = capacityTone(projectedPlanned, budgetMinutes);
+  const busy = isSaving || isDeleting;
+  let deleteLabel = "Delete task";
+  if (isDeleting) {
+    deleteLabel = "Deleting…";
+  } else if (confirmDelete) {
+    deleteLabel = "Confirm delete";
+  }
 
   return (
     <div
@@ -129,7 +238,7 @@ export default function TaskDetailSheet({
             onClick={close}
             type="button"
           >
-            ✕
+            x
           </button>
         </header>
 
@@ -216,7 +325,7 @@ export default function TaskDetailSheet({
             </h4>
             <div className="flex flex-wrap gap-1 rounded-full border border-border-subtle bg-surface-subtle p-1">
               {RECURRENCE.map((rule) => {
-                const selected = recurrence === rule;
+                const selected = recurrence === rule.value;
                 return (
                   <button
                     className={`min-h-10 rounded-full px-3 font-medium text-sm ${
@@ -224,32 +333,61 @@ export default function TaskDetailSheet({
                         ? "bg-surface-elevated text-text-primary"
                         : "text-text-secondary"
                     }`}
-                    data-recurrence={rule}
-                    key={rule}
+                    data-recurrence={rule.value ?? "null"}
+                    key={rule.label}
                     onClick={onRecurrenceClick}
                     type="button"
                   >
-                    {rule}
+                    {rule.label}
                   </button>
                 );
               })}
             </div>
           </section>
 
+          {error ? (
+            <p className="text-capacity-over text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+
           <div className="space-y-2 pb-2">
             <button
-              className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm"
+              className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm disabled:opacity-60"
+              disabled={busy}
+              onClick={onSave}
+              type="button"
+            >
+              {isSaving ? "Saving…" : "Save changes"}
+            </button>
+            <button
+              className="flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
+              disabled={busy}
               onClick={markToday}
               type="button"
             >
               {isToday ? "On Today's board" : "Schedule to Today's board"}
             </button>
             <button
-              className="flex min-h-11 w-full items-center justify-center rounded-sm text-capacity-over text-sm hover:bg-capacity-over/10"
+              className="flex min-h-11 w-full items-center justify-center rounded-sm text-capacity-over text-sm hover:bg-capacity-over/10 disabled:opacity-60"
+              disabled={busy}
+              onClick={onDelete}
+              type="button"
+            >
+              {deleteLabel}
+            </button>
+            {confirmDelete ? (
+              <p className="text-center text-sm text-text-secondary">
+                This cannot be undone. Tap Confirm delete again.
+              </p>
+            ) : null}
+            <button
+              className="flex min-h-11 w-full items-center justify-center rounded-sm text-sm text-text-secondary hover:bg-surface-elevated"
+              disabled={busy}
               onClick={close}
               type="button"
             >
-              Close / dismiss
+              Close
             </button>
           </div>
         </div>

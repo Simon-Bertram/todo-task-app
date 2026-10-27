@@ -1,5 +1,5 @@
 import { createAuth as createConfiguredAuth } from "@todo-task-app/auth";
-import { type Database, createDb } from "@todo-task-app/db";
+import { createDb, type Database } from "@todo-task-app/db";
 
 import { ENV } from "./env.server";
 

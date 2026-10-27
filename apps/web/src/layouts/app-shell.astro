@@ -4,22 +4,29 @@ import BottomNav from "../components/shell/bottom-nav.astro";
 import MobileTopBar from "../components/shell/mobile-top-bar.astro";
 import SideNav from "../components/shell/side-nav.astro";
 import {
-  dailyCapacityMinutes,
+  DEFAULT_DAILY_CAPACITY_MINUTES,
   getTodayPlannedMinutes,
-  mockProjects,
-  mockTasks,
-} from "../lib/mock-data";
+  type Project,
+  type Task,
+} from "../lib/task-helpers";
 import Layout from "./layout.astro";
 
 interface Props {
   mobileTitle?: string;
+  projects?: Project[];
+  tasks?: Task[];
   title?: string;
 }
 
-const { title = "APEX", mobileTitle = "APEX" } = Astro.props;
+const {
+  title = "APEX",
+  mobileTitle = "APEX",
+  tasks = [],
+  projects = [],
+} = Astro.props;
 const currentPath = Astro.url.pathname;
-const plannedMinutes = getTodayPlannedMinutes();
-const budgetMinutes = dailyCapacityMinutes;
+const plannedMinutes = getTodayPlannedMinutes(tasks);
+const budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES;
 const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
 ---
 
@@ -42,8 +49,8 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
   <TaskDetailSheet
     budgetMinutes={budgetMinutes}
     plannedMinutes={plannedMinutes}
-    projects={mockProjects}
-    tasks={mockTasks}
+    projects={projects}
+    tasks={tasks}
     client:load
   />
 </Layout>
@@ -52,29 +59,34 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
   class="glass-panel m-auto w-[min(100%,24rem)] rounded-md p-5 text-text-primary backdrop:bg-black/60"
   id="quick-add-dialog"
 >
-  <form class="space-y-4" method="dialog">
+  <form class="space-y-4" id="quick-add-form">
     <h2 class="font-semibold text-lg">Quick add</h2>
     <p class="text-sm text-text-secondary">
-      Mock capture only — API wiring comes later.
+      Capture a task title. You can refine priorities in the detail sheet.
     </p>
     <input
       class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
       name="title"
       placeholder="Task title…"
+      required
       type="text"
     >
+    <p
+      class="hidden text-capacity-over text-sm"
+      id="quick-add-error"
+      role="alert"
+    ></p>
     <div class="flex justify-end gap-2">
       <button
         class="min-h-11 rounded-sm border border-border-contrast px-4 text-sm text-text-primary"
-        type="submit"
-        value="cancel"
+        id="quick-add-cancel"
+        type="button"
       >
         Cancel
       </button>
       <button
         class="min-h-11 rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm"
         type="submit"
-        value="ok"
       >
         Add
       </button>
@@ -83,9 +95,16 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
 </dialog>
 
 <script>
+  import { orpc } from "../lib/orpc";
+
   const dialog = document.getElementById(
     "quick-add-dialog"
   ) as HTMLDialogElement | null;
+  const form = document.getElementById(
+    "quick-add-form"
+  ) as HTMLFormElement | null;
+  const errorEl = document.getElementById("quick-add-error");
+  const cancel = document.getElementById("quick-add-cancel");
   const triggers = [
     document.getElementById("quick-add-fab"),
     document.getElementById("quick-add-header"),
@@ -93,7 +112,53 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
 
   for (const trigger of triggers) {
     trigger?.addEventListener("click", () => {
+      errorEl?.classList.add("hidden");
+      if (errorEl) {
+        errorEl.textContent = "";
+      }
       dialog?.showModal();
+      form?.querySelector("input")?.focus();
     });
   }
+
+  cancel?.addEventListener("click", () => {
+    dialog?.close();
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const title = String(data.get("title") ?? "").trim();
+    if (!title) {
+      return;
+    }
+
+    try {
+      await orpc.tasks.create({ title });
+      dialog?.close();
+      location.reload();
+    } catch {
+      if (errorEl) {
+        errorEl.textContent = "Could not create task. Try again.";
+        errorEl.classList.remove("hidden");
+      }
+    }
+  });
+
+  document.addEventListener("click", async (event) => {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest?.("[data-add-today]") as HTMLElement | null;
+    const id = button?.dataset.addToday;
+    if (!id) {
+      return;
+    }
+
+    event.preventDefault();
+    try {
+      await orpc.tasks.update({ id, isToday: true });
+      location.reload();
+    } catch {
+      // Keep silent for now; toast system is not wired.
+    }
+  });
 </script>

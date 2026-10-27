@@ -1,25 +1,33 @@
 ---
+import { capacityTone, formatMinutes } from "../../lib/quadrant";
 import {
-  dailyCapacityMinutes,
+  DEFAULT_DAILY_CAPACITY_MINUTES,
   getTaskQuadrant,
   getTodayByBucket,
   getTodayPlannedMinutes,
   getTodayTasks,
-} from "../../lib/mock-data";
-import { capacityTone, formatMinutes } from "../../lib/quadrant";
+  type Project,
+  type Task,
+} from "../../lib/task-helpers";
 import TaskCard from "../task/task-card.astro";
 import AlertBanner from "../ui/alert-banner.astro";
 import CapacityBar from "../ui/capacity-bar.astro";
 import EmptySlot from "../ui/empty-slot.astro";
 
-const plannedMinutes = getTodayPlannedMinutes();
-const budgetMinutes = dailyCapacityMinutes;
+interface Props {
+  projects: Project[];
+  tasks: Task[];
+}
+
+const { tasks, projects } = Astro.props;
+const plannedMinutes = getTodayPlannedMinutes(tasks);
+const budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES;
 const tone = capacityTone(plannedMinutes, budgetMinutes);
-const buckets = getTodayByBucket();
-const todayCount = getTodayTasks().length;
+const buckets = getTodayByBucket(tasks);
+const todayCount = getTodayTasks(tasks).length;
 
 const qMinutes = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
-for (const task of getTodayTasks()) {
+for (const task of getTodayTasks(tasks)) {
   qMinutes[getTaskQuadrant(task)] += task.estimatedMinutes;
 }
 
@@ -38,7 +46,7 @@ const quickSlots = 5;
   <header class="space-y-4">
     <div>
       <p class="font-mono text-text-muted text-xs uppercase tracking-wide">
-        Tuesday execution
+        Daily execution
       </p>
       <h1
         class="mt-1 font-semibold text-2xl tracking-tight text-text-primary sm:text-3xl"
@@ -93,7 +101,9 @@ const quickSlots = 5;
       </span>
     </div>
     <div class="space-y-3">
-      {buckets.major.map((task) => <TaskCard task={task} variant="today" />)}
+      {buckets.major.map((task) => (
+        <TaskCard projects={projects} task={task} variant="today" />
+      ))}
       {Array.from({
         length: Math.max(majorSlots - buckets.major.length, 0),
       }).map(() => (
@@ -121,7 +131,9 @@ const quickSlots = 5;
       </span>
     </div>
     <div class="space-y-3">
-      {buckets.medium.map((task) => <TaskCard task={task} variant="today" />)}
+      {buckets.medium.map((task) => (
+        <TaskCard projects={projects} task={task} variant="today" />
+      ))}
       {Array.from({
         length: Math.max(mediumSlots - buckets.medium.length, 0),
       }).map(() => (
@@ -149,7 +161,9 @@ const quickSlots = 5;
       </span>
     </div>
     <div class="space-y-2">
-      {buckets.quick.map((task) => <TaskCard task={task} variant="today" />)}
+      {buckets.quick.map((task) => (
+        <TaskCard projects={projects} task={task} variant="today" />
+      ))}
       {Array.from({
         length: Math.max(quickSlots - buckets.quick.length, 0),
       }).map(() => <EmptySlot href="/matrix" label="Add a quick win" />)}

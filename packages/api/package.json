@@ -16,6 +16,7 @@
     "@orpc/zod": "catalog:",
     "@todo-task-app/auth": "workspace:*",
     "@todo-task-app/db": "workspace:*",
+    "drizzle-orm": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

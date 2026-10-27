@@ -1,8 +1,21 @@
 ---
 import TodayBoard from "../components/today/today-board.astro";
 import AppShell from "../layouts/app-shell.astro";
+import { loadAppBoardData } from "../lib/orpc.server";
+
+const data = await loadAppBoardData(Astro.request);
+if (data === "unauthorized") {
+  return Astro.redirect("/login");
+}
+
+const { tasks, projects } = data;
 ---
 
-<AppShell mobileTitle="APEX / Today" title="Today · APEX">
-  <TodayBoard />
+<AppShell
+  mobileTitle="APEX / Today"
+  projects={projects}
+  tasks={tasks}
+  title="Today · APEX"
+>
+  <TodayBoard projects={projects} tasks={tasks} />
 </AppShell>

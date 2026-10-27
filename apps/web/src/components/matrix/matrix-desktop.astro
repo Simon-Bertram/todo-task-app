@@ -1,36 +1,45 @@
 ---
 import {
-  dailyCapacityMinutes,
+  DEFAULT_DAILY_CAPACITY_MINUTES,
   getTasksByQuadrant,
   getTodayPlannedMinutes,
   getTodayTasks,
-  mockTasks,
-} from "../../lib/mock-data";
+  type Project,
+  type Task,
+} from "../../lib/task-helpers";
 import SegmentedControl from "../ui/segmented-control.astro";
 import QuadrantPanel from "./quadrant-panel.astro";
 import TodayDock from "./today-dock.astro";
 
-const filter = Astro.url.searchParams.get("filter") ?? "all";
-const byQuadrant = getTasksByQuadrant();
+interface Props {
+  projects: Project[];
+  tasks: Task[];
+}
 
-function applyFilter<T extends { isToday: boolean }>(tasks: T[]): T[] {
+const { tasks, projects } = Astro.props;
+const filter = Astro.url.searchParams.get("filter") ?? "all";
+const byQuadrant = getTasksByQuadrant(tasks);
+
+function applyFilter(items: Task[]): Task[] {
   if (filter === "today") {
-    return tasks.filter((task) => task.isToday);
+    return items.filter((task) => task.isToday);
   }
   if (filter === "not-today") {
-    return tasks.filter((task) => !task.isToday);
+    return items.filter((task) => !task.isToday);
   }
-  return tasks;
+  return items;
 }
 
 const q1 = applyFilter(byQuadrant.Q1);
 const q2 = applyFilter(byQuadrant.Q2);
 const q3 = applyFilter(byQuadrant.Q3);
 const q4 = applyFilter(byQuadrant.Q4);
-const backlogCount = mockTasks.filter((task) => !task.isCompleted).length;
-const todayCount = getTodayTasks().length;
-const plannedMinutes = getTodayPlannedMinutes();
-const percent = Math.round((plannedMinutes / dailyCapacityMinutes) * 100);
+const backlogCount = tasks.filter((task) => !task.isCompleted).length;
+const todayCount = getTodayTasks(tasks).length;
+const plannedMinutes = getTodayPlannedMinutes(tasks);
+const percent = Math.round(
+  (plannedMinutes / DEFAULT_DAILY_CAPACITY_MINUTES) * 100
+);
 ---
 
 <div class="hidden min-h-[calc(100svh-0px)] lg:flex">
@@ -67,11 +76,11 @@ const percent = Math.round((plannedMinutes / dailyCapacityMinutes) * 100);
     </header>
 
     <div class="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3">
-      <QuadrantPanel quadrant="Q1" tasks={q1} />
-      <QuadrantPanel quadrant="Q2" tasks={q2} />
-      <QuadrantPanel quadrant="Q3" tasks={q3} />
-      <QuadrantPanel quadrant="Q4" tasks={q4} />
+      <QuadrantPanel projects={projects} quadrant="Q1" tasks={q1} />
+      <QuadrantPanel projects={projects} quadrant="Q2" tasks={q2} />
+      <QuadrantPanel projects={projects} quadrant="Q3" tasks={q3} />
+      <QuadrantPanel projects={projects} quadrant="Q4" tasks={q4} />
     </div>
   </div>
-  <TodayDock />
+  <TodayDock tasks={tasks} />
 </div>

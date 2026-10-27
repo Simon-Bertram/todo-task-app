@@ -1,16 +1,29 @@
 ---
 import CapacitySettings from "../components/islands/capacity-settings";
 import AppShell from "../layouts/app-shell.astro";
+import { loadAppBoardData } from "../lib/orpc.server";
+
+const data = await loadAppBoardData(Astro.request);
+if (data === "unauthorized") {
+  return Astro.redirect("/login");
+}
+
+const { tasks, projects } = data;
 ---
 
-<AppShell mobileTitle="APEX / Settings" title="Settings · APEX">
+<AppShell
+  mobileTitle="APEX / Settings"
+  projects={projects}
+  tasks={tasks}
+  title="Settings · APEX"
+>
   <div class="mx-auto max-w-xl space-y-6 px-4 py-6 lg:px-8">
     <header>
       <h1 class="font-semibold text-2xl tracking-tight text-text-primary">
         Settings
       </h1>
       <p class="mt-1 text-sm text-text-secondary">
-        Preferences for the mock design shell.
+        Preferences for your daily capacity and execution board.
       </p>
     </header>
     <CapacitySettings client:load />

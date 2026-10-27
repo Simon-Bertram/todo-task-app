@@ -3,8 +3,38 @@
   "extends": [
     "ultracite/biome/core",
     "../../biome.jsonc",
-    "ultracite/biome/astro",
-    "ultracite/biome/react"
+    "ultracite/biome/astro"
   ],
-  "root": false
+  "root": false,
+  "overrides": [
+    {
+      "includes": ["src/components/islands/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noChildrenProp": "error",
+            "noNestedComponentDefinitions": "error",
+            "noReactPropAssignments": "error",
+            "noRenderReturnValue": "error",
+            "noVoidElementsWithChildren": "error",
+            "useExhaustiveDependencies": "error",
+            "useHookAtTopLevel": "error",
+            "useJsxKeyInIterable": "error"
+          },
+          "suspicious": {
+            "noArrayIndexKey": "error",
+            "noDuplicateJsxProps": "error",
+            "noLeakedRender": "error",
+            "noReactForwardRef": "error",
+            "noSuspiciousSemicolonInJsx": "error",
+            "noUnknownAttribute": "error",
+            "noReactSpecificProps": "off"
+          },
+          "style": {
+            "useReactFunctionComponents": "error"
+          }
+        }
+      }
+    }
+  ]
 }

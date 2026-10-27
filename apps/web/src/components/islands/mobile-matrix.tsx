@@ -1,23 +1,17 @@
 import { useCallback, useState } from "preact/hooks";
-import type { MockTask } from "../../lib/mock-data";
 import {
   formatMinutes,
   QUADRANT_META,
   type QuadrantId,
 } from "../../lib/quadrant";
-
-interface ProjectRef {
-  color: string;
-  id: string;
-  name: string;
-}
+import type { Project, Task } from "../../lib/task-helpers";
 
 interface Props {
   backlogCount: number;
   budgetMinutes: number;
   plannedMinutes: number;
-  projects: ProjectRef[];
-  tasksByQuadrant: Record<QuadrantId, MockTask[]>;
+  projects: Project[];
+  tasksByQuadrant: Record<QuadrantId, Task[]>;
   todayCount: number;
 }
 
@@ -52,7 +46,7 @@ export default function MobileMatrix({
     }
   }, []);
 
-  function projectFor(id: string | null): ProjectRef | undefined {
+  function projectFor(id: string | null): Project | undefined {
     if (!id) {
       return undefined;
     }

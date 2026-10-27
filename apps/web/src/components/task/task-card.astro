@@ -1,23 +1,30 @@
 ---
+import { formatMinutes, QUADRANT_META } from "../../lib/quadrant";
 import {
   getProject,
   getTaskQuadrant,
-  type MockTask,
-} from "../../lib/mock-data";
-import { formatMinutes, QUADRANT_META } from "../../lib/quadrant";
+  type Project,
+  type Task,
+} from "../../lib/task-helpers";
 import Chip from "../ui/chip.astro";
 
 interface Props {
+  projects?: Project[];
   showAddToToday?: boolean;
-  task: MockTask;
+  task: Task;
   variant?: "matrix" | "today";
 }
 
-const { task, variant = "matrix", showAddToToday = false } = Astro.props;
+const {
+  task,
+  variant = "matrix",
+  showAddToToday = false,
+  projects = [],
+} = Astro.props;
 const quadrant = getTaskQuadrant(task);
 const meta = QUADRANT_META[quadrant];
 const { accentClass, colorVar } = meta;
-const project = getProject(task.projectId);
+const project = getProject(projects, task.projectId);
 ---
 
 <article

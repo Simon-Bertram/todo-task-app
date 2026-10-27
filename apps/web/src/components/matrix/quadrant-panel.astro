@@ -1,14 +1,15 @@
 ---
-import type { MockTask } from "../../lib/mock-data";
 import { QUADRANT_META, type QuadrantId } from "../../lib/quadrant";
+import type { Project, Task } from "../../lib/task-helpers";
 import TaskCard from "../task/task-card.astro";
 
 interface Props {
+  projects?: Project[];
   quadrant: QuadrantId;
-  tasks: MockTask[];
+  tasks: Task[];
 }
 
-const { quadrant, tasks } = Astro.props;
+const { quadrant, tasks, projects = [] } = Astro.props;
 const meta = QUADRANT_META[quadrant];
 ---
 
@@ -46,7 +47,12 @@ const meta = QUADRANT_META[quadrant];
       </p>
     ) : (
       tasks.map((task) => (
-        <TaskCard showAddToToday task={task} variant="matrix" />
+        <TaskCard
+          projects={projects}
+          showAddToToday
+          task={task}
+          variant="matrix"
+        />
       ))
     )}
   </div>
