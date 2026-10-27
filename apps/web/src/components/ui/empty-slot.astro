@@ -1,0 +1,18 @@
+---
+interface Props {
+  hint?: string;
+  href?: string;
+  label: string;
+}
+
+const { href, label, hint } = Astro.props;
+const Tag = href ? "a" : "div";
+---
+
+<Tag
+  class="flex min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-sm border border-dashed border-border-contrast bg-surface-subtle/50 px-4 py-3 text-center transition-colors hover:border-primary/40 hover:bg-surface"
+  href={href}
+>
+  <span class="font-medium text-sm text-text-secondary">{label}</span>
+  {hint ? <span class="font-mono text-text-muted text-xs">{hint}</span> : null}
+</Tag>

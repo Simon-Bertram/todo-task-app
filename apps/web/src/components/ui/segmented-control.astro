@@ -1,0 +1,46 @@
+---
+interface Option {
+  count?: number;
+  id: string;
+  label: string;
+}
+
+interface Props {
+  ariaLabel: string;
+  name: string;
+  options: Option[];
+  selectedId: string;
+}
+
+const { name, options, selectedId, ariaLabel } = Astro.props;
+---
+
+<div
+  aria-label={ariaLabel}
+  class="flex gap-1 overflow-x-auto rounded-full border border-border-subtle bg-surface-subtle p-1"
+  role="tablist"
+>
+  {options.map((option) => {
+    const selected = option.id === selectedId;
+    return (
+      <a
+        aria-selected={selected}
+        class:list={[
+          "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 font-medium text-sm transition-colors",
+          selected
+            ? "bg-surface-elevated text-text-primary"
+            : "text-text-secondary hover:text-text-primary",
+        ]}
+        href={`?${name}=${option.id}`}
+        role="tab"
+      >
+        <span>{option.label}</span>
+        {typeof option.count === "number" ? (
+          <span class="tabular-metrics font-mono text-xs opacity-70">
+            ({option.count})
+          </span>
+        ) : null}
+      </a>
+    );
+  })}
+</div>

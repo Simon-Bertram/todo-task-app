@@ -1,0 +1,20 @@
+---
+interface Props {
+  color?: string;
+  mono?: boolean;
+}
+
+const { color, mono = true } = Astro.props;
+---
+
+<span
+  style={color
+    ? `color: ${color}; border-color: color-mix(in srgb, ${color} 30%, transparent); background-color: color-mix(in srgb, ${color} 12%, transparent);`
+    : "color: var(--color-text-secondary); border-color: var(--color-border-contrast); background-color: var(--color-surface-subtle);"}
+  class:list={[
+    "inline-flex h-6 max-w-full items-center truncate rounded-full border px-2 text-[10px] font-medium tracking-wide",
+    mono ? "font-mono" : "font-sans",
+  ]}
+>
+  <slot />
+</span>

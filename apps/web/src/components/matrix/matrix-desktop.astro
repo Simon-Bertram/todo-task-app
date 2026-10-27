@@ -1,0 +1,77 @@
+---
+import {
+  dailyCapacityMinutes,
+  getTasksByQuadrant,
+  getTodayPlannedMinutes,
+  getTodayTasks,
+  mockTasks,
+} from "../../lib/mock-data";
+import SegmentedControl from "../ui/segmented-control.astro";
+import QuadrantPanel from "./quadrant-panel.astro";
+import TodayDock from "./today-dock.astro";
+
+const filter = Astro.url.searchParams.get("filter") ?? "all";
+const byQuadrant = getTasksByQuadrant();
+
+function applyFilter<T extends { isToday: boolean }>(tasks: T[]): T[] {
+  if (filter === "today") {
+    return tasks.filter((task) => task.isToday);
+  }
+  if (filter === "not-today") {
+    return tasks.filter((task) => !task.isToday);
+  }
+  return tasks;
+}
+
+const q1 = applyFilter(byQuadrant.Q1);
+const q2 = applyFilter(byQuadrant.Q2);
+const q3 = applyFilter(byQuadrant.Q3);
+const q4 = applyFilter(byQuadrant.Q4);
+const backlogCount = mockTasks.filter((task) => !task.isCompleted).length;
+const todayCount = getTodayTasks().length;
+const plannedMinutes = getTodayPlannedMinutes();
+const percent = Math.round((plannedMinutes / dailyCapacityMinutes) * 100);
+---
+
+<div class="hidden min-h-[calc(100svh-0px)] lg:flex">
+  <div class="flex min-w-0 flex-1 flex-col gap-4 p-6">
+    <header class="space-y-3">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 class="font-semibold text-2xl tracking-tight text-text-primary">
+            Eisenhower Prioritization Matrix
+          </h1>
+          <p class="mt-1 font-mono text-sm text-text-secondary tabular-metrics">
+            {backlogCount}
+            backlog · {todayCount} on Today · {percent}% load
+          </p>
+        </div>
+      </div>
+      <SegmentedControl
+        ariaLabel="Today filter"
+        name="filter"
+        options={[
+          { id: "all", label: "All" },
+          { id: "not-today", label: "Not on Today" },
+          { id: "today", label: "On Today" },
+        ]}
+        selectedId={filter}
+      />
+      <div
+        aria-hidden="true"
+        class="flex items-center gap-6 font-mono text-text-muted text-xs"
+      >
+        <span>Importance ↑</span>
+        <span>Urgency →</span>
+      </div>
+    </header>
+
+    <div class="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3">
+      <QuadrantPanel quadrant="Q1" tasks={q1} />
+      <QuadrantPanel quadrant="Q2" tasks={q2} />
+      <QuadrantPanel quadrant="Q3" tasks={q3} />
+      <QuadrantPanel quadrant="Q4" tasks={q4} />
+    </div>
+  </div>
+  <TodayDock />
+</div>

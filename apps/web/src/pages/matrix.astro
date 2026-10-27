@@ -1,0 +1,33 @@
+---
+import MobileMatrix from "../components/islands/mobile-matrix";
+import MatrixDesktop from "../components/matrix/matrix-desktop.astro";
+import AppShell from "../layouts/app-shell.astro";
+import {
+  dailyCapacityMinutes,
+  getTasksByQuadrant,
+  getTodayPlannedMinutes,
+  getTodayTasks,
+  mockProjects,
+  mockTasks,
+} from "../lib/mock-data";
+
+const tasksByQuadrant = getTasksByQuadrant();
+const plannedMinutes = getTodayPlannedMinutes();
+const todayCount = getTodayTasks().length;
+const backlogCount = mockTasks.filter((task) => !task.isCompleted).length;
+---
+
+<AppShell mobileTitle="APEX / Matrix" title="Matrix · APEX">
+  <div class="px-4 py-4 lg:px-0 lg:py-0">
+    <MobileMatrix
+      backlogCount={backlogCount}
+      budgetMinutes={dailyCapacityMinutes}
+      plannedMinutes={plannedMinutes}
+      projects={mockProjects}
+      tasksByQuadrant={tasksByQuadrant}
+      todayCount={todayCount}
+      client:load
+    />
+  </div>
+  <MatrixDesktop />
+</AppShell>

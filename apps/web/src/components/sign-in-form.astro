@@ -1,0 +1,163 @@
+---
+interface Props {
+  heading?: string;
+  showHeading?: boolean;
+  variant?: "glass" | "solid";
+}
+
+const {
+  variant = "solid",
+  heading = "Welcome back",
+  showHeading = true,
+} = Astro.props;
+
+const shellClass =
+  variant === "glass"
+    ? "glass-panel w-full max-w-md rounded-md p-6 sm:p-8"
+    : "w-full max-w-md rounded-md border border-border-contrast bg-surface p-6 sm:p-8";
+
+const headingClass = showHeading
+  ? "mb-6 font-semibold text-2xl text-text-primary tracking-tight"
+  : "sr-only";
+---
+
+<div class={shellClass} id="login">
+  <h1 class={headingClass} id="signin-heading">{heading}</h1>
+
+  <form aria-labelledby="signin-heading" class="space-y-4" id="signin-form">
+    <div class="space-y-1.5">
+      <label
+        class="block font-medium text-sm text-text-secondary"
+        for="signin-email"
+      >
+        Email
+      </label>
+      <input
+        autocomplete="email"
+        class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        id="signin-email"
+        name="email"
+        placeholder="you@example.com"
+        required
+        type="email"
+      >
+    </div>
+
+    <div class="space-y-1.5">
+      <label
+        class="block font-medium text-sm text-text-secondary"
+        for="signin-password"
+      >
+        Password
+      </label>
+      <input
+        autocomplete="current-password"
+        class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        id="signin-password"
+        name="password"
+        placeholder="••••••••"
+        required
+        type="password"
+      >
+    </div>
+
+    <p
+      aria-live="assertive"
+      class="hidden text-capacity-over text-sm"
+      id="signin-form-error"
+      role="alert"
+      tabindex="-1"
+    ></p>
+
+    <button
+      class="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+      type="submit"
+    >
+      Sign in
+    </button>
+  </form>
+
+  <p class="mt-5 text-center text-sm text-text-secondary">
+    Need an account?
+    <a class="text-primary underline hover:brightness-110" href="/signup"
+      >Sign up</a
+    >
+  </p>
+</div>
+
+<script>
+  import { authClient } from "../lib/auth-client";
+
+  const form = document.getElementById("signin-form") as HTMLFormElement;
+  const emailInput = document.getElementById(
+    "signin-email"
+  ) as HTMLInputElement;
+  const passwordInput = document.getElementById(
+    "signin-password"
+  ) as HTMLInputElement;
+  const formError = document.getElementById(
+    "signin-form-error"
+  ) as HTMLParagraphElement;
+  const submitButton = form.querySelector(
+    'button[type="submit"]'
+  ) as HTMLButtonElement;
+
+  const formErrorId = "signin-form-error";
+  const fields = [emailInput, passwordInput];
+
+  function clearInvalidState() {
+    formError.textContent = "";
+    formError.classList.add("hidden");
+
+    for (const field of fields) {
+      field.removeAttribute("aria-invalid");
+      field.removeAttribute("aria-describedby");
+    }
+  }
+
+  function showFormError(message: string) {
+    formError.textContent = message;
+    formError.classList.remove("hidden");
+
+    for (const field of fields) {
+      field.setAttribute("aria-invalid", "true");
+      field.setAttribute("aria-describedby", formErrorId);
+    }
+
+    formError.focus();
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    clearInvalidState();
+    form.setAttribute("aria-busy", "true");
+    submitButton.disabled = true;
+    submitButton.textContent = "Signing in…";
+
+    try {
+      await authClient.signIn.email(
+        {
+          email: emailInput.value,
+          password: passwordInput.value,
+        },
+        {
+          onError: (ctx) => {
+            showFormError(
+              ctx.error.message || "Sign in failed. Please try again."
+            );
+          },
+          onSuccess: () => {
+            window.location.href = "/today";
+          },
+        }
+      );
+    } catch {
+      showFormError("An unexpected error occurred.");
+    } finally {
+      form.removeAttribute("aria-busy");
+      submitButton.disabled = false;
+      submitButton.textContent = "Sign in";
+    }
+  });
+</script>

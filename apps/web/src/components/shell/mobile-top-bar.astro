@@ -1,0 +1,33 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = "APEX" } = Astro.props;
+---
+
+<header
+  class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border-contrast bg-canvas/90 px-4 backdrop-blur-md lg:hidden"
+>
+  <div>
+    <p class="font-semibold text-lg tracking-tight text-text-primary">
+      {title}
+    </p>
+  </div>
+  <div class="flex items-center gap-2">
+    <button
+      aria-label="Add task"
+      class="flex size-11 items-center justify-center rounded-sm border border-border-contrast bg-surface text-primary text-xl"
+      id="quick-add-header"
+      type="button"
+    >
+      +
+    </button>
+    <div
+      aria-hidden="true"
+      class="flex size-9 items-center justify-center rounded-full bg-primary font-semibold text-on-primary text-sm"
+    >
+      A
+    </div>
+  </div>
+</header>

@@ -1,25 +1,34 @@
 ---
 import "../styles/global.css";
-import Header from "../components/Header.astro";
 
 interface Props {
+  bare?: boolean;
   title?: string;
 }
 
-const { title = "todo-task-app" } = Astro.props;
+const { title = "APEX", bare = false } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html class="dark" lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link href="/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    >
+    <link
+      href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css"
+      rel="stylesheet"
+    >
+    <meta content={Astro.generator} name="generator">
     <title>{title}</title>
   </head>
-  <body class="min-h-screen bg-neutral-950 text-white">
-    <Header />
+  <body class={bare ? "min-h-svh" : "min-h-svh bg-canvas text-text-primary"}>
     <slot />
   </body>
 </html>

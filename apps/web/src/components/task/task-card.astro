@@ -1,0 +1,74 @@
+---
+import {
+  getProject,
+  getTaskQuadrant,
+  type MockTask,
+} from "../../lib/mock-data";
+import { formatMinutes, QUADRANT_META } from "../../lib/quadrant";
+import Chip from "../ui/chip.astro";
+
+interface Props {
+  showAddToToday?: boolean;
+  task: MockTask;
+  variant?: "matrix" | "today";
+}
+
+const { task, variant = "matrix", showAddToToday = false } = Astro.props;
+const quadrant = getTaskQuadrant(task);
+const meta = QUADRANT_META[quadrant];
+const { accentClass, colorVar } = meta;
+const project = getProject(task.projectId);
+---
+
+<article
+  data-task-id={task.id}
+  class:list={[
+    "rounded-sm border border-border-contrast bg-surface p-3 pl-4 sm:p-4",
+    accentClass,
+  ]}
+>
+  <div class="flex flex-wrap items-start gap-2">
+    {variant === "today" ? (
+      <Chip color={colorVar}>
+        {quadrant} {meta.label.toUpperCase()}
+      </Chip>
+    ) : null}
+    {task.isToday && variant === "matrix" ? (
+      <Chip color="var(--color-primary)">Today</Chip>
+    ) : null}
+    <Chip>{formatMinutes(task.estimatedMinutes)} ETC</Chip>
+    {project ? <Chip color={project.color}>#{project.name}</Chip> : null}
+  </div>
+
+  <h3 class="mt-2 font-semibold text-base text-text-primary leading-snug">
+    <button
+      class="task-open text-left hover:text-primary"
+      data-task-id={task.id}
+      type="button"
+    >
+      {task.title}
+    </button>
+  </h3>
+
+  {task.notes && variant === "matrix" ? (
+    <p class="mt-1 line-clamp-2 text-sm text-text-secondary">{task.notes}</p>
+  ) : null}
+
+  <div
+    class="mt-3 flex flex-wrap items-center gap-3 font-mono text-text-muted text-xs tabular-metrics"
+  >
+    <span>U:{task.isUrgent}/3</span>
+    <span>I:{task.isImportant}/3</span>
+    {task.dueDate ? <span>Due {task.dueDate}</span> : null}
+  </div>
+
+  {showAddToToday && !task.isToday ? (
+    <button
+      class="mt-3 inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
+      data-add-today={task.id}
+      type="button"
+    >
+      + Add to Today ({formatMinutes(task.estimatedMinutes)})
+    </button>
+  ) : null}
+</article>

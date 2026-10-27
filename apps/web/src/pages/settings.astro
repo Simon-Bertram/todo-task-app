@@ -1,0 +1,18 @@
+---
+import CapacitySettings from "../components/islands/capacity-settings";
+import AppShell from "../layouts/app-shell.astro";
+---
+
+<AppShell mobileTitle="APEX / Settings" title="Settings · APEX">
+  <div class="mx-auto max-w-xl space-y-6 px-4 py-6 lg:px-8">
+    <header>
+      <h1 class="font-semibold text-2xl tracking-tight text-text-primary">
+        Settings
+      </h1>
+      <p class="mt-1 text-sm text-text-secondary">
+        Preferences for the mock design shell.
+      </p>
+    </header>
+    <CapacitySettings client:load />
+  </div>
+</AppShell>

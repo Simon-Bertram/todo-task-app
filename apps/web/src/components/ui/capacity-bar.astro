@@ -1,0 +1,80 @@
+---
+import { capacityTone } from "../../lib/quadrant";
+
+interface Segment {
+  colorClass: string;
+  label: string;
+  minutes: number;
+}
+
+interface Props {
+  budgetMinutes: number;
+  plannedMinutes: number;
+  segments?: Segment[];
+  showLabel?: boolean;
+}
+
+const {
+  plannedMinutes,
+  budgetMinutes,
+  segments,
+  showLabel = true,
+} = Astro.props;
+
+const percent = Math.round((plannedMinutes / budgetMinutes) * 100);
+const tone = capacityTone(plannedMinutes, budgetMinutes);
+
+function toneBarClass(value: typeof tone): string {
+  if (value === "over") {
+    return "bg-capacity-over";
+  }
+  if (value === "warn") {
+    return "bg-capacity-warn";
+  }
+  return "bg-capacity-ok";
+}
+
+const toneClass = toneBarClass(tone);
+const headroom = Math.max(budgetMinutes - plannedMinutes, 0);
+---
+
+<div class="space-y-2">
+  {showLabel ? (
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <p class="tabular-metrics font-mono text-sm text-text-secondary">
+        {(plannedMinutes / 60).toFixed(1)}h / {(budgetMinutes / 60).toFixed(1)}h
+        <span class="text-text-muted"> ({percent}%)</span>
+      </p>
+      <p class="tabular-metrics font-mono text-text-muted text-xs">
+        {headroom > 0
+          ? `${headroom}m headroom`
+          : `${plannedMinutes - budgetMinutes}m over`}
+      </p>
+    </div>
+  ) : null}
+  <div
+    aria-label="Daily capacity"
+    aria-valuemax={100}
+    aria-valuemin={0}
+    aria-valuenow={percent}
+    class="h-1.5 overflow-hidden rounded-full bg-surface"
+    role="progressbar"
+  >
+    {segments && segments.length > 0 ? (
+      <div class="flex h-full w-full">
+        {segments.map((segment) => (
+          <div
+            class:list={["h-full", segment.colorClass]}
+            style={`width: ${(segment.minutes / budgetMinutes) * 100}%`}
+            title={`${segment.label}: ${segment.minutes}m`}
+          />
+        ))}
+      </div>
+    ) : (
+      <div
+        class:list={["h-full rounded-full transition-all", toneClass]}
+        style={`width: ${Math.min(percent, 100)}%`}
+      />
+    )}
+  </div>
+</div>

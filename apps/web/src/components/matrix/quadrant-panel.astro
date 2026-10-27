@@ -1,0 +1,53 @@
+---
+import type { MockTask } from "../../lib/mock-data";
+import { QUADRANT_META, type QuadrantId } from "../../lib/quadrant";
+import TaskCard from "../task/task-card.astro";
+
+interface Props {
+  quadrant: QuadrantId;
+  tasks: MockTask[];
+}
+
+const { quadrant, tasks } = Astro.props;
+const meta = QUADRANT_META[quadrant];
+---
+
+<section
+  aria-labelledby={`quad-${quadrant}`}
+  class:list={[
+    "flex min-h-64 flex-col rounded-md border border-border-contrast p-3",
+    meta.tintClass,
+  ]}
+>
+  <header class="mb-3 flex items-start justify-between gap-2">
+    <div>
+      <h2
+        class="font-semibold text-sm tracking-wide"
+        id={`quad-${quadrant}`}
+        style={`color: ${meta.colorVar}`}
+      >
+        {quadrant}
+        // {meta.label.toUpperCase()}
+      </h2>
+      <p class="mt-0.5 text-text-muted text-xs">{meta.intent}</p>
+    </div>
+    <span
+      class="font-mono text-xs tabular-metrics"
+      style={`color: ${meta.colorVar}`}
+    >
+      {tasks.length}
+    </span>
+  </header>
+
+  <div class="flex flex-1 flex-col gap-2 overflow-y-auto">
+    {tasks.length === 0 ? (
+      <p class="m-auto px-2 py-8 text-center text-sm text-text-muted">
+        Empty — drop tasks here to set {quadrant} defaults.
+      </p>
+    ) : (
+      tasks.map((task) => (
+        <TaskCard showAddToToday task={task} variant="matrix" />
+      ))
+    )}
+  </div>
+</section>

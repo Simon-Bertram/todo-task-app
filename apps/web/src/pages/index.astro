@@ -1,54 +1,60 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import heroSkyline from "../assets/hero-skyline.jpg";
+import hero480Avif from "../assets/hero-skyline-480.avif";
+import hero480Jpg from "../assets/hero-skyline-480.jpg";
+import hero480Webp from "../assets/hero-skyline-480.webp";
+import hero682Avif from "../assets/hero-skyline-682.avif";
+import hero682Webp from "../assets/hero-skyline-682.webp";
+import SignInForm from "../components/sign-in-form.astro";
+import Layout from "../layouts/layout.astro";
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
+const sizes = "100vw";
+const avifSrcset = `${hero480Avif.src} 480w, ${hero682Avif.src} 682w`;
+const webpSrcset = `${hero480Webp.src} 480w, ${hero682Webp.src} 682w`;
+const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
 ---
 
-<Layout title="todo-task-app">
-  <div class="container mx-auto max-w-3xl px-4 py-2">
-    <pre class="overflow-x-auto font-mono text-sm text-white">{TITLE_TEXT}</pre>
-    <div class="grid gap-6">
-      <section class="rounded-lg border border-neutral-700 p-4">
-        <h2 class="mb-2 font-medium text-white">API Status</h2>
-        <div class="flex items-center gap-2" id="api-status">
-          <div class="h-2 w-2 rounded-full bg-orange-400" id="status-dot"></div>
-          <span class="text-sm text-neutral-400" id="status-text">Checking...</span>
-        </div>
-      </section>
+<!-- Hero photo: Lerone Pieters / Unsplash — prebaked AVIF/WebP for Alchemy passthrough -->
+<Layout bare title="APEX — Intentional daily execution">
+  <main class="relative min-h-svh overflow-hidden">
+    <picture class="absolute inset-0 size-full">
+      <source sizes={sizes} srcset={avifSrcset} type="image/avif">
+      <source sizes={sizes} srcset={webpSrcset} type="image/webp">
+      <source sizes={sizes} srcset={jpegSrcset} type="image/jpeg">
+      <img
+        alt=""
+        class="size-full object-cover"
+        decoding="async"
+        fetchpriority="high"
+        height={heroSkyline.height}
+        loading="eager"
+        src={heroSkyline.src}
+        width={heroSkyline.width}
+      >
+    </picture>
+    <div
+      aria-hidden="true"
+      class="absolute inset-0 bg-linear-to-b from-[#0B0F17]/85 via-[#0B0F17]/35 to-[#0B0F17]/75"
+    ></div>
+
+    <div
+      class="relative z-10 mx-auto flex min-h-svh w-full max-w-6xl flex-col justify-between gap-10 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:gap-16 lg:px-12 lg:py-16"
+    >
+      <div class="max-w-xl shrink-0 pt-4 lg:pt-0">
+        <p
+          class="font-semibold text-5xl text-text-primary tracking-[-0.03em] sm:text-6xl lg:text-7xl"
+        >
+          APEX
+        </p>
+        <p class="mt-4 max-w-md text-base text-text-secondary sm:text-lg">
+          Intentional daily execution — Eisenhower Matrix planning with a
+          time-budgeted Today board.
+        </p>
+      </div>
+
+      <div class="w-full max-w-md lg:ml-auto">
+        <SignInForm heading="Sign in" variant="glass" />
+      </div>
     </div>
-  </div>
+  </main>
 </Layout>
-
-<script>
-  import { orpc } from "../lib/orpc";
-
-  const statusDot = document.getElementById("status-dot")!;
-  const statusText = document.getElementById("status-text")!;
-
-  async function checkHealth() {
-    try {
-      const data = await orpc.healthCheck();
-      statusDot.className = "h-2 w-2 rounded-full bg-green-500";
-      statusText.textContent = "Connected";
-    } catch (error) {
-      statusDot.className = "h-2 w-2 rounded-full bg-red-500";
-      statusText.textContent = "Disconnected";
-    }
-  }
-
-  checkHealth();
-</script>

@@ -4,16 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check-types": "tsc -b ../../packages/api && astro check",
     "astro": "astro",
+    "check-types": "tsc -b ../../packages/api && astro check",
     "dev:bare": "astro dev",
     "env:generate": "varlock codegen"
   },
   "dependencies": {
+    "@astrojs/preact": "^6.1.1",
     "@orpc/client": "catalog:",
     "@todo-task-app/api": "workspace:*",
     "astro": "^7.3.1",
     "better-auth": "catalog:",
+    "preact": "^11.0.2",
+    "sharp": "^0.35.5",
     "varlock": "catalog:",
     "zod": "catalog:"
   },
@@ -21,6 +24,7 @@
     "@alchemy.run/frontend-frameworks": "2.0.0-beta.84",
     "@astrojs/check": "^0.9.10",
     "@cloudflare/workers-types": "catalog:",
+    "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.3.3",
     "@todo-task-app/config": "workspace:*",
     "tailwindcss": "^4.3.3",

@@ -1,0 +1,52 @@
+---
+import AppShell from "../layouts/app-shell.astro";
+import { getTaskQuadrant, mockProjects, mockTasks } from "../lib/mock-data";
+
+const rows = mockProjects.map((project) => {
+  const tasks = mockTasks.filter(
+    (task) => task.projectId === project.id && !task.isCompleted
+  );
+  return { count: tasks.length, project, tasks };
+});
+---
+
+<AppShell mobileTitle="APEX / Projects" title="Projects · APEX">
+  <div class="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-8">
+    <header>
+      <h1 class="font-semibold text-2xl tracking-tight text-text-primary">
+        Projects
+      </h1>
+      <p class="mt-1 text-sm text-text-secondary">
+        Color-coded categories for Matrix and Today cards (mock data).
+      </p>
+    </header>
+
+    <ul class="space-y-3">
+      {rows.map(({ project, count, tasks }) => (
+        <li class="rounded-md border border-border-contrast bg-surface p-4">
+          <div class="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              class="size-3 rounded-full"
+              style={`background: ${project.color}`}
+            />
+            <h2 class="font-semibold text-text-primary">#{project.name}</h2>
+            <span class="tabular-metrics ml-auto font-mono text-text-muted text-xs">
+              {count} tasks
+            </span>
+          </div>
+          <ul class="mt-3 space-y-1.5 border-border-subtle border-t pt-3">
+            {tasks.slice(0, 4).map((task) => (
+              <li class="flex items-center justify-between gap-2 text-sm">
+                <span class="truncate text-text-secondary">{task.title}</span>
+                <span class="shrink-0 font-mono text-text-muted text-xs">
+                  {getTaskQuadrant(task)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  </div>
+</AppShell>

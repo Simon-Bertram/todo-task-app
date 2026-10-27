@@ -1,0 +1,29 @@
+---
+interface Props {
+  tone?: "warn" | "over" | "info";
+}
+
+const { tone = "warn" } = Astro.props;
+
+function alertToneClasses(value: typeof tone): string {
+  if (value === "over") {
+    return "border-capacity-over/40 bg-capacity-over/10 text-capacity-over";
+  }
+  if (value === "info") {
+    return "border-primary/30 bg-primary/10 text-primary";
+  }
+  return "border-capacity-warn/40 bg-capacity-warn/10 text-capacity-warn";
+}
+
+const toneClasses = alertToneClasses(tone);
+---
+
+<div
+  role="status"
+  class:list={[
+    "rounded-sm border px-3 py-2.5 font-medium text-sm",
+    toneClasses,
+  ]}
+>
+  <slot />
+</div>

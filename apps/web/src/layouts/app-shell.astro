@@ -1,0 +1,99 @@
+---
+import TaskDetailSheet from "../components/islands/task-detail-sheet";
+import BottomNav from "../components/shell/bottom-nav.astro";
+import MobileTopBar from "../components/shell/mobile-top-bar.astro";
+import SideNav from "../components/shell/side-nav.astro";
+import {
+  dailyCapacityMinutes,
+  getTodayPlannedMinutes,
+  mockProjects,
+  mockTasks,
+} from "../lib/mock-data";
+import Layout from "./layout.astro";
+
+interface Props {
+  mobileTitle?: string;
+  title?: string;
+}
+
+const { title = "APEX", mobileTitle = "APEX" } = Astro.props;
+const currentPath = Astro.url.pathname;
+const plannedMinutes = getTodayPlannedMinutes();
+const budgetMinutes = dailyCapacityMinutes;
+const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
+---
+
+<Layout title={title}>
+  <div class="flex min-h-svh bg-canvas">
+    <SideNav
+      budgetMinutes={budgetMinutes}
+      capacityPercent={capacityPercent}
+      currentPath={currentPath}
+      plannedMinutes={plannedMinutes}
+    />
+    <div class="flex min-w-0 flex-1 flex-col">
+      <MobileTopBar title={mobileTitle} />
+      <main class="flex-1 overflow-x-hidden pb-24 lg:pb-0">
+        <slot />
+      </main>
+      <BottomNav currentPath={currentPath} />
+    </div>
+  </div>
+  <TaskDetailSheet
+    budgetMinutes={budgetMinutes}
+    plannedMinutes={plannedMinutes}
+    projects={mockProjects}
+    tasks={mockTasks}
+    client:load
+  />
+</Layout>
+
+<dialog
+  class="glass-panel m-auto w-[min(100%,24rem)] rounded-md p-5 text-text-primary backdrop:bg-black/60"
+  id="quick-add-dialog"
+>
+  <form class="space-y-4" method="dialog">
+    <h2 class="font-semibold text-lg">Quick add</h2>
+    <p class="text-sm text-text-secondary">
+      Mock capture only — API wiring comes later.
+    </p>
+    <input
+      class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+      name="title"
+      placeholder="Task title…"
+      type="text"
+    >
+    <div class="flex justify-end gap-2">
+      <button
+        class="min-h-11 rounded-sm border border-border-contrast px-4 text-sm text-text-primary"
+        type="submit"
+        value="cancel"
+      >
+        Cancel
+      </button>
+      <button
+        class="min-h-11 rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm"
+        type="submit"
+        value="ok"
+      >
+        Add
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  const dialog = document.getElementById(
+    "quick-add-dialog"
+  ) as HTMLDialogElement | null;
+  const triggers = [
+    document.getElementById("quick-add-fab"),
+    document.getElementById("quick-add-header"),
+  ];
+
+  for (const trigger of triggers) {
+    trigger?.addEventListener("click", () => {
+      dialog?.showModal();
+    });
+  }
+</script>

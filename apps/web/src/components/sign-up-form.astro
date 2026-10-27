@@ -1,0 +1,183 @@
+---
+---
+
+<div
+  class="w-full max-w-md rounded-md border border-border-contrast bg-surface p-6 sm:p-8"
+>
+  <h1
+    class="mb-6 font-semibold text-2xl tracking-tight text-text-primary"
+    id="signup-heading"
+  >
+    Create account
+  </h1>
+
+  <form aria-labelledby="signup-heading" class="space-y-4" id="signup-form">
+    <div class="space-y-1.5">
+      <label
+        class="block font-medium text-sm text-text-secondary"
+        for="signup-name"
+      >
+        Name
+      </label>
+      <input
+        autocomplete="name"
+        class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        id="signup-name"
+        name="name"
+        placeholder="Alex Rivera"
+        required
+        type="text"
+      >
+    </div>
+
+    <div class="space-y-1.5">
+      <label
+        class="block font-medium text-sm text-text-secondary"
+        for="signup-email"
+      >
+        Email
+      </label>
+      <input
+        autocomplete="email"
+        class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        id="signup-email"
+        name="email"
+        placeholder="you@example.com"
+        required
+        type="email"
+      >
+    </div>
+
+    <div class="space-y-1.5">
+      <label
+        class="block font-medium text-sm text-text-secondary"
+        for="signup-password"
+      >
+        Password
+      </label>
+      <input
+        aria-describedby="signup-password-hint"
+        autocomplete="new-password"
+        class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        id="signup-password"
+        minlength="12"
+        name="password"
+        placeholder="••••••••"
+        required
+        type="password"
+      >
+      <p class="font-mono text-text-muted text-xs" id="signup-password-hint">
+        At least 12 characters
+      </p>
+    </div>
+
+    <p
+      aria-live="assertive"
+      class="hidden text-capacity-over text-sm"
+      id="signup-form-error"
+      role="alert"
+      tabindex="-1"
+    ></p>
+
+    <button
+      class="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+      type="submit"
+    >
+      Sign up
+    </button>
+  </form>
+
+  <p class="mt-5 text-center text-sm text-text-secondary">
+    Already have an account?
+    <a class="text-primary underline hover:brightness-110" href="/#login"
+      >Sign in</a
+    >
+  </p>
+</div>
+
+<script>
+  import { authClient } from "../lib/auth-client";
+
+  const form = document.getElementById("signup-form") as HTMLFormElement;
+  const nameInput = document.getElementById("signup-name") as HTMLInputElement;
+  const emailInput = document.getElementById(
+    "signup-email"
+  ) as HTMLInputElement;
+  const passwordInput = document.getElementById(
+    "signup-password"
+  ) as HTMLInputElement;
+  const formError = document.getElementById(
+    "signup-form-error"
+  ) as HTMLParagraphElement;
+  const submitButton = form.querySelector(
+    'button[type="submit"]'
+  ) as HTMLButtonElement;
+
+  const passwordHintId = "signup-password-hint";
+  const formErrorId = "signup-form-error";
+  const fields = [nameInput, emailInput, passwordInput];
+
+  function clearInvalidState() {
+    formError.textContent = "";
+    formError.classList.add("hidden");
+
+    for (const field of fields) {
+      field.removeAttribute("aria-invalid");
+    }
+
+    passwordInput.setAttribute("aria-describedby", passwordHintId);
+    nameInput.removeAttribute("aria-describedby");
+    emailInput.removeAttribute("aria-describedby");
+  }
+
+  function showFormError(message: string) {
+    formError.textContent = message;
+    formError.classList.remove("hidden");
+
+    for (const field of fields) {
+      field.setAttribute("aria-invalid", "true");
+      field.setAttribute("aria-describedby", formErrorId);
+    }
+
+    passwordInput.setAttribute(
+      "aria-describedby",
+      `${passwordHintId} ${formErrorId}`
+    );
+    formError.focus();
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    clearInvalidState();
+    form.setAttribute("aria-busy", "true");
+    submitButton.disabled = true;
+    submitButton.textContent = "Creating account…";
+
+    try {
+      await authClient.signUp.email(
+        {
+          email: emailInput.value,
+          name: nameInput.value,
+          password: passwordInput.value,
+        },
+        {
+          onError: (ctx) => {
+            showFormError(
+              ctx.error.message || "Sign up failed. Please try again."
+            );
+          },
+          onSuccess: () => {
+            window.location.href = "/today";
+          },
+        }
+      );
+    } catch {
+      showFormError("An unexpected error occurred.");
+    } finally {
+      form.removeAttribute("aria-busy");
+      submitButton.disabled = false;
+      submitButton.textContent = "Sign up";
+    }
+  });
+</script>
