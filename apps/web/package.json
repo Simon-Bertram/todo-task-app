@@ -7,7 +7,9 @@
     "astro": "astro",
     "check-types": "tsc -b ../../packages/api && astro check",
     "dev:bare": "astro dev",
-    "env:generate": "varlock codegen"
+    "env:generate": "varlock codegen",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/preact": "^6.1.1",
@@ -28,6 +30,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@todo-task-app/config": "workspace:*",
     "tailwindcss": "^4.3.3",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

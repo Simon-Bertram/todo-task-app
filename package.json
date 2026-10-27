@@ -18,7 +18,8 @@
     "dev:web": "turbo run dev:bare -F web --",
     "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
     "fix": "ultracite fix",
-    "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/"
+    "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
+    "test": "turbo run test"
   },
   "dependencies": {
     "zod": "catalog:"
