@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 import type { WebEnv } from "@todo-task-app/infra/alchemy.run";
 
 // Infers cloudflare:workers env from the Alchemy Website.Astro bindings.

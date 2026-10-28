@@ -56,9 +56,52 @@ If you see that and still get `Unauthorized: Authentication error`, the stored t
 ## 1. Prerequisites
 
 - A Cloudflare account (free plan is enough)
-- Verified account email and a usable `workers.dev` subdomain
+- Verified account email
+- Production zone **`todo.sarl`** on Cloudflare (active; nameservers at Cloudflare)
 - Node 22+ (or Bun)
 - From the repo root: `pnpm install`
+
+### Production hosts (`todo.sarl`)
+
+| Role | Hostname |
+|------|----------|
+| Web (Astro) | `https://todo.sarl` (`www.todo.sarl` → 301) |
+| API / Better Auth | `https://api.todo.sarl` |
+| Auth email From (Resend) | `APEX <noreply@mail.todo.sarl>` |
+
+Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/infra/alchemy.run.ts) (`domain` + `workersDev: false`). Deploy attaches them once the zone exists.
+
+**Local `pnpm run dev`** still uses `http://localhost:4321` (web) and `http://localhost:3000` (API). Set:
+
+- `CORS_ORIGIN=http://localhost:4321`
+- `BETTER_AUTH_URL=http://localhost:3000`
+- `PUBLIC_SERVER_URL=http://localhost:3000` (web)
+
+**Production deploy** env:
+
+- `CORS_ORIGIN=https://todo.sarl`
+- `EMAIL_FROM=APEX <noreply@mail.todo.sarl>`
+- `RESEND_API_KEY=…` (Resend dashboard)
+- `BETTER_AUTH_URL` is supplied by Alchemy as `Worker.URL` → `https://api.todo.sarl`
+
+### Resend domain (`mail.todo.sarl`)
+
+Auth verification and password-reset emails go through Resend (not Fastmail). Fastmail is optional and only for a personal `@todo.sarl` inbox.
+
+1. Domain `mail.todo.sarl` is registered in Resend (or add it under [Domains](https://resend.com/domains)).
+2. In the Cloudflare DNS UI for `todo.sarl`, add the records from the Resend domain page for `mail.todo.sarl` (DNS Write). Current Resend values (re-check the dashboard if rotated):
+
+| Type | Name | Content / priority |
+|------|------|--------------------|
+| TXT | `resend._domainkey.mail` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrEf72ZoML4BgNA0lHE6sCnVRYo697oNsCMmMzUm2WyC7nLLtgPxhlod5i8TDU7IfpGjsCXHZVqtzHt53Z8ZWbpHKERC1ikDDKuIOoi10TwJSbOOZ18DQZsauJi8w+WdO88vh5LzB932admCC14x5n+tTTMgj2xiPPxXBVu1JL0QIDAQAB` |
+| MX | `send.mail` | `feedback-smtp.us-east-1.amazonses.com` (priority `10`) |
+| TXT | `send.mail` | `v=spf1 include:amazonses.com ~all` |
+| CNAME | `rsend.mail` | `send.forge.rmta.net` (**DNS only**, not proxied) |
+
+Keep apex MX free unless you intentionally add a mailbox provider (Fastmail is optional and unrelated to auth sends).
+
+3. In Resend, click **Verify** / wait until status is **Verified** (often minutes after DNS propagates).
+4. Ensure `EMAIL_FROM=APEX <noreply@mail.todo.sarl>`.
 
 ---
 
@@ -152,11 +195,11 @@ Alchemy loads deployment inputs via `varlock/auto-load` in [`packages/infra/alch
 
 | File | Required for local |
 |------|--------------------|
-| [`apps/server/.env`](../apps/server/.env) | `BETTER_AUTH_SECRET` (≥32 chars), `CORS_ORIGIN=http://localhost:4321`, `BETTER_AUTH_URL=http://localhost:3000` |
+| [`apps/server/.env`](../apps/server/.env) | `BETTER_AUTH_SECRET` (≥32 chars), `CORS_ORIGIN=http://localhost:4321`, `BETTER_AUTH_URL=http://localhost:3000`, `RESEND_API_KEY`, `EMAIL_FROM` (use `APEX <noreply@mail.todo.sarl>` once Resend is verified; `onboarding@resend.dev` only for self-inbox tests) |
 | [`apps/web/.env`](../apps/web/.env) | `PUBLIC_SERVER_URL=http://localhost:3000` |
-| [`packages/infra/.env.schema`](../packages/infra/.env.schema) | Imports server secrets; optional `ALCHEMY_PASSWORD` |
+| [`packages/infra/.env.schema`](../packages/infra/.env.schema) | Imports server secrets including Resend; optional `ALCHEMY_PASSWORD` |
 
-[`packages/infra/.env.schema`](../packages/infra/.env.schema) imports `NODE_ENV`, `CORS_ORIGIN`, and `BETTER_AUTH_SECRET` from the server app. You usually do not need a separate `packages/infra/.env` for local if those values exist under `apps/server/.env`.
+[`packages/infra/.env.schema`](../packages/infra/.env.schema) imports `NODE_ENV`, `CORS_ORIGIN`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, and `EMAIL_FROM` from the server app. You usually do not need a separate `packages/infra/.env` for local if those values exist under `apps/server/.env`.
 
 Optional: set `ALCHEMY_PASSWORD` on the host/container (devcontainer already forwards it) if you rely on Alchemy password-based secret encryption.
 
@@ -232,4 +275,4 @@ Then open http://localhost:4321 (web) and http://localhost:3000 (API).
 | `alchemy profile show` shows connected but `dev` still Unauthorized | Stored token is bad; reconfigure or set both env vars |
 | D1 HTTP migrate from `packages/db` asks for account/database/token | Skip for day-to-day; Alchemy applies migrations from the path in `alchemy.run.ts` during `dev`/`deploy` |
 
-After first production deploy, set `CORS_ORIGIN` in `apps/server/.env` to the exact deployed web origin and deploy again (see [README](../README.md)).
+After first production deploy, set `CORS_ORIGIN=https://todo.sarl` (and confirmed Resend `EMAIL_FROM`) for the deploy stage and deploy again (see [README](../README.md)).

@@ -23,14 +23,18 @@ export const server = Worker("server", {
   dev: {
     port: 3000,
   },
+  domain: "api.todo.sarl",
   env: {
     BETTER_AUTH_SECRET: Redacted("BETTER_AUTH_SECRET"),
     BETTER_AUTH_URL: Worker.URL,
     CORS_ORIGIN: ConfigString("CORS_ORIGIN"),
     DB: db,
+    EMAIL_FROM: ConfigString("EMAIL_FROM"),
+    RESEND_API_KEY: Redacted("RESEND_API_KEY"),
   },
   main: "../../apps/server/src/index.ts",
   name: "todo-server",
+  workersDev: false,
 });
 
 export type ServerEnv = InferEnv<typeof server>;
@@ -59,6 +63,10 @@ export default Stack(
       dev: {
         port: 4321,
       },
+      domain: {
+        name: "todo.sarl",
+        redirects: ["www.todo.sarl"],
+      },
       env: {
         PUBLIC_SERVER_URL: serverWorker.url.as<string>(),
         SERVER: serverWorker,
@@ -66,6 +74,7 @@ export default Stack(
       },
       name: "todo-web",
       rootDir: "../../apps/web",
+      workersDev: false,
     });
 
     return {

@@ -7,11 +7,11 @@ allowBuilds:
   msgpackr-extract: true
   workerd: true
 catalog:
-  zod: ^4.5.4
+  zod: ^4.6.7
   typescript: ^6.0.3
-  "@types/node": ^26.4.1
+  "@types/node": ^26.6.5
   varlock: 1.23.0
-  "@cloudflare/workers-types": ^5.20260906.1
+  "@cloudflare/workers-types": ^5.20261027.1
   "@orpc/server": 2.0.0-beta.46
   "@orpc/openapi": 2.0.0-beta.46
   "@orpc/zod": 2.0.0-beta.46
@@ -19,3 +19,10 @@ catalog:
   "@orpc/client": 2.0.0-beta.46
   drizzle-orm: 1.0.0-rc.5
   vitest: ^4.1.0
+permissions:
+  drizzle-kit:
+    skills: true
+  ultracite:
+    skills: true
+  varlock:
+    skills: true

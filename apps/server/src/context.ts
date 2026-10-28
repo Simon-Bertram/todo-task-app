@@ -1,16 +1,17 @@
 import type { Context as ApiContext } from "@todo-task-app/api/context";
 import type { Context as HonoContext } from "hono";
+
 import { createAuth, getDb } from "./services";
 
-export type CreateContextOptions = {
+export interface CreateContextOptions {
   context: HonoContext;
-};
+}
 
 export async function createContext({
   context,
 }: CreateContextOptions): Promise<ApiContext> {
-  const db = await getDb();
-  const session = await (await createAuth(db)).api.getSession({
+  const db = getDb();
+  const session = await createAuth(db).api.getSession({
     headers: context.req.raw.headers,
   });
   return {

@@ -157,6 +157,7 @@
     try {
       await authClient.signUp.email(
         {
+          callbackURL: `${window.location.origin}/login`,
           email: emailInput.value,
           name: nameInput.value,
           password: passwordInput.value,
@@ -168,7 +169,10 @@
             );
           },
           onSuccess: () => {
-            window.location.href = "/today";
+            const params = new URLSearchParams({
+              email: emailInput.value,
+            });
+            window.location.href = `/check-email?${params.toString()}`;
           },
         }
       );

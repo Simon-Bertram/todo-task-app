@@ -1,3 +1,5 @@
+/// <reference path="../../cloudflare-env.d.ts" />
+
 import { env } from "cloudflare:workers";
 import { createORPCClient, ORPCError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";

@@ -6,6 +6,10 @@ import { ENV } from "./env.server";
 export function getDb(): Database {
   return createDb(ENV);
 }
-export async function createAuth(database?: Database) {
-  return createConfiguredAuth(ENV, database ?? (await getDb()));
+
+export function createAuth(
+  database?: Database,
+  waitUntil?: (promise: Promise<unknown>) => void
+) {
+  return createConfiguredAuth(ENV, database ?? getDb(), { waitUntil });
 }

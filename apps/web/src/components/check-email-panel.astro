@@ -1,0 +1,136 @@
+---
+---
+
+<div
+  class="w-full max-w-md rounded-md border border-border-contrast bg-surface p-6 sm:p-8"
+>
+  <h1
+    class="mb-2 font-semibold text-2xl text-text-primary tracking-tight"
+    id="check-email-heading"
+  >
+    Check your email
+  </h1>
+  <p class="mb-6 text-sm text-text-secondary" id="check-email-copy">
+    We sent a verification link. Open it to activate your account, then sign in.
+  </p>
+
+  <form class="space-y-4" id="resend-verification-form">
+    <input id="check-email-value" name="email" type="hidden">
+
+    <p
+      aria-live="assertive"
+      class="hidden text-capacity-over text-sm"
+      id="check-email-error"
+      role="alert"
+      tabindex="-1"
+    ></p>
+
+    <p
+      aria-live="polite"
+      class="hidden text-sm text-text-secondary"
+      id="check-email-success"
+      role="status"
+    ></p>
+
+    <button
+      class="flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast bg-surface-subtle font-semibold text-sm text-text-primary transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+      id="resend-verification-button"
+      type="submit"
+    >
+      Resend verification email
+    </button>
+  </form>
+
+  <p class="mt-5 text-center text-sm text-text-secondary">
+    Ready to continue?
+    <a class="text-primary underline hover:brightness-110" href="/#login"
+      >Sign in</a
+    >
+  </p>
+</div>
+
+<script>
+  import { authClient } from "../lib/auth-client";
+
+  const form = document.getElementById(
+    "resend-verification-form"
+  ) as HTMLFormElement;
+  const emailInput = document.getElementById(
+    "check-email-value"
+  ) as HTMLInputElement;
+  const copy = document.getElementById(
+    "check-email-copy"
+  ) as HTMLParagraphElement;
+  const formError = document.getElementById(
+    "check-email-error"
+  ) as HTMLParagraphElement;
+  const formSuccess = document.getElementById(
+    "check-email-success"
+  ) as HTMLParagraphElement;
+  const submitButton = document.getElementById(
+    "resend-verification-button"
+  ) as HTMLButtonElement;
+
+  const email = new URLSearchParams(window.location.search).get("email");
+
+  if (email) {
+    emailInput.value = email;
+    copy.textContent = `We sent a verification link to ${email}. Open it to activate your account, then sign in.`;
+  } else {
+    submitButton.disabled = true;
+    submitButton.classList.add("hidden");
+  }
+
+  function clearMessages() {
+    formError.textContent = "";
+    formError.classList.add("hidden");
+    formSuccess.textContent = "";
+    formSuccess.classList.add("hidden");
+  }
+
+  function showError(message: string) {
+    formError.textContent = message;
+    formError.classList.remove("hidden");
+    formError.focus();
+  }
+
+  function showSuccess(message: string) {
+    formSuccess.textContent = message;
+    formSuccess.classList.remove("hidden");
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!emailInput.value) {
+      return;
+    }
+
+    clearMessages();
+    form.setAttribute("aria-busy", "true");
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending…";
+
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        callbackURL: `${window.location.origin}/login`,
+        email: emailInput.value,
+      });
+
+      if (error) {
+        showError(
+          error.message || "Could not resend verification email. Try again."
+        );
+        return;
+      }
+
+      showSuccess("Verification email sent. Check your inbox.");
+    } catch {
+      showError("An unexpected error occurred.");
+    } finally {
+      form.removeAttribute("aria-busy");
+      submitButton.disabled = false;
+      submitButton.textContent = "Resend verification email";
+    }
+  });
+</script>

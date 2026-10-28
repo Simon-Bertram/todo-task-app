@@ -79,7 +79,7 @@ cd packages/infra && pnpm exec alchemy deploy --stage production
 ```
 ### Production origins
 
-- Required after the first deploy: set `CORS_ORIGIN` in `apps/server/.env` to the exact deployed web origin, such as `https://app.example.com`, then deploy the server again.
+- Required after the first deploy: set `CORS_ORIGIN=https://todo.sarl` (and Resend `EMAIL_FROM=APEX <noreply@mail.todo.sarl>`) for the production stage, then deploy again. See [docs/ALCHEMY_SETUP.md](docs/ALCHEMY_SETUP.md) for `todo.sarl` / `api.todo.sarl` and Resend DNS.
 
 ## Project Structure
 

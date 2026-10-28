@@ -8,10 +8,23 @@ import {
 } from "@todo-task-app/db/schema/auth";
 import { betterAuth } from "better-auth";
 
+import {
+  resetPasswordEmailContent,
+  sendEmail,
+  verificationEmailContent,
+} from "./email";
+
 export interface AuthConfig {
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   CORS_ORIGIN: string;
+  EMAIL_FROM: string;
+  RESEND_API_KEY: string;
+}
+
+export interface CreateAuthOptions {
+  desktopOrigins?: readonly string[];
+  waitUntil?: (promise: Promise<unknown>) => void;
 }
 
 const schema = {
@@ -57,12 +70,27 @@ export function sharedCookieDomain(
 export function createAuth(
   env: AuthConfig,
   database: Database,
-  desktopOrigins: readonly string[] = []
+  options: CreateAuthOptions = {}
 ) {
   const cookieDomain = sharedCookieDomain(env.BETTER_AUTH_URL, env.CORS_ORIGIN);
+  const emailConfig = {
+    apiKey: env.RESEND_API_KEY,
+    from: env.EMAIL_FROM,
+  };
+  const { desktopOrigins = [], waitUntil } = options;
 
   return betterAuth({
     advanced: {
+      backgroundTasks: {
+        handler: (promise) => {
+          if (waitUntil) {
+            waitUntil(promise);
+            return;
+          }
+
+          promise.catch(() => undefined);
+        },
+      },
       ...(cookieDomain
         ? {
             crossSubDomainCookies: {
@@ -83,13 +111,33 @@ export function createAuth(
       schema,
     }),
     emailAndPassword: {
-      autoSignIn: true,
+      autoSignIn: false,
       disableSignUp: false,
       enabled: true,
       maxPasswordLength: 128,
       minPasswordLength: 12,
+      requireEmailVerification: true,
       resetPasswordTokenExpiresIn: 3600,
       revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({ user: authUser, url }) => {
+        const content = resetPasswordEmailContent(url);
+        await sendEmail(emailConfig, {
+          subject: "Reset your password",
+          to: authUser.email,
+          ...content,
+        });
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendVerificationEmail: async ({ user: authUser, url }) => {
+        const content = verificationEmailContent(url);
+        await sendEmail(emailConfig, {
+          subject: "Verify your email address",
+          to: authUser.email,
+          ...content,
+        });
+      },
     },
     plugins: [],
     secret: env.BETTER_AUTH_SECRET,

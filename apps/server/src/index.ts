@@ -26,9 +26,12 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/api/auth/*", async (c) =>
-  (await createAuth()).handler(c.req.raw)
-);
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  const auth = createAuth(undefined, (promise) => {
+    c.executionCtx.waitUntil(promise);
+  });
+  return auth.handler(c.req.raw);
+});
 
 const openAPIGenerator = new OpenAPIGenerator({
   converters: [new ZodToJsonSchemaConverter()],
