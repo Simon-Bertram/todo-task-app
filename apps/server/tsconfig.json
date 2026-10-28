@@ -7,6 +7,9 @@
       "@/*": ["./src/*"]
     },
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
-  }
+    "jsxImportSource": "hono/jsx",
+    "types": ["node", "@cloudflare/workers-types"]
+  },
+  "include": ["src/**/*.ts", "cloudflare-env.d.ts", "tsdown.config.ts"],
+  "exclude": ["dist"]
 }

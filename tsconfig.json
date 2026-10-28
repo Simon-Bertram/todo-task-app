@@ -1,3 +1,11 @@
 {
-  "extends": "@todo-task-app/config/tsconfig.base.json"
+  "files": [],
+  "references": [
+    { "path": "./apps/server" },
+    { "path": "./apps/web" },
+    { "path": "./packages/api" },
+    { "path": "./packages/auth" },
+    { "path": "./packages/db" },
+    { "path": "./packages/infra" }
+  ]
 }
