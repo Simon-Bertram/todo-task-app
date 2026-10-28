@@ -97,6 +97,7 @@
 
 <script>
   import { authClient } from "../lib/auth-client";
+  import { type MappedAuthError, mapAuthClientError } from "../lib/auth-errors";
 
   const form = document.getElementById("signup-form") as HTMLFormElement;
   const nameInput = document.getElementById("signup-name") as HTMLInputElement;
@@ -118,7 +119,7 @@
   const fields = [nameInput, emailInput, passwordInput];
 
   function clearInvalidState() {
-    formError.textContent = "";
+    formError.replaceChildren();
     formError.classList.add("hidden");
 
     for (const field of fields) {
@@ -130,8 +131,22 @@
     emailInput.removeAttribute("aria-describedby");
   }
 
-  function showFormError(message: string) {
-    formError.textContent = message;
+  function showFormError(mapped: MappedAuthError) {
+    formError.replaceChildren();
+
+    const body = document.createElement("span");
+    body.textContent = mapped.body;
+    formError.append(body);
+
+    if (mapped.action) {
+      formError.append(document.createTextNode(" "));
+      const action = document.createElement("a");
+      action.className = "text-primary underline hover:brightness-110";
+      action.href = mapped.action.href;
+      action.textContent = mapped.action.label;
+      formError.append(action);
+    }
+
     formError.classList.remove("hidden");
 
     for (const field of fields) {
@@ -165,7 +180,7 @@
         {
           onError: (ctx) => {
             showFormError(
-              ctx.error.message || "Sign up failed. Please try again."
+              mapAuthClientError(ctx.error, { email: emailInput.value })
             );
           },
           onSuccess: () => {
@@ -177,7 +192,9 @@
         }
       );
     } catch {
-      showFormError("An unexpected error occurred.");
+      showFormError(
+        mapAuthClientError({ message: "An unexpected error occurred." })
+      );
     } finally {
       form.removeAttribute("aria-busy");
       submitButton.disabled = false;

@@ -129,6 +129,7 @@ export function createAuth(
       },
     },
     emailVerification: {
+      sendOnSignIn: true,
       sendOnSignUp: true,
       sendVerificationEmail: async ({ user: authUser, url }) => {
         const content = verificationEmailContent(url);

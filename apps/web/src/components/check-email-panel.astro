@@ -51,6 +51,7 @@
 
 <script>
   import { authClient } from "../lib/auth-client";
+  import { mapAuthClientError } from "../lib/auth-errors";
 
   const form = document.getElementById(
     "resend-verification-form"
@@ -71,12 +72,21 @@
     "resend-verification-button"
   ) as HTMLButtonElement;
 
-  const email = new URLSearchParams(window.location.search).get("email");
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get("email");
+  const reason = params.get("reason");
 
   if (email) {
     emailInput.value = email;
-    copy.textContent = `We sent a verification link to ${email}. Open it to activate your account, then sign in.`;
+    copy.textContent =
+      reason === "unverified"
+        ? `Sign-in is blocked until you verify ${email}. Open the link in your inbox (or resend below), then sign in.`
+        : `We sent a verification link to ${email}. Open it to activate your account, then sign in.`;
   } else {
+    if (reason === "unverified") {
+      copy.textContent =
+        "Sign-in is blocked until you verify your email. Open the link in your inbox, then sign in.";
+    }
     submitButton.disabled = true;
     submitButton.classList.add("hidden");
   }
@@ -118,15 +128,15 @@
       });
 
       if (error) {
-        showError(
-          error.message || "Could not resend verification email. Try again."
-        );
+        showError(mapAuthClientError(error).body);
         return;
       }
 
-      showSuccess("Verification email sent. Check your inbox.");
+      showSuccess("Verification email sent. Check your inbox and spam folder.");
     } catch {
-      showError("An unexpected error occurred.");
+      showError(
+        mapAuthClientError({ message: "An unexpected error occurred." }).body
+      );
     } finally {
       form.removeAttribute("aria-busy");
       submitButton.disabled = false;
