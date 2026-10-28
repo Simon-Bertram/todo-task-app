@@ -18,7 +18,7 @@ catalog:
   better-auth: 1.7.12
   "@orpc/client": 2.0.0-beta.46
   drizzle-orm: 1.0.0-rc.5
-  vitest: ^4.1.0
+  vitest: ^4.1.12
 permissions:
   drizzle-kit:
     skills: true

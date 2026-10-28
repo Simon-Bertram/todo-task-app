@@ -1,4 +1,5 @@
 ---
+import { Font } from "astro:assets";
 import "../styles/global.css";
 
 interface Props {
@@ -15,16 +16,8 @@ const { title = "APEX", bare = false } = Astro.props;
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link href="/favicon.svg" rel="icon" type="image/svg+xml">
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap"
-      rel="stylesheet"
-    >
-    <link
-      href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css"
-      rel="stylesheet"
-    >
+    <Font cssVariable="--font-geist" preload />
+    <Font cssVariable="--font-jetbrains-mono" />
     <meta content={Astro.generator} name="generator">
     <title>{title}</title>
   </head>

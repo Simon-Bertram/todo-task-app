@@ -195,7 +195,7 @@ catalogs:
       specifier: 1.23.0
       version: 1.23.0
     vitest:
-      specifier: ^4.1.0
+      specifier: ^4.1.12
       version: 4.1.12
     zod:
       specifier: ^4.6.7
@@ -290,7 +290,7 @@ importers:
     dependencies:
       '@astrojs/preact':
         specifier: ^6.1.1
-        version: 6.1.1(@babel/core@7.29.7)(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(preact@11.0.2)(yaml@2.9.1)
+        version: 6.1.1(@babel/core@7.29.7)(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(preact@11.1.0)(yaml@2.9.1)
       '@orpc/client':
         specifier: 'catalog:'
         version: 2.0.0-beta.46
@@ -298,14 +298,14 @@ importers:
         specifier: workspace:*
         version: link:../../packages/api
       astro:
-        specifier: ^7.3.1
+        specifier: ^7.4.2
         version: 7.4.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
       better-auth:
         specifier: 'catalog:'
         version: 1.7.12(drizzle-kit@1.0.0-rc.5(drizzle-orm@1.0.0-rc.5(@cloudflare/workers-types@5.20261027.1)(@effect/sql-d1@4.0.6(effect@4.0.6))(@libsql/client@0.18.0)(effect@4.0.6)(zod@4.6.7)))(drizzle-orm@1.0.0-rc.5(@cloudflare/workers-types@5.20261027.1)(@effect/sql-d1@4.0.6(effect@4.0.6))(@libsql/client@0.18.0)(effect@4.0.6)(zod@4.6.7))(vitest@4.1.12(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))
       preact:
-        specifier: ^11.0.2
-        version: 11.0.2(preact-render-to-string@6.8.2)
+        specifier: ^11.1.0
+        version: 11.1.0(preact-render-to-string@6.8.2)
       sharp:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@26.6.5)
@@ -320,14 +320,14 @@ importers:
         specifier: 2.0.0-beta.84
         version: 2.0.0-beta.84(@effect/platform-bun@4.0.6(effect@4.0.6))(@types/node@26.6.5)(astro@7.4.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(effect@4.0.6)(hono@4.13.14)(redis@6.3.0)(typescript@6.0.3)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@astrojs/check':
-        specifier: ^0.9.10
+        specifier: ^0.9.12
         version: 0.9.12(@emnapi/runtime@1.11.3)(prettier@3.9.10)(typescript@6.0.3)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261027.1
       '@preact/preset-vite':
         specifier: ^2.10.6
-        version: 2.10.6(@babel/core@7.29.7)(preact@11.0.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+        version: 2.10.6(@babel/core@7.29.7)(preact@11.1.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -403,7 +403,7 @@ importers:
         version: 1.0.0-rc.5(@cloudflare/workers-types@5.20261027.1)(@effect/sql-d1@4.0.6(effect@4.0.6))(@libsql/client@0.18.0)(effect@4.0.6)(zod@4.6.7)
       resend:
         specifier: ^6.34.1
-        version: 6.34.1
+        version: 6.35.0
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -3328,8 +3328,8 @@ packages:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
 
-  mime@4.1.1:
-    resolution: {integrity: sha512-YAApRsTpM2+gnUFHhRNGfkX8NK0V5xj1nyQLufGlwEI+eX4xRsTcel2IXDuMEGSGjBvzykNW4VuoEACgwYe7BQ==}
+  mime@4.1.2:
+    resolution: {integrity: sha512-ikRzZ2RwbUVDyL9SsU0f2Phcmav4yq5r8faH5ZZKHtOZrMBLnrQOrj0uvqZ5R1uQnj+RO7Wcklw/lAf81mP9LQ==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -3481,8 +3481,8 @@ packages:
     peerDependencies:
       preact: '>=10 || >= 11.0.0-0'
 
-  preact@11.0.2:
-    resolution: {integrity: sha512-ofG+Lqznbt13JKDjdWPLTo5ONBqcNgidqnLRzJBG6PZjzGXOLRd5y9r448+HUofTyDbgKWVrPhHP0IgcxEZslQ==}
+  preact@11.1.0:
+    resolution: {integrity: sha512-hz1VsjWx5pSYPDVEzb9w+XyOmQpP1qW/ZEaMiYm+C8ykJr8KP+TKGZIbCW0QmZ/Yr/jg3XkZoziEWn9iWHZ9Mw==}
     peerDependencies:
       preact-render-to-string: '>=6.7.0'
     peerDependenciesMeta:
@@ -3552,8 +3552,8 @@ packages:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
 
-  resend@6.34.1:
-    resolution: {integrity: sha512-3jo/j1WAW7CBkE6pzK4qLjZCfHRLIhY3ph3x/wzU+MN51cSw3EtReGce8S1cA1R0ipNDOdFYU5Lmt5r563lvYw==}
+  resend@6.35.0:
+    resolution: {integrity: sha512-sScNQHunU2Np7oICQ/44GXif8cQ0lp2WPEo9nDtTnM1koPvgJwH/SEee8mJwYRwyIfi+uj7IetKiYspfyYBYaA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@react-email/render': '*'
@@ -4311,7 +4311,7 @@ snapshots:
       capnp-es: 0.0.16(typescript@6.0.3)
       effect: 4.0.6
       magic-string: 0.30.21
-      mime: 4.1.1
+      mime: 4.1.2
       sharp: 0.35.5(@types/node@26.6.5)
       unenv: 2.0.0-rc.24
       workerd: 1.20261012.1
@@ -4514,14 +4514,14 @@ snapshots:
       github-slugger: 2.0.0
       satteri: 0.10.5
 
-  '@astrojs/preact@6.1.1(@babel/core@7.29.7)(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(preact@11.0.2)(yaml@2.9.1)':
+  '@astrojs/preact@6.1.1(@babel/core@7.29.7)(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(preact@11.1.0)(yaml@2.9.1)':
     dependencies:
       '@astrojs/internal-helpers': 0.13.0
-      '@preact/preset-vite': 2.10.6(@babel/core@7.29.7)(preact@11.0.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      '@preact/signals': 2.11.4(preact@11.0.2)
+      '@preact/preset-vite': 2.10.6(@babel/core@7.29.7)(preact@11.1.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@preact/signals': 2.11.4(preact@11.1.0)
       devalue: 6.0.3
-      preact: 11.0.2(preact-render-to-string@6.8.2)
-      preact-render-to-string: 6.8.2(preact@11.0.2)
+      preact: 11.1.0(preact-render-to-string@6.8.2)
+      preact-render-to-string: 6.8.2(preact@11.1.0)
       vite: 8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@babel/core'
@@ -5337,12 +5337,12 @@ snapshots:
 
   '@oxc-project/types@0.155.0': {}
 
-  '@preact/preset-vite@2.10.6(@babel/core@7.29.7)(preact@11.0.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
+  '@preact/preset-vite@2.10.6(@babel/core@7.29.7)(preact@11.1.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/plugin-transform-react-jsx': 7.29.7(@babel/core@7.29.7)
       '@babel/plugin-transform-react-jsx-development': 7.29.7(@babel/core@7.29.7)
-      '@prefresh/vite': 2.4.12(preact@11.0.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@prefresh/vite': 2.4.12(preact@11.1.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@rollup/pluginutils': 5.5.1
       babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.29.7)
       debug: 4.4.3
@@ -5358,29 +5358,29 @@ snapshots:
 
   '@preact/signals-core@1.14.5': {}
 
-  '@preact/signals@2.11.4(preact@11.0.2)':
+  '@preact/signals@2.11.4(preact@11.1.0)':
     dependencies:
       '@preact/signals-core': 1.14.5
-      preact: 11.0.2(preact-render-to-string@6.8.2)
+      preact: 11.1.0(preact-render-to-string@6.8.2)
 
   '@prefresh/babel-plugin@0.5.4(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
 
-  '@prefresh/core@1.5.11(preact@11.0.2)':
+  '@prefresh/core@1.5.11(preact@11.1.0)':
     dependencies:
-      preact: 11.0.2(preact-render-to-string@6.8.2)
+      preact: 11.1.0(preact-render-to-string@6.8.2)
 
   '@prefresh/utils@1.2.1': {}
 
-  '@prefresh/vite@2.4.12(preact@11.0.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
+  '@prefresh/vite@2.4.12(preact@11.1.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@babel/core': 7.29.7
       '@prefresh/babel-plugin': 0.5.4(@babel/core@7.29.7)
-      '@prefresh/core': 1.5.11(preact@11.0.2)
+      '@prefresh/core': 1.5.11(preact@11.1.0)
       '@prefresh/utils': 1.2.1
       '@rollup/pluginutils': 4.2.1
-      preact: 11.0.2(preact-render-to-string@6.8.2)
+      preact: 11.1.0(preact-render-to-string@6.8.2)
       vite: 8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
@@ -6681,7 +6681,7 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.2
 
-  mime@4.1.1: {}
+  mime@4.1.2: {}
 
   mimic-function@5.0.1: {}
 
@@ -6805,13 +6805,13 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  preact-render-to-string@6.8.2(preact@11.0.2):
+  preact-render-to-string@6.8.2(preact@11.1.0):
     dependencies:
-      preact: 11.0.2(preact-render-to-string@6.8.2)
+      preact: 11.1.0(preact-render-to-string@6.8.2)
 
-  preact@11.0.2(preact-render-to-string@6.8.2):
+  preact@11.1.0(preact-render-to-string@6.8.2):
     optionalDependencies:
-      preact-render-to-string: 6.8.2(preact@11.0.2)
+      preact-render-to-string: 6.8.2(preact@11.1.0)
 
   prettier@3.9.10: {}
 
@@ -6864,7 +6864,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  resend@6.34.1:
+  resend@6.35.0:
     dependencies:
       postal-mime: 2.7.6
       standardwebhooks: 1.1.1
