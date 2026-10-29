@@ -8,6 +8,6 @@
     "outDir": "dist"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist"],
+  "exclude": ["dist", "src/**/*.test.ts"],
   "references": [{ "path": "../db" }]
 }

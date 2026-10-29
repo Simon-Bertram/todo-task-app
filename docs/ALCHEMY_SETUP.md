@@ -84,7 +84,10 @@ Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/inf
 - `RESEND_API_KEY=…` (Resend dashboard)
 - `BETTER_AUTH_URL` is supplied by Alchemy as `Worker.URL` → `https://api.todo.sarl`
 
+Auth sets session cookies with `Domain=.todo.sarl` so the apex web Worker can forward them to the API during SSR. After changing cookie-domain logic in `@todo-task-app/auth`, redeploy the **server** Worker, clear site cookies for `todo.sarl` / `api.todo.sarl` (or sign out), then sign in again—old host-only cookies on `api.todo.sarl` will not migrate. Confirm DevTools shows the session cookie with `Domain=.todo.sarl`, then `/today` should render the app shell instead of bouncing to `/login`.
+
 ### Resend domain (`mail.todo.sarl`)
+
 
 Auth verification and password-reset emails go through Resend (not Fastmail). Fastmail is optional and only for a personal `@todo.sarl` inbox.
 
@@ -274,5 +277,6 @@ Then open http://localhost:4321 (web) and http://localhost:3000 (API).
 | `Unauthorized: Authentication error` while deploying `alchemy-state-store` | Reconfigure with a valid, sufficiently scoped token + correct account id |
 | `alchemy profile show` shows connected but `dev` still Unauthorized | Stored token is bad; reconfigure or set both env vars |
 | D1 HTTP migrate from `packages/db` asks for account/database/token | Skip for day-to-day; Alchemy applies migrations from the path in `alchemy.run.ts` during `dev`/`deploy` |
+| Sign-in succeeds but `/today` redirects to `/login` | Session cookie not shared with apex: redeploy server, clear `todo.sarl` / `api.todo.sarl` cookies, sign in again; cookie must use `Domain=.todo.sarl` |
 
 After first production deploy, set `CORS_ORIGIN=https://todo.sarl` (and confirmed Resend `EMAIL_FROM`) for the deploy stage and deploy again (see [README](../README.md)).

@@ -35,10 +35,20 @@ const schema = {
 };
 
 /**
+ * Cookie Domain= value must include at least two labels (e.g. `.todo.sarl`),
+ * never a bare public suffix like `.sarl`.
+ */
+function isSafeCookieDomain(domain: string): boolean {
+  const withoutLeadingDot = domain.startsWith(".") ? domain.slice(1) : domain;
+  return withoutLeadingDot.split(".").filter(Boolean).length >= 2;
+}
+
+/**
  * When the API and web app share a parent host (e.g. todo-server.* and
- * todo-web.* under simonbertram.workers.dev), return that parent with a
- * leading dot so Better Auth can set Domain= for SSR cookie forwarding.
- * Same-hostname setups (localhost across ports) return undefined.
+ * todo-web.* under simonbertram.workers.dev, or api.todo.sarl + todo.sarl),
+ * return that parent with a leading dot so Better Auth can set Domain= for
+ * SSR cookie forwarding. Same-hostname setups (localhost across ports)
+ * return undefined.
  */
 export function sharedCookieDomain(
   authUrl: string,
@@ -57,6 +67,18 @@ export function sharedCookieDomain(
     return;
   }
 
+  // Apex + subdomain (e.g. api.todo.sarl + todo.sarl).
+  if (authHost.endsWith(`.${webHost}`)) {
+    const domain = `.${webHost}`;
+    return isSafeCookieDomain(domain) ? domain : undefined;
+  }
+  if (webHost.endsWith(`.${authHost}`)) {
+    const domain = `.${authHost}`;
+    return isSafeCookieDomain(domain) ? domain : undefined;
+  }
+
+  // Sibling subdomains at equal depth (e.g. api.foo.workers.dev +
+  // web.foo.workers.dev → .foo.workers.dev).
   const authParent = authHost.split(".").slice(1).join(".");
   const webParent = webHost.split(".").slice(1).join(".");
 
@@ -64,7 +86,8 @@ export function sharedCookieDomain(
     return;
   }
 
-  return `.${authParent}`;
+  const domain = `.${authParent}`;
+  return isSafeCookieDomain(domain) ? domain : undefined;
 }
 
 export function createAuth(
