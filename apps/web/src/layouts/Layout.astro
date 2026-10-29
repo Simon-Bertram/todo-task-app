@@ -16,7 +16,10 @@ const { title = "PlanSage", bare = false } = Astro.props;
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link href="/favicon.svg" rel="icon" type="image/svg+xml">
-    <Font cssVariable="--font-geist" preload />
+    <Font
+      cssVariable="--font-geist"
+      preload={[{ style: "normal", subset: "latin", weight: 400 }]}
+    />
     <Font cssVariable="--font-jetbrains-mono" />
     <meta content={Astro.generator} name="generator">
     <title>{title}</title>

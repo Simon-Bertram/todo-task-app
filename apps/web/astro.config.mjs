@@ -13,7 +13,7 @@ export default defineConfig({
       provider: fontProviders.google(),
       styles: ["normal"],
       subsets: ["latin"],
-      weights: [400, 500, 600, 700],
+      weights: [400, 500, 600],
     },
     {
       cssVariable: "--font-jetbrains-mono",
