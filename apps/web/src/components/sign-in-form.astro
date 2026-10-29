@@ -132,12 +132,12 @@ const headingClass = showHeading
       const title = document.createElement("p");
       title.className = "font-medium";
       title.textContent = mapped.title;
-      formError.append(title);
+      formError.appendChild(title);
     }
 
     const body = document.createElement("p");
     body.textContent = mapped.body;
-    formError.append(body);
+    formError.appendChild(body);
 
     if (mapped.action) {
       const action = document.createElement("a");
@@ -145,7 +145,7 @@ const headingClass = showHeading
         "inline-block text-primary underline hover:brightness-110";
       action.href = mapped.action.href;
       action.textContent = mapped.action.label;
-      formError.append(action);
+      formError.appendChild(action);
     }
 
     formError.classList.remove("hidden");

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
 
-const STORAGE_KEY = "apex-daily-capacity-minutes";
+const STORAGE_KEY = "plansage-daily-capacity-minutes";
 const MIN = 120;
 const MAX = 480;
 const STEP = 30;

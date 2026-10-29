@@ -136,15 +136,15 @@
 
     const body = document.createElement("span");
     body.textContent = mapped.body;
-    formError.append(body);
+    formError.appendChild(body);
 
     if (mapped.action) {
-      formError.append(document.createTextNode(" "));
+      formError.appendChild(document.createTextNode(" "));
       const action = document.createElement("a");
       action.className = "text-primary underline hover:brightness-110";
       action.href = mapped.action.href;
       action.textContent = mapped.action.label;
-      formError.append(action);
+      formError.appendChild(action);
     }
 
     formError.classList.remove("hidden");

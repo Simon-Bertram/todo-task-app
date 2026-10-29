@@ -67,7 +67,7 @@ If you see that and still get `Unauthorized: Authentication error`, the stored t
 |------|----------|
 | Web (Astro) | `https://todo.sarl` (`www.todo.sarl` → 301) |
 | API / Better Auth | `https://api.todo.sarl` |
-| Auth email From (Resend) | `APEX <noreply@mail.todo.sarl>` |
+| Auth email From (Resend) | `PlanSage <noreply@mail.todo.sarl>` |
 
 Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/infra/alchemy.run.ts) (`domain` + `workersDev: false`). Deploy attaches them once the zone exists.
 
@@ -80,7 +80,7 @@ Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/inf
 **Production deploy** env:
 
 - `CORS_ORIGIN=https://todo.sarl`
-- `EMAIL_FROM=APEX <noreply@mail.todo.sarl>`
+- `EMAIL_FROM=PlanSage <noreply@mail.todo.sarl>`
 - `RESEND_API_KEY=…` (Resend dashboard)
 - `BETTER_AUTH_URL` is supplied by Alchemy as `Worker.URL` → `https://api.todo.sarl`
 
@@ -101,7 +101,7 @@ Auth verification and password-reset emails go through Resend (not Fastmail). Fa
 Keep apex MX free unless you intentionally add a mailbox provider (Fastmail is optional and unrelated to auth sends).
 
 3. In Resend, click **Verify** / wait until status is **Verified** (often minutes after DNS propagates).
-4. Ensure `EMAIL_FROM=APEX <noreply@mail.todo.sarl>`.
+4. Ensure `EMAIL_FROM=PlanSage <noreply@mail.todo.sarl>`.
 
 ---
 
@@ -195,7 +195,7 @@ Alchemy loads deployment inputs via `varlock/auto-load` in [`packages/infra/alch
 
 | File | Required for local |
 |------|--------------------|
-| [`apps/server/.env`](../apps/server/.env) | `BETTER_AUTH_SECRET` (≥32 chars), `CORS_ORIGIN=http://localhost:4321`, `BETTER_AUTH_URL=http://localhost:3000`, `RESEND_API_KEY`, `EMAIL_FROM` (use `APEX <noreply@mail.todo.sarl>` once Resend is verified; `onboarding@resend.dev` only for self-inbox tests) |
+| [`apps/server/.env`](../apps/server/.env) | `BETTER_AUTH_SECRET` (≥32 chars), `CORS_ORIGIN=http://localhost:4321`, `BETTER_AUTH_URL=http://localhost:3000`, `RESEND_API_KEY`, `EMAIL_FROM` (use `PlanSage <noreply@mail.todo.sarl>` once Resend is verified; `onboarding@resend.dev` only for self-inbox tests) |
 | [`apps/web/.env`](../apps/web/.env) | `PUBLIC_SERVER_URL=http://localhost:3000` |
 | [`packages/infra/.env.schema`](../packages/infra/.env.schema) | Imports server secrets including Resend; optional `ALCHEMY_PASSWORD` |
 

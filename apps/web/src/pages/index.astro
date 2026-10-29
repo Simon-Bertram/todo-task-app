@@ -15,7 +15,7 @@ const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
 ---
 
 <!-- Hero photo: Lerone Pieters / Unsplash — prebaked AVIF/WebP for Alchemy passthrough -->
-<Layout bare title="APEX — Intentional daily execution">
+<Layout bare title="PlanSage — Intentional daily execution">
   <main class="relative min-h-svh overflow-hidden">
     <picture class="absolute inset-0 size-full">
       <source sizes={sizes} srcset={avifSrcset} type="image/avif">
@@ -44,12 +44,46 @@ const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
         <p
           class="font-semibold text-5xl text-text-primary tracking-[-0.03em] sm:text-6xl lg:text-7xl"
         >
-          APEX
+          PlanSage
         </p>
-        <p class="mt-4 max-w-md text-base text-text-secondary sm:text-lg">
-          Intentional daily execution — Eisenhower Matrix planning with a
-          time-budgeted Today board.
+        <p
+          class="mt-4 max-w-md text-base text-text-secondary sm:text-lg"
+          data-hero-tagline
+        >
+          Stop drowning in endless checklists. Plan what matters, then finish
+          only what fits today.
         </p>
+        <ul
+          class="mt-8 max-w-md space-y-3 text-sm text-text-secondary sm:text-base"
+          data-feature-list
+        >
+          <li>
+            <span class="font-medium text-text-primary"
+              >See priorities clearly</span
+            >
+            — Urgency and importance put work into Do First, Schedule,
+            Streamline, or Drop.
+          </li>
+          <li>
+            <span class="font-medium text-text-primary">Protect your day</span>
+            — A time-budgeted Today board shows whether your plan fits your
+            focus hours before you overcommit.
+          </li>
+          <li>
+            <span class="font-medium text-text-primary"
+              >Stay within capacity</span
+            >
+            — A live workload bar turns amber, then red, as you approach your
+            daily limit (2–8 hours).
+          </li>
+          <li>
+            <span class="font-medium text-text-primary"
+              >Use a realistic mix</span
+            >
+            — The 1-3-5 filter keeps one major task, a few mediums, and quick
+            wins in balance.
+          </li>
+        </ul>
       </div>
 
       <div class="w-full max-w-md lg:ml-auto">
@@ -58,3 +92,43 @@ const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
     </div>
   </main>
 </Layout>
+
+<script>
+  import { gsap } from "gsap";
+
+  const mm = gsap.matchMedia();
+
+  mm.add("(prefers-reduced-motion: no-preference)", () => {
+    const tagline = document.querySelector("[data-hero-tagline]");
+    const features = document.querySelectorAll("[data-feature-list] li");
+
+    const timeline = gsap.timeline({ delay: 0.15 });
+
+    if (tagline) {
+      timeline.from(tagline, {
+        autoAlpha: 0,
+        duration: 0.45,
+        ease: "power2.out",
+        y: 12,
+      });
+    }
+
+    if (features.length > 0) {
+      timeline.from(
+        features,
+        {
+          autoAlpha: 0,
+          duration: 0.5,
+          ease: "power2.out",
+          stagger: 0.12,
+          y: 20,
+        },
+        "-=0.15"
+      );
+    }
+
+    return () => {
+      timeline.kill();
+    };
+  });
+</script>
