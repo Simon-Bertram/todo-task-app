@@ -43,11 +43,14 @@ export default function TaskDetailSheet({
     [taskId, tasks]
   );
 
+  const [title, setTitle] = useState("");
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [isUrgent, setIsUrgent] = useState(0);
   const [isImportant, setIsImportant] = useState(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [recurrence, setRecurrence] = useState<RecurrenceValue>(null);
   const [isToday, setIsToday] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     function onOpen(event: Event) {
@@ -71,10 +74,13 @@ export default function TaskDetailSheet({
     if (!baseTask) {
       return;
     }
+    setTitle(baseTask.title);
+    setProjectId(baseTask.projectId);
     setIsUrgent(baseTask.isUrgent);
     setIsImportant(baseTask.isImportant);
     setEstimatedMinutes(baseTask.estimatedMinutes);
     setIsToday(baseTask.isToday);
+    setIsCompleted(baseTask.isCompleted);
     setRecurrence(
       RECURRENCE.find((rule) => rule.value === baseTask.recurrenceRule)
         ?.value ?? null
@@ -135,8 +141,28 @@ export default function TaskDetailSheet({
     setRecurrence(raw as Exclude<RecurrenceValue, null>);
   }, []);
 
+  const onTitleInput = useCallback((event: Event) => {
+    const { value } = event.currentTarget as HTMLInputElement;
+    setTitle(value);
+  }, []);
+
+  const onProjectChange = useCallback((event: Event) => {
+    const { value } = event.currentTarget as HTMLSelectElement;
+    setProjectId(value === "" ? null : value);
+  }, []);
+
+  const onCompletedChange = useCallback((event: Event) => {
+    const { checked } = event.currentTarget as HTMLInputElement;
+    setIsCompleted(checked);
+  }, []);
+
   const onSave = useCallback(async () => {
     if (!baseTask || isSaving) {
+      return;
+    }
+    const nextTitle = title.trim();
+    if (!nextTitle) {
+      setError("Title is required.");
       return;
     }
     setIsSaving(true);
@@ -145,10 +171,13 @@ export default function TaskDetailSheet({
       await orpc.tasks.update({
         estimatedMinutes,
         id: baseTask.id,
+        isCompleted,
         isImportant,
         isToday,
         isUrgent,
+        projectId,
         recurrenceRule: recurrence,
+        title: nextTitle,
       });
       setTaskId(null);
       location.reload();
@@ -160,11 +189,14 @@ export default function TaskDetailSheet({
   }, [
     baseTask,
     estimatedMinutes,
+    isCompleted,
     isImportant,
     isSaving,
     isToday,
     isUrgent,
+    projectId,
     recurrence,
+    title,
   ]);
 
   const onDelete = useCallback(async () => {
@@ -195,7 +227,7 @@ export default function TaskDetailSheet({
 
   const quadrant = getQuadrant(isUrgent, isImportant);
   const meta = QUADRANT_META[quadrant];
-  const project = projects.find((item) => item.id === baseTask.projectId);
+  const selectedProject = projects.find((item) => item.id === projectId);
   const projectedPlanned = isToday
     ? plannedMinutes
     : plannedMinutes + estimatedMinutes;
@@ -243,17 +275,53 @@ export default function TaskDetailSheet({
         </header>
 
         <div className="space-y-6 px-4 py-5">
-          {project ? (
-            <p
-              className="font-mono text-xs uppercase tracking-wide"
-              style={{ color: project.color }}
+          <label className="block space-y-1.5">
+            <span className="font-medium text-sm text-text-secondary">
+              Title
+            </span>
+            <input
+              className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 font-semibold text-lg text-text-primary focus:border-primary focus:outline-none"
+              onInput={onTitleInput}
+              type="text"
+              value={title}
+            />
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="font-medium text-sm text-text-secondary">
+              Project
+            </span>
+            <select
+              className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
+              onChange={onProjectChange}
+              value={projectId ?? ""}
             >
-              #{project.name}
-            </p>
-          ) : null}
-          <h3 className="font-semibold text-text-primary text-xl tracking-tight">
-            {baseTask.title}
-          </h3>
+              <option value="">Inbox (no project)</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  #{project.name}
+                </option>
+              ))}
+            </select>
+            {selectedProject ? (
+              <span
+                className="inline-block font-mono text-xs uppercase tracking-wide"
+                style={{ color: selectedProject.color }}
+              >
+                #{selectedProject.name}
+              </span>
+            ) : null}
+          </label>
+
+          <label className="flex min-h-11 items-center gap-3 rounded-sm border border-border-contrast bg-surface-subtle px-3">
+            <input
+              checked={isCompleted}
+              className="size-4 accent-[var(--color-primary)]"
+              onChange={onCompletedChange}
+              type="checkbox"
+            />
+            <span className="text-sm text-text-primary">Mark completed</span>
+          </label>
 
           <section className="space-y-3 rounded-sm border border-border-contrast bg-surface-subtle p-3">
             <div className="flex items-center justify-between gap-2">

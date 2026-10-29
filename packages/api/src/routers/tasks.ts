@@ -2,7 +2,7 @@ import { ORPCError } from "@orpc/server";
 import type { Database } from "@todo-task-app/db";
 import { projects } from "@todo-task-app/db/schema/projects";
 import { tasks } from "@todo-task-app/db/schema/tasks";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
@@ -141,6 +141,8 @@ export const tasksRouter = {
       z
         .object({
           includeCompleted: z.boolean().optional(),
+          // undefined = all; null = unassigned; string = that project
+          projectId: z.string().nullable().optional(),
         })
         .optional()
     )
@@ -152,6 +154,11 @@ export const tasksRouter = {
       const conditions = [eq(tasks.userId, userId)];
       if (!includeCompleted) {
         conditions.push(eq(tasks.isCompleted, false));
+      }
+      if (input?.projectId === null) {
+        conditions.push(isNull(tasks.projectId));
+      } else if (typeof input?.projectId === "string") {
+        conditions.push(eq(tasks.projectId, input.projectId));
       }
 
       const rows = await context.db

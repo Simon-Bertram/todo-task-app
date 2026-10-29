@@ -56,6 +56,8 @@ Shortcuts:
 
 Every query/mutation must enforce user session boundaries (`user_id` = session user).
 
+**Human/dev CRUD guide:** for a step-by-step Drizzle → oRPC → Astro vertical slice (with projects/tasks as the worked example), see [docs/ADDING_CRUD.md](docs/ADDING_CRUD.md).
+
 ---
 
 ## Skill and docs routing
@@ -65,6 +67,7 @@ Read the matching skill **before** coding that area:
 | Area | Read first |
 |------|------------|
 | Product / domain rules | [docs/PRD.md](docs/PRD.md) |
+| Adding CRUD (oRPC / D1 / Astro) | [docs/ADDING_CRUD.md](docs/ADDING_CRUD.md) |
 | Lint / format / code standards | [`.agents/skills/ultracite/SKILL.md`](.agents/skills/ultracite/SKILL.md) and [`references/code-standards.md`](.agents/skills/ultracite/references/code-standards.md) |
 | oRPC (procedures, routers, clients) | Stack is **oRPC v2 (beta)** (`2.0.0-beta.46`). Follow [`.agents/skills/orpc/SKILL.md`](.agents/skills/orpc/SKILL.md); for OpenAPI/REST also [`.agents/skills/orpc-openapi/SKILL.md`](.agents/skills/orpc-openapi/SKILL.md). Prefer repo patterns in [`packages/api`](packages/api) and [`apps/server/src/index.ts`](apps/server/src/index.ts); verify via [orpc.dev/llms.txt](https://orpc.dev/llms.txt). [`orpc-migrate`](.agents/skills/orpc-migrate/SKILL.md) is historical/reference only. Contract-first: [`orpc-contract`](.agents/skills/orpc-contract/SKILL.md) when relevant. |
 | Hono API Worker | [`.agents/skills/hono/SKILL.md`](.agents/skills/hono/SKILL.md); Cloudflare `workers-best-practices` skill |

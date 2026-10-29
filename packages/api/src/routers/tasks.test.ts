@@ -262,6 +262,55 @@ describe("tasksRouter", () => {
       const listed = await call(tasksRouter.list, undefined, { context });
       expect(listed.map((task) => task.title)).toEqual(["Second", "First"]);
     });
+
+    it("filters by projectId when provided", async () => {
+      const context = await createAuthedContext("user-1", {
+        project: { id: "proj-1", name: "Work" },
+      });
+      await seedProject(context.db, {
+        id: "proj-2",
+        name: "Home",
+        userId: "user-1",
+      });
+
+      await call(
+        tasksRouter.create,
+        { projectId: "proj-1", title: "Work task" },
+        { context }
+      );
+      await call(
+        tasksRouter.create,
+        { projectId: "proj-2", title: "Home task" },
+        { context }
+      );
+      await call(tasksRouter.create, { title: "Inbox" }, { context });
+
+      const work = await call(
+        tasksRouter.list,
+        { projectId: "proj-1" },
+        { context }
+      );
+      expect(work.map((task) => task.title)).toEqual(["Work task"]);
+    });
+
+    it("filters unassigned tasks when projectId is null", async () => {
+      const context = await createAuthedContext("user-1", {
+        project: { id: "proj-1" },
+      });
+      await call(
+        tasksRouter.create,
+        { projectId: "proj-1", title: "Assigned" },
+        { context }
+      );
+      await call(tasksRouter.create, { title: "Inbox" }, { context });
+
+      const inbox = await call(
+        tasksRouter.list,
+        { projectId: null },
+        { context }
+      );
+      expect(inbox.map((task) => task.title)).toEqual(["Inbox"]);
+    });
   });
 
   describe("update", () => {
