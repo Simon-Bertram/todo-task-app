@@ -8,6 +8,7 @@ const { currentPath } = Astro.props;
 const links = [
   { href: "/today", label: "Today" },
   { href: "/matrix", label: "Matrix" },
+  { href: "/tasks", label: "Tasks" },
   { href: "/projects", label: "Projects" },
   { href: "/settings", label: "Settings" },
 ] as const;
@@ -22,12 +23,12 @@ function isActive(href: string): boolean {
   class="fixed inset-x-0 bottom-0 z-40 border-t border-border-contrast bg-[rgb(17_24_39/0.92)] backdrop-blur-[20px] lg:hidden"
   style="padding-bottom: env(safe-area-inset-bottom)"
 >
-  <div class="relative grid h-16 grid-cols-4 items-center px-2">
-    {links.slice(0, 2).map((link) => (
+  <div class="relative grid h-16 grid-cols-5 items-center px-1">
+    {links.map((link) => (
       <a
         aria-current={isActive(link.href) ? "page" : undefined}
         class:list={[
-          "flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs font-medium",
+          "flex min-h-11 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
           isActive(link.href) ? "text-primary" : "text-text-secondary",
         ]}
         href={link.href}
@@ -47,17 +48,5 @@ function isActive(href: string): boolean {
         +
       </button>
     </div>
-    {links.slice(2).map((link) => (
-      <a
-        aria-current={isActive(link.href) ? "page" : undefined}
-        class:list={[
-          "flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs font-medium",
-          isActive(link.href) ? "text-primary" : "text-text-secondary",
-        ]}
-        href={link.href}
-      >
-        {link.label}
-      </a>
-    ))}
   </div>
 </nav>

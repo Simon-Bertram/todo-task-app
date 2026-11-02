@@ -27,6 +27,7 @@ export function createSession(userId: string, email?: string): Session {
       emailVerified: false,
       id: userId,
       name: userId,
+      tasksBoardPrefs: null,
       updatedAt: now,
     },
   } as Session;

@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `tasks_board_prefs` text;

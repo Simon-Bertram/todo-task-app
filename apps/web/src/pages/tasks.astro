@@ -1,0 +1,52 @@
+---
+import TasksBoard from "../components/islands/tasks-board";
+import AppShell from "../layouts/app-shell.astro";
+import { loadAppBoardData } from "../lib/orpc.server";
+import { mergeTasksBoardPrefs } from "../lib/task-helpers";
+
+const data = await loadAppBoardData(Astro.request);
+if (data === "unauthorized") {
+  return Astro.redirect("/login");
+}
+
+const { tasks, projects, tasksBoardPrefs } = data;
+const merged = mergeTasksBoardPrefs(
+  {
+    due: Astro.url.searchParams.get("due"),
+    importance: Astro.url.searchParams.get("importance"),
+    project: Astro.url.searchParams.get("project"),
+    q: Astro.url.searchParams.get("q"),
+    sort: Astro.url.searchParams.get("sort"),
+    urgency: Astro.url.searchParams.get("urgency"),
+  },
+  tasksBoardPrefs
+);
+
+const knownProjectIds = new Set(projects.map((project) => project.id));
+const projectIsUnknown =
+  merged.prefs.project !== null &&
+  merged.prefs.project !== "inbox" &&
+  !knownProjectIds.has(merged.prefs.project);
+
+const initialPrefs = projectIsUnknown
+  ? { ...merged.prefs, project: null }
+  : merged.prefs;
+const initialQuery = merged.query;
+---
+
+<AppShell
+  mobileTitle="PlanSage / Tasks"
+  projects={projects}
+  tasks={tasks}
+  title="Tasks · PlanSage"
+>
+  <div class="mx-auto max-w-3xl px-4 py-6 lg:px-8">
+    <TasksBoard
+      initialPrefs={initialPrefs}
+      initialQuery={initialQuery}
+      projects={projects}
+      tasks={tasks}
+      client:load
+    />
+  </div>
+</AppShell>

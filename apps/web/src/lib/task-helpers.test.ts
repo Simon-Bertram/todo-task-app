@@ -1,12 +1,20 @@
+import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { describe, expect, it } from "vitest";
 
 import {
+  filterTasksList,
+  getLocalDateString,
   getProject,
   getTasksByQuadrant,
   getTodayByBucket,
   getTodayPlannedMinutes,
   getTodayTasks,
+  hasActiveTasksBoardFilters,
+  matchesDueDateFilter,
+  mergeTasksBoardPrefs,
   type Project,
+  prefsToSearchParams,
+  sortTasksList,
   type Task,
 } from "./task-helpers";
 
@@ -146,5 +154,149 @@ describe("getTodayByBucket", () => {
     expect(groups.medium.map((task) => task.id)).toEqual(["medium", "other"]);
     expect(groups.quick.map((task) => task.id)).toEqual(["quick"]);
     expect(groups.other).toEqual([]);
+  });
+});
+
+describe("getLocalDateString", () => {
+  it("formats a local calendar date as YYYY-MM-DD", () => {
+    expect(getLocalDateString(new Date(2026, 10, 2))).toBe("2026-11-02");
+  });
+});
+
+describe("matchesDueDateFilter", () => {
+  const today = "2026-11-02";
+
+  it("matches overdue, today, upcoming, and none buckets", () => {
+    const overdue = makeTask({ dueDate: "2026-11-01", id: "1", title: "A" });
+    const dueToday = makeTask({ dueDate: "2026-11-02", id: "2", title: "B" });
+    const upcoming = makeTask({ dueDate: "2026-11-05", id: "3", title: "C" });
+    const none = makeTask({ dueDate: null, id: "4", title: "D" });
+
+    expect(matchesDueDateFilter(overdue, "overdue", today)).toBe(true);
+    expect(matchesDueDateFilter(dueToday, "today", today)).toBe(true);
+    expect(matchesDueDateFilter(upcoming, "upcoming", today)).toBe(true);
+    expect(matchesDueDateFilter(none, "none", today)).toBe(true);
+    expect(matchesDueDateFilter(none, "today", today)).toBe(false);
+  });
+});
+
+describe("filterTasksList and sortTasksList", () => {
+  const projects: Project[] = [
+    { color: "#111", id: "p1", name: "Alpha" },
+    { color: "#222", id: "p2", name: "Beta" },
+  ];
+
+  const tasks = [
+    makeTask({
+      dueDate: "2026-11-01",
+      id: "1",
+      isImportant: 3,
+      isUrgent: 1,
+      projectId: "p1",
+      title: "Zebra crisis",
+    }),
+    makeTask({
+      dueDate: "2026-11-05",
+      id: "2",
+      isImportant: 1,
+      isUrgent: 3,
+      projectId: "p2",
+      title: "Alpha follow-up",
+    }),
+    makeTask({
+      dueDate: null,
+      id: "3",
+      isImportant: 0,
+      isUrgent: 0,
+      projectId: null,
+      title: "Inbox note",
+    }),
+    makeTask({
+      id: "4",
+      isCompleted: true,
+      projectId: "p1",
+      title: "Done Alpha",
+    }),
+  ];
+
+  it("filters by project, due, priority, and search including project name", () => {
+    const filtered = filterTasksList(
+      tasks,
+      projects,
+      {
+        due: "all",
+        importanceMin: null,
+        project: null,
+        query: "alpha",
+        urgencyMin: null,
+      },
+      "2026-11-02"
+    );
+
+    // Title match (2) + project name "Alpha" match (1); completed (4) excluded
+    expect(filtered.map((task) => task.id).sort()).toEqual(["1", "2"]);
+  });
+
+  it("sorts by title and by due date with nulls last", () => {
+    const open = tasks.filter((task) => !task.isCompleted);
+    expect(sortTasksList(open, "title").map((task) => task.id)).toEqual([
+      "2",
+      "3",
+      "1",
+    ]);
+    expect(sortTasksList(open, "due").map((task) => task.id)).toEqual([
+      "1",
+      "2",
+      "3",
+    ]);
+  });
+});
+
+describe("mergeTasksBoardPrefs and prefsToSearchParams", () => {
+  it("lets URL params override stored prefs and keeps search URL-only", () => {
+    const stored = {
+      ...DEFAULT_TASKS_BOARD_PREFS,
+      due: "today" as const,
+      sort: "importance" as const,
+    };
+    const merged = mergeTasksBoardPrefs(
+      { due: "overdue", q: "ship", sort: null },
+      stored
+    );
+
+    expect(merged.prefs.sort).toBe("importance");
+    expect(merged.prefs.due).toBe("overdue");
+    expect(merged.query).toBe("ship");
+  });
+
+  it("serializes only non-default prefs and the query", () => {
+    const params = prefsToSearchParams(
+      {
+        due: "upcoming",
+        importanceMin: 2,
+        project: "inbox",
+        sort: "due",
+        urgencyMin: null,
+      },
+      " launch "
+    );
+
+    expect(params.get("due")).toBe("upcoming");
+    expect(params.get("importance")).toBe("2");
+    expect(params.get("project")).toBe("inbox");
+    expect(params.get("sort")).toBeNull();
+    expect(params.get("q")).toBe("launch");
+  });
+
+  it("detects active filters", () => {
+    expect(hasActiveTasksBoardFilters(DEFAULT_TASKS_BOARD_PREFS, "")).toBe(
+      false
+    );
+    expect(
+      hasActiveTasksBoardFilters(
+        { ...DEFAULT_TASKS_BOARD_PREFS, project: "inbox" },
+        ""
+      )
+    ).toBe(true);
   });
 });

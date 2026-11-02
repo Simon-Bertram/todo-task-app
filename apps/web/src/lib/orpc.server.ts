@@ -5,6 +5,9 @@ import { createORPCClient, ORPCError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import type { AppRouterClient } from "@todo-task-app/api/routers/index";
 
+import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-prefs";
+import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
+
 import { ENV } from "../env.public";
 import type { Project, Task } from "./task-helpers";
 
@@ -13,6 +16,7 @@ const TRAILING_SLASH = /\/$/;
 export interface AppBoardData {
   projects: Project[];
   tasks: Task[];
+  tasksBoardPrefs: TasksBoardPrefs;
 }
 
 function createServerClient(request: Request): AppRouterClient {
@@ -48,11 +52,16 @@ export async function loadAppBoardData(
   const client = createServerClient(request);
 
   try {
-    const [tasks, projects] = await Promise.all([
+    const [tasks, projects, preferences] = await Promise.all([
       client.tasks.list(),
       client.projects.list(),
+      client.preferences.get(),
     ]);
-    return { projects, tasks };
+    return {
+      projects,
+      tasks,
+      tasksBoardPrefs: preferences.tasksBoard ?? DEFAULT_TASKS_BOARD_PREFS,
+    };
   } catch (error) {
     if (isUnauthorized(error)) {
       return "unauthorized";

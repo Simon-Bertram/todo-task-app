@@ -174,6 +174,11 @@ export function createAuth(
           required: false,
           type: "number",
         },
+        tasksBoardPrefs: {
+          input: false,
+          required: false,
+          type: "string",
+        },
       },
     },
   });
