@@ -27,6 +27,7 @@ import {
   getLocalDateString,
   getProject,
   getTaskQuadrant,
+  getTodayExecutionProgress,
   getTodayPlannedMinutes,
   getTodayTasks,
   type Project,
@@ -42,21 +43,21 @@ interface Props {
 
 const BUCKET_META: Record<
   Exclude<CapacityBucket, "other">,
-  { hint: string; slots: number; title: string }
+  { hint: string; slotIds: string[]; title: string }
 > = {
   major: {
     hint: "1 slot · 60–120m deep work",
-    slots: 1,
+    slotIds: ["major-1"],
     title: "1 Major",
   },
   medium: {
     hint: "3 slots · 30–60m",
-    slots: 3,
+    slotIds: ["medium-1", "medium-2", "medium-3"],
     title: "3 Medium",
   },
   quick: {
     hint: "5 slots · under 15m",
-    slots: 5,
+    slotIds: ["quick-1", "quick-2", "quick-3", "quick-4", "quick-5"],
     title: "5 Quick wins",
   },
 };
@@ -130,6 +131,9 @@ export default function TodayBoard({
   const plannedMinutes = getTodayPlannedMinutes(tasks);
   const tone = capacityTone(plannedMinutes, budgetMinutes);
   const todayCount = todayTasks.length;
+  const execution = useMemo(() => getTodayExecutionProgress(tasks), [tasks]);
+  const dayProtected =
+    execution.dayProtected && plannedMinutes <= budgetMinutes;
 
   const buckets = useMemo(() => {
     const groups: Record<CapacityBucket, Task[]> = {
@@ -263,11 +267,43 @@ export default function TodayBoard({
               {formatMinutes(plannedMinutes)} / {formatMinutes(budgetMinutes)}
             </p>
           </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between font-mono text-xs">
+              <span className="text-text-muted">Done today</span>
+              <span className="text-text-secondary">{execution.percent}%</span>
+            </div>
+            <div
+              aria-label="Done today"
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={execution.percent}
+              className="h-1.5 overflow-hidden rounded-full bg-surface"
+              role="progressbar"
+            >
+              <div
+                className="h-full rounded-full bg-capacity-ok transition-all"
+                style={{ width: `${Math.min(execution.percent, 100)}%` }}
+              />
+            </div>
+            <p className="tabular-metrics font-mono text-text-muted text-xs">
+              {formatMinutes(execution.completedMinutes)} /{" "}
+              {formatMinutes(execution.stagedMinutes)} staged ·{" "}
+              {execution.completedCount}/{execution.stagedCount} tasks
+            </p>
+          </div>
           <div className="flex flex-wrap gap-3 font-mono text-text-muted text-xs">
             <span>Q1: {formatMinutes(qMinutes.Q1)}</span>
             <span>Q2: {formatMinutes(qMinutes.Q2)}</span>
             <span>Q3: {formatMinutes(qMinutes.Q3)}</span>
           </div>
+          {dayProtected ? (
+            <p
+              className="rounded-sm border border-capacity-ok/40 bg-capacity-ok/10 px-3 py-2 text-capacity-ok text-sm"
+              role="status"
+            >
+              Day protected — you finished what fit today.
+            </p>
+          ) : null}
           {tone === "warn" ? (
             <p className="rounded-sm border border-capacity-warn/40 bg-capacity-warn/10 px-3 py-2 text-capacity-warn text-sm">
               Approaching daily budget. Adding another major task may breach{" "}
@@ -296,8 +332,21 @@ export default function TodayBoard({
                 <p className="text-sm text-text-secondary">{meta.hint}</p>
               </div>
               <span className="tabular-metrics font-mono text-text-muted text-xs">
-                {items.length}/{meta.slots}
+                {items.length}/{meta.slotIds.length} filled
               </span>
+            </div>
+            <div className="flex gap-1">
+              {meta.slotIds.map((slotId, slotNumber) => (
+                <span
+                  aria-hidden="true"
+                  className={
+                    slotNumber < items.length
+                      ? "h-1.5 flex-1 rounded-full bg-capacity-ok"
+                      : "h-1.5 flex-1 rounded-full bg-surface"
+                  }
+                  key={slotId}
+                />
+              ))}
             </div>
             <ul className="space-y-2">
               {items.length === 0 ? (

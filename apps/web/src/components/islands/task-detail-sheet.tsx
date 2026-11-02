@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import {
+  type CelebrationIntensity,
+  celebrateTaskComplete,
+} from "../../lib/celebrate";
 import { orpc } from "../../lib/orpc";
 import {
   capacityTone,
   formatMinutes,
+  getCapacityBucket,
   getQuadrant,
   QUADRANT_META,
 } from "../../lib/quadrant";
@@ -28,6 +33,26 @@ const RECURRENCE = [
 ] as const;
 
 type RecurrenceValue = (typeof RECURRENCE)[number]["value"];
+
+function completionIntensity(options: {
+  budgetMinutes: number;
+  estimatedMinutes: number;
+  isToday: boolean;
+  plannedMinutes: number;
+  remainingTodayCount: number;
+}): CelebrationIntensity {
+  if (
+    options.isToday &&
+    options.remainingTodayCount === 0 &&
+    options.plannedMinutes <= options.budgetMinutes
+  ) {
+    return "dayProtected";
+  }
+  if (getCapacityBucket(options.estimatedMinutes) === "major") {
+    return "major";
+  }
+  return "default";
+}
 
 export default function TaskDetailSheet({
   tasks,
@@ -181,8 +206,10 @@ export default function TaskDetailSheet({
     }
     setIsSaving(true);
     setError(null);
+    const becameCompleted = isCompleted && !baseTask.isCompleted;
     try {
-      await orpc.tasks.update({
+      const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
+      const result = await orpc.tasks.update({
         dueDate,
         estimatedMinutes,
         id: baseTask.id,
@@ -193,8 +220,26 @@ export default function TaskDetailSheet({
         notes: notes.trim() ? notes.trim() : null,
         projectId,
         recurrenceRule: recurrence,
+        timeZone,
         title: nextTitle,
       });
+      if (becameCompleted) {
+        const remainingTodayCount = tasks.filter(
+          (task) => task.isToday && !task.isCompleted && task.id !== baseTask.id
+        ).length;
+        await celebrateTaskComplete(
+          completionIntensity({
+            budgetMinutes,
+            estimatedMinutes,
+            isToday,
+            plannedMinutes,
+            remainingTodayCount,
+          })
+        );
+        if (result.unlockedMilestones && result.unlockedMilestones.length > 0) {
+          showToast("Milestone unlocked", "success");
+        }
+      }
       setTaskId(null);
       showToast("Task saved", "success");
       location.reload();
@@ -206,6 +251,7 @@ export default function TaskDetailSheet({
     }
   }, [
     baseTask,
+    budgetMinutes,
     dueDate,
     estimatedMinutes,
     isCompleted,
@@ -214,8 +260,10 @@ export default function TaskDetailSheet({
     isToday,
     isUrgent,
     notes,
+    plannedMinutes,
     projectId,
     recurrence,
+    tasks,
     title,
   ]);
 
@@ -357,7 +405,7 @@ export default function TaskDetailSheet({
           <label className="flex min-h-11 items-center gap-3 rounded-sm border border-border-contrast bg-surface-subtle px-3">
             <input
               checked={isCompleted}
-              className="size-4 accent-[var(--color-primary)]"
+              className="size-4 accent-[--color-primary)]"
               onChange={onCompletedChange}
               type="checkbox"
             />

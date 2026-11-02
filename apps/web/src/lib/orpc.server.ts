@@ -20,7 +20,7 @@ export interface AppBoardData {
   tasksBoardPrefs: TasksBoardPrefs;
 }
 
-function createServerClient(request: Request): AppRouterClient {
+export function createServerClient(request: Request): AppRouterClient {
   const cookie = request.headers.get("cookie") ?? "";
 
   const link = new RPCLink({
@@ -48,13 +48,43 @@ export function isUnauthorized(error: unknown): boolean {
 }
 
 export async function loadAppBoardData(
-  request: Request
+  request: Request,
+  options?: { includeCompleted?: boolean }
 ): Promise<AppBoardData | "unauthorized"> {
   const client = createServerClient(request);
 
   try {
     const [tasks, projects, preferences] = await Promise.all([
-      client.tasks.list(),
+      client.tasks.list(
+        options?.includeCompleted ? { includeCompleted: true } : undefined
+      ),
+      client.projects.list(),
+      client.preferences.get(),
+    ]);
+    return {
+      dailyCapacityMinutes: preferences.dailyCapacityMinutes,
+      projects,
+      tasks,
+      tasksBoardPrefs: preferences.tasksBoard ?? DEFAULT_TASKS_BOARD_PREFS,
+    };
+  } catch (error) {
+    if (isUnauthorized(error)) {
+      return "unauthorized";
+    }
+    throw error;
+  }
+}
+
+export async function loadCompletedBoardData(
+  request: Request,
+  range: "this_week" | "last_week" | "last_month" | "last_year" | "all",
+  timeZone: string
+): Promise<AppBoardData | "unauthorized"> {
+  const client = createServerClient(request);
+
+  try {
+    const [tasks, projects, preferences] = await Promise.all([
+      client.tasks.listCompleted({ range, timeZone }),
       client.projects.list(),
       client.preferences.get(),
     ]);

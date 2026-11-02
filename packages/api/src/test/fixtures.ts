@@ -24,7 +24,7 @@ export function createSession(userId: string, email?: string): Session {
       createdAt: now,
       dailyCapacityMinutes: 300,
       email: email ?? `${userId}@example.com`,
-      emailVerified: false,
+      emailVerified: true,
       id: userId,
       name: userId,
       tasksBoardPrefs: null,

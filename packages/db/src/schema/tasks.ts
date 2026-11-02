@@ -69,6 +69,11 @@ export const tasks = sqliteTable(
     ),
     index("tasks_user_id_status_idx").on(table.userId, table.status),
     index("tasks_user_id_project_id_idx").on(table.userId, table.projectId),
+    index("tasks_user_id_is_completed_completed_at_idx").on(
+      table.userId,
+      table.isCompleted,
+      table.completedAt
+    ),
   ]
 );
 

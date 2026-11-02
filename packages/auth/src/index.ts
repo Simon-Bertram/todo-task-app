@@ -2,6 +2,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import type { Database } from "@todo-task-app/db";
 import {
   account,
+  rateLimit,
   session,
   user,
   verification,
@@ -29,6 +30,7 @@ export interface CreateAuthOptions {
 
 const schema = {
   account,
+  rateLimit,
   session,
   user,
   verification,
@@ -49,6 +51,11 @@ function isSafeCookieDomain(domain: string): boolean {
  * return that parent with a leading dot so Better Auth can set Domain= for
  * SSR cookie forwarding. Same-hostname setups (localhost across ports)
  * return undefined.
+ *
+ * Security: a shared Domain= expands the session-cookie blast radius to every
+ * host under that parent. Never deploy untrusted apps on the shared apex
+ * (e.g. `.todo.sarl`). Prefer custom domains with workersDev disabled in
+ * production so sibling workers.dev hosts do not inherit the cookie.
  */
 export function sharedCookieDomain(
   authUrl: string,
@@ -127,6 +134,9 @@ export function createAuth(
         sameSite: "none",
         secure: true,
       },
+      ipAddress: {
+        ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"],
+      },
     },
     baseURL: env.BETTER_AUTH_URL,
     database: drizzleAdapter(database, {
@@ -164,15 +174,62 @@ export function createAuth(
       },
     },
     plugins: [],
+    rateLimit: {
+      customRules: {
+        "/request-password-reset": {
+          max: 3,
+          window: 60,
+        },
+        "/sign-in/email": {
+          max: 5,
+          window: 60,
+        },
+        "/sign-up/email": {
+          max: 3,
+          window: 60,
+        },
+      },
+      enabled: true,
+      storage: "database",
+    },
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [env.CORS_ORIGIN, ...desktopOrigins],
     user: {
       additionalFields: {
+        celebrations: {
+          defaultValue: "subtle",
+          input: false,
+          required: false,
+          type: "string",
+        },
         dailyCapacityMinutes: {
           defaultValue: 300,
           input: false,
           required: false,
           type: "number",
+        },
+        onboardingCompletedAt: {
+          input: false,
+          required: false,
+          type: "date",
+        },
+        rhythmBest: {
+          defaultValue: 0,
+          input: false,
+          required: false,
+          type: "number",
+        },
+        rhythmCurrent: {
+          defaultValue: 0,
+          input: false,
+          required: false,
+          type: "number",
+        },
+        rhythmOptIn: {
+          defaultValue: false,
+          input: false,
+          required: false,
+          type: "boolean",
         },
         tasksBoardPrefs: {
           input: false,

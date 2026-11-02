@@ -1,0 +1,49 @@
+---
+import CompleteBoard from "../components/islands/complete-board";
+import AppShell from "../layouts/app-shell.astro";
+import { parseCompletedRange } from "../lib/completed-range";
+import { loadCompletedBoardData } from "../lib/orpc.server";
+
+const range = parseCompletedRange(Astro.url.searchParams.get("range"));
+const timeZoneParam = Astro.url.searchParams.get("tz");
+const timeZone =
+  timeZoneParam && timeZoneParam.length > 0 ? timeZoneParam : "UTC";
+
+const data = await loadCompletedBoardData(Astro.request, range, timeZone);
+if (data === "unauthorized") {
+  return Astro.redirect("/login");
+}
+
+const { tasks, projects, dailyCapacityMinutes } = data;
+---
+
+<AppShell
+  budgetMinutes={dailyCapacityMinutes}
+  mobileTitle="PlanSage / Complete"
+  projects={projects}
+  tasks={tasks}
+  title="Complete · PlanSage"
+>
+  <CompleteBoard
+    projects={projects}
+    range={range}
+    tasks={tasks}
+    timeZone={timeZone}
+    client:load
+  />
+</AppShell>
+
+<script is:inline>
+  (() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) {
+      return;
+    }
+    const url = new URL(location.href);
+    if (url.searchParams.get("tz") === tz) {
+      return;
+    }
+    url.searchParams.set("tz", tz);
+    location.replace(url.toString());
+  })();
+</script>

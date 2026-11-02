@@ -18,9 +18,9 @@ This repo uses **Better-T-Stack**, not the original “single Worker / embedded 
 | Real-time | Optimistic UI + focus / `visibilitychange` revalidation only |
 | Scheduled jobs (Post-V1) | Cloudflare Workers Cron Triggers on the existing `apps/server` Worker via Alchemy—not a third Worker and not Astro |
 
-**V1 scope:** Eisenhower Matrix planning UI, time-budgeted Today execution view, capacity engine (incl. 1-3-5 filter), projects/categories, task CRUD with recurrence-on-complete, desktop DnD + mobile sheet/toggle flows, Matrix ↔ Today information architecture below.
+**V1 scope:** Eisenhower Matrix planning UI, time-budgeted Today execution view, capacity engine (incl. 1-3-5 filter), projects/categories, task CRUD with recurrence-on-complete, desktop DnD + mobile sheet/toggle flows, Matrix ↔ Today information architecture below, **Complete** archive view with range filters, capacity-aligned day progress / setup checklist, and restrained completion confetti (`canvas-confetti`).
 
-**V1 non-goals:** Durable Objects, WebSockets, multi-tenant workspaces (schema may reserve optional `workspace_id` only), Cmd+K quick capture, Focus Mode / Pomodoro, two-way calendar sync, weekly analytics dashboard, sequential blockers / sub-checklists UI, and Workers Cron governance automation (see Post-V1 §§4.6–4.7). Schema may still reserve columns/tables for Post-V1 without exposing UI.
+**V1 non-goals:** Durable Objects, WebSockets, multi-tenant workspaces (schema may reserve optional `workspace_id` only), Cmd+K quick capture, Focus Mode / Pomodoro, two-way calendar sync, weekly analytics dashboard, sequential blockers / sub-checklists UI, and Workers Cron governance automation (see Post-V1 §§4.6–4.7). Also out of scope: points economies, public leaderboards / social flairs, daily login bonuses, streak freezes / rescues, volume XP, and heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page embeds, default sound/haptics). Schema may still reserve columns/tables for Post-V1 without exposing UI.
 
 Respect **V1 vs Post-V1** labels in this document when implementing.
 
@@ -88,7 +88,7 @@ Quadrant mapping uses threshold **≥ 2**:
 
 ### 4.2.1 Matrix ↔ Today information architecture (V1)
 
-**Mental model:** Matrix = **Planning** (priority placement). Today = **Execution** (capacity-bound day). `is_today` is a **status overlay**, not a fifth matrix cell. Matrix and Today are **peer** primary nav destinations (Matrix | Today), not nested.
+**Mental model:** Matrix = **Planning** (priority placement). Today = **Execution** (capacity-bound day). Complete = **Archive / reflection** (completed tasks). `is_today` is a **status overlay**, not a fifth matrix cell. Matrix, Today, Projects, and Complete are **peer** primary nav destinations (Today | Matrix | Projects | Complete | Settings), not nested.
 
 #### Desktop — classic 2×2
 
@@ -119,6 +119,26 @@ Quadrant mapping uses threshold **≥ 2**:
 - Default sort/group by **1-3-5** (Major / Medium / Quick); secondary: manual `sort_order` / due time—**not** by quadrant.
 - Capacity bar sticky at top; adding from Matrix shows immediate workload delta.
 - Nice-to-have: tapping a quadrant chip jumps to Matrix with that quadrant selected.
+
+### 4.2.2 Complete view (V1)
+
+Primary nav destination **Complete** at `/complete`. Lists only tasks with `is_completed = 1`, ordered by `completed_at` descending. Reopen via task detail / `tasks.update({ isCompleted: false })`.
+
+**Date filters** (segmented control; default `this_week`). Bounds use the viewer’s local calendar (pass IANA `timeZone` into the API; do not assume UTC day boundaries):
+
+| Range | Bounds |
+|-------|--------|
+| This week | Monday 00:00:00 of the current week → end of today |
+| Last week | Monday 00:00:00 → Friday 23:59:59.999 of the **previous** week (weekdays only; excludes that week’s Sat/Sun) |
+| Last month | 1st 00:00:00 → last day 23:59:59.999 of the **previous** calendar month |
+| Last year | Jan 1 00:00:00 → Dec 31 23:59:59.999 of the **previous** calendar year |
+| All time | No `completed_at` bound (still `is_completed = true` only) |
+
+URL: `/complete?range=this_week|last_week|last_month|last_year|all`.
+
+**API:** `tasks.listCompleted` with `{ range, timeZone }`. Index: `(user_id, is_completed, completed_at)`.
+
+Empty state per range (e.g. “No completions this week”). Archive + light reflection—not a scoreboard.
 
 ### 4.3 "Today's Tasks" Screen & Capacity Engine
 
@@ -163,7 +183,9 @@ Not required for V1 UI. Schema may reserve fields (§6) ahead of implementation.
 | Global Quick Capture | Cmd/Ctrl+K palette for frictionless Inbox entry without leaving the current view | Preact island → oRPC create into Inbox |
 | Focus Mode | Pomodoro-style timer that dims the UI; logs spent time vs estimate | Timer island; persist `actual_minutes` on the task |
 | Two-Way Calendar Time Blocking | Sync Today tasks with duration into Google/Apple Calendar blocks | Better Auth OAuth plugins + calendar APIs |
-| Weekly Analytics & Quadrant Review | Ratio of completed Q2 (strategic) vs Q3 (interruptions) | Read-only oRPC aggregates + chart island |
+| Weekly Analytics & Quadrant Review | Q2 vs Q3 completion ratio; % protected / over-capacity days; “interruptions tax” narrative (not a scoreboard); personal reflective challenges only | Read-only oRPC aggregates + chart island |
+| Protected-day rhythm | Opt-in consecutive “protected day” counter (default off); neutral “rhythm paused” on miss—no freezes/shop | `user_day_stats` + rhythm fields on `user`; mutation rollup and/or cron |
+| Personal milestones | Sparse private unlocks (first under-capacity day, first balanced 1-3-5, Q2≥Q3 week, 7/30 protected days) | `user_milestones`; Settings list + toast; no public flair |
 | Sequential Blockers & Sub-Checklists | Lightweight subtasks; “blocked by” another task; Today shows actionable work only | `blocked_by_task_id` + `subtasks`; filter blocked from Today |
 
 ### 4.7 Task Governance & Automation Rules (Post-V1)
@@ -176,6 +198,35 @@ Implemented later via **Cloudflare Workers Cron Triggers** on the existing `apps
 4. **Q2 Escalation:** Q2 tasks within 48 hours of `due_date` increment Urgency so they map into Q1.
 5. **Inbox TTL:** Uncategorized Inbox items unassigned for 72 hours default toward Q4 ratings.
 6. **Anti-Stacking for Recurring Tasks:** Missed recurring instances are marked `status = missed` (not carried over); generate a fresh instance for today.
+
+### 4.8 Gamification (capacity-aligned)
+
+Gamification must reinforce **finishing what fits today**, not session count or task volume. Over-capacity days are never “winning.” Copy tone: “Day protected,” “Rhythm,” “Done today”—never “XP,” “Level up,” or “Don’t break your streak!”
+
+**North-star loop:** Plan (Matrix) → Stage within budget → Complete staged work → Quiet day-integrity acknowledgment.
+
+**Do not build**
+
+- Daily login bonuses / escalating visit rewards
+- Streak freezes, rescues, paid micro-currency
+- Redeemable points / virtual economies
+- Public leaderboards, social flairs, roles
+- VIP/Diamond titles from spend or raw completion volume
+- Volume XP that encourages stuffing Today past capacity
+- Heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page, GSAP fireworks) or sound/haptics by default
+
+**V1 / near-term**
+
+1. **Complete view** — See §4.2.2.
+2. **Day progress** — Alongside the staging capacity bar, show execution progress (completed staged minutes ÷ staged minutes; label “Done today”). Surface 1-3-5 fill state. When all staged Today tasks are complete and planned ≤ capacity, show a short “Day protected” acknowledgment.
+3. **Setup checklist** — Dismissible: set capacity → create project → place Matrix task → stage into Today within capacity → complete one Today task. Persist via `user.onboarding_completed_at`.
+4. **Completion confetti** — `canvas-confetti` in `apps/web` only, via dynamic import (e.g. `celebrateTaskComplete`). Fire on false→true complete (not uncomplete). Low particle count (~40–80), theme colors. Slightly richer burst for Major (1-3-5) or day-closed under capacity. Skip when celebrations = off or `prefers-reduced-motion: reduce`. Settings: Celebrations subtle / off (default subtle). Stay within island JS budget (`< 35KB` gzipped).
+
+**Post-V1**
+
+5. **Protected-day rhythm** — Opt-in (default off). A protected day = ≥1 Today completion and ended planned ≤ capacity. Consecutive counter; missed days show neutral “rhythm paused.” Schema: `user_day_stats` + rhythm fields on `user`.
+6. **Personal milestones** — Private sparse unlocks; Settings → Milestones + one-line toast. Table: `user_milestones`. No public flair.
+7. **Weekly intentionality** — Fold into §4.6 Weekly Analytics (Q2 vs Q3, % protected / over-capacity, reflective challenges only).
 
 ## 5. Technical Architecture & Tech Stack
 
@@ -201,6 +252,11 @@ Existing table: `user` in [`packages/db/src/schema/auth.ts`](../packages/db/src/
 Add product prefs as columns on `user` (or a 1:1 prefs table keyed by `user_id`), for example:
 
 - `daily_capacity_minutes` INTEGER DEFAULT 300
+- `onboarding_completed_at` INTEGER NULL (timestamp_ms) — setup checklist dismissed
+- `celebrations` TEXT DEFAULT `'subtle'` — `subtle` | `off` (completion confetti)
+- `rhythm_opt_in` INTEGER DEFAULT 0 — Post-V1 protected-day rhythm
+- `rhythm_current` INTEGER DEFAULT 0 — Post-V1
+- `rhythm_best` INTEGER DEFAULT 0 — Post-V1
 
 Follow Better Auth + Drizzle adapter guidance when extending the user schema (see Better Auth skills).
 
@@ -262,7 +318,30 @@ Suggested indexes:
 - `(user_id, due_date, is_completed)`
 - `(user_id, is_urgent, is_important)`
 - `(user_id, is_today, sort_order)` for Today list
+- `(user_id, is_completed, completed_at)` for Complete list
 - `(user_id, status)` for triage / archive jobs (Post-V1)
+
+### user_day_stats (Post-V1 — protected-day rhythm)
+
+```text
+user_day_stats
+  user_id TEXT NOT NULL → user.id ON DELETE CASCADE
+  local_date TEXT NOT NULL      -- YYYY-MM-DD in viewer TZ
+  is_protected INTEGER DEFAULT 0
+  completed_minutes INTEGER DEFAULT 0
+  planned_minutes INTEGER DEFAULT 0
+  PRIMARY KEY (user_id, local_date)
+```
+
+### user_milestones (Post-V1)
+
+```text
+user_milestones
+  user_id TEXT NOT NULL → user.id ON DELETE CASCADE
+  key TEXT NOT NULL             -- e.g. first_day_protected
+  unlocked_at ...
+  PRIMARY KEY (user_id, key)
+```
 
 ## 7. Mobile-First & Non-Functional Requirements
 

@@ -45,6 +45,7 @@ export const server = Worker(
           : ConfigString("CORS_ORIGIN"),
         DB: db,
         EMAIL_FROM: ConfigString("EMAIL_FROM"),
+        NODE_ENV: isCustomDomainStage ? "production" : "development",
         RESEND_API_KEY: Redacted("RESEND_API_KEY"),
       },
       main: "../../apps/server/src/index.ts",

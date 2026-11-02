@@ -74,13 +74,16 @@ app.use("/*", async (c, next) => {
     return c.newResponse(rpcResult.response.body, rpcResult.response);
   }
 
-  const apiResult = await apiHandler.handle(c.req.raw, {
-    context,
-    prefix: "/api-reference",
-  });
+  // OpenAPI/Scalar documents the authenticated surface — keep it off production.
+  if (ENV.NODE_ENV !== "production") {
+    const apiResult = await apiHandler.handle(c.req.raw, {
+      context,
+      prefix: "/api-reference",
+    });
 
-  if (apiResult.matched) {
-    return c.newResponse(apiResult.response.body, apiResult.response);
+    if (apiResult.matched) {
+      return c.newResponse(apiResult.response.body, apiResult.response);
+    }
   }
 
   await next();

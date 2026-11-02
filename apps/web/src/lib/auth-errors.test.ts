@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { mapAuthClientError } from "./auth-errors";
 
 const INCORRECT_CREDENTIALS = /Incorrect email or password/i;
+const IF_ACCOUNT_EXISTS = /if an account exists/i;
+const ALREADY_EXISTS = /already exists/i;
 
 describe("mapAuthClientError", () => {
   it("maps EMAIL_NOT_VERIFIED with email CTA", () => {
@@ -27,6 +29,17 @@ describe("mapAuthClientError", () => {
 
     expect(mapped.body).toMatch(INCORRECT_CREDENTIALS);
     expect(mapped.action).toBeUndefined();
+  });
+
+  it("softens signup exists without confirming the account", () => {
+    const mapped = mapAuthClientError({
+      code: "USER_ALREADY_EXISTS",
+      message: "User already exists",
+    });
+
+    expect(mapped.body).toMatch(IF_ACCOUNT_EXISTS);
+    expect(mapped.body).not.toMatch(ALREADY_EXISTS);
+    expect(mapped.action?.href).toBe("/#login");
   });
 
   it("falls back to the provider message", () => {

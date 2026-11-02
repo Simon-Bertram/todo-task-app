@@ -10,7 +10,12 @@ const requireAuth = o.middleware(async ({ context, next }) => {
   if (!context.session?.user) {
     throw new ORPCError("UNAUTHORIZED");
   }
-  return next({
+  if (!context.session.user.emailVerified) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "Email verification required",
+    });
+  }
+  return await next({
     context: {
       session: context.session,
     },

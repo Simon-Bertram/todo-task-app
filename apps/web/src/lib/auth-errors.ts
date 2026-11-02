@@ -78,7 +78,7 @@ export function mapAuthClientError(
           href: "/#login",
           label: "Sign in instead",
         },
-        body: "An account with this email already exists.",
+        body: "If an account exists for this email, try signing in or reset your password.",
         code,
       };
     case "PASSWORD_TOO_SHORT":

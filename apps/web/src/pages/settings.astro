@@ -1,14 +1,42 @@
 ---
 import CapacitySettings from "../components/islands/capacity-settings";
+import GamificationSettings from "../components/islands/gamification-settings";
+import SetupChecklist from "../components/islands/setup-checklist";
 import AppShell from "../layouts/app-shell.astro";
-import { loadAppBoardData } from "../lib/orpc.server";
+import {
+  createServerClient,
+  isUnauthorized,
+  loadAppBoardData,
+} from "../lib/orpc.server";
 
-const data = await loadAppBoardData(Astro.request);
+const data = await loadAppBoardData(Astro.request, { includeCompleted: true });
 if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
 const { tasks, projects, dailyCapacityMinutes } = data;
+
+let celebrations: "subtle" | "off" = "subtle";
+let onboardingCompletedAt: Date | null = null;
+let rhythmOptIn = false;
+let rhythmBest = 0;
+let rhythmCurrent = 0;
+
+try {
+  const client = createServerClient(Astro.request);
+  const prefs = await client.preferences.get();
+  ({
+    celebrations,
+    onboardingCompletedAt,
+    rhythmBest,
+    rhythmCurrent,
+    rhythmOptIn,
+  } = prefs);
+} catch (error) {
+  if (isUnauthorized(error)) {
+    return Astro.redirect("/login");
+  }
+}
 ---
 
 <AppShell
@@ -27,6 +55,20 @@ const { tasks, projects, dailyCapacityMinutes } = data;
         Preferences for your daily capacity and execution board.
       </p>
     </header>
+    <SetupChecklist
+      capacitySet={false}
+      dismissed={Boolean(onboardingCompletedAt)}
+      projects={projects}
+      tasks={tasks}
+      client:load
+    />
     <CapacitySettings initialMinutes={dailyCapacityMinutes} client:load />
+    <GamificationSettings
+      initialCelebrations={celebrations}
+      initialRhythmOptIn={rhythmOptIn}
+      rhythmBest={rhythmBest}
+      rhythmCurrent={rhythmCurrent}
+      client:load
+    />
   </div>
 </AppShell>

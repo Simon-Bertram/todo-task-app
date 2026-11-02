@@ -33,6 +33,7 @@ export default function CapacitySettings({ initialMinutes = DEFAULT }: Props) {
       await orpc.preferences.updateDailyCapacity({
         dailyCapacityMinutes: minutes,
       });
+      window.localStorage.setItem("plansage-capacity-saved", "1");
       setSaved(true);
       location.reload();
     } catch {

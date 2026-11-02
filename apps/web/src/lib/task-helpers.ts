@@ -20,6 +20,7 @@ export interface Project {
 }
 
 export interface Task {
+  completedAt?: Date | string | null;
   dueDate: string | null;
   estimatedMinutes: number;
   id: string;
@@ -71,6 +72,44 @@ export function getTodayTasks(tasks: Task[]): Task[] {
   return tasks
     .filter((task) => task.isToday && !task.isCompleted)
     .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function getStagedTodayTasks(tasks: Task[]): Task[] {
+  return tasks
+    .filter((task) => task.isToday)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function getTodayExecutionProgress(tasks: Task[]): {
+  completedCount: number;
+  completedMinutes: number;
+  dayProtected: boolean;
+  percent: number;
+  stagedCount: number;
+  stagedMinutes: number;
+} {
+  const staged = getStagedTodayTasks(tasks);
+  const stagedMinutes = staged.reduce(
+    (sum, task) => sum + task.estimatedMinutes,
+    0
+  );
+  const completed = staged.filter((task) => task.isCompleted);
+  const completedMinutes = completed.reduce(
+    (sum, task) => sum + task.estimatedMinutes,
+    0
+  );
+  const percent =
+    stagedMinutes === 0
+      ? 0
+      : Math.round((completedMinutes / stagedMinutes) * 100);
+  return {
+    completedCount: completed.length,
+    completedMinutes,
+    dayProtected: staged.length > 0 && completed.length === staged.length,
+    percent,
+    stagedCount: staged.length,
+    stagedMinutes,
+  };
 }
 
 export function getTodayPlannedMinutes(tasks: Task[]): number {

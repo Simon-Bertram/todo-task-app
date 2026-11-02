@@ -2,6 +2,7 @@ import { defineRelationsPart, sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
+  celebrations: text("celebrations").default("subtle").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
@@ -15,6 +16,14 @@ export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
   image: text("image"),
   name: text("name").notNull(),
+  onboardingCompletedAt: integer("onboarding_completed_at", {
+    mode: "timestamp_ms",
+  }),
+  rhythmBest: integer("rhythm_best").default(0).notNull(),
+  rhythmCurrent: integer("rhythm_current").default(0).notNull(),
+  rhythmOptIn: integer("rhythm_opt_in", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   tasksBoardPrefs: text("tasks_board_prefs"),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
@@ -90,6 +99,17 @@ export const verification = sqliteTable(
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)]
 );
+
+/**
+ * Better Auth rate-limit store (`rateLimit.storage: "database"`).
+ * Counters must live in D1 — in-memory defaults do not share across Worker isolates.
+ */
+export const rateLimit = sqliteTable("rate_limit", {
+  count: integer("count").notNull(),
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  lastRequest: integer("last_request").notNull(),
+});
 
 export const authRelations = defineRelationsPart(
   { account, session, user, verification },

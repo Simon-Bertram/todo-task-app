@@ -2,11 +2,14 @@ import { ORPCError } from "@orpc/server";
 import type { Database } from "@todo-task-app/db";
 import { projects } from "@todo-task-app/db/schema/projects";
 import { tasks } from "@todo-task-app/db/schema/tasks";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
+import { COMPLETED_RANGES, completedRangeBounds } from "../lib/completed-range";
+import { evaluateMilestones } from "../lib/milestones";
 import { nextDueDateForRecurrence } from "../lib/recurrence";
+import { upsertDayStatsAndRhythm } from "../lib/rhythm";
 
 const prioritySchema = z.number().int().min(0).max(3);
 const dueDateSchema = z
@@ -16,6 +19,7 @@ const dueDateSchema = z
 const estimatedMinutesSchema = z.number().int().min(1).max(480);
 
 const taskOutputSchema = z.object({
+  completedAt: z.date().nullable(),
   dueDate: z.string().nullable(),
   estimatedMinutes: z.number().int(),
   id: z.string(),
@@ -34,6 +38,7 @@ type TaskRow = typeof tasks.$inferSelect;
 
 function toTaskOutput(row: TaskRow) {
   return {
+    completedAt: row.completedAt ?? null,
     dueDate: row.dueDate,
     estimatedMinutes: row.estimatedMinutes,
     id: row.id,
@@ -48,6 +53,9 @@ function toTaskOutput(row: TaskRow) {
     title: row.title,
   };
 }
+
+const completedRangeSchema = z.enum(COMPLETED_RANGES);
+const timeZoneSchema = z.string().min(1).max(100);
 
 async function assertProjectOwned(
   db: Database,
@@ -267,6 +275,46 @@ export const tasksRouter = {
       return rows.map(toTaskOutput);
     }),
 
+  listCompleted: protectedProcedure
+    .input(
+      z.object({
+        range: completedRangeSchema.default("this_week"),
+        timeZone: timeZoneSchema,
+      })
+    )
+    .output(z.array(taskOutputSchema))
+    .handler(async ({ context, input }) => {
+      const userId = context.session.user.id;
+      let bounds: ReturnType<typeof completedRangeBounds>;
+      try {
+        bounds = completedRangeBounds(input.range, input.timeZone);
+      } catch (error) {
+        throw new ORPCError("BAD_REQUEST", {
+          cause: error,
+          message: "Invalid time zone",
+        });
+      }
+
+      const conditions = [
+        eq(tasks.userId, userId),
+        eq(tasks.isCompleted, true),
+      ];
+      if (bounds.startMs !== null) {
+        conditions.push(gte(tasks.completedAt, new Date(bounds.startMs)));
+      }
+      if (bounds.endMs !== null) {
+        conditions.push(lte(tasks.completedAt, new Date(bounds.endMs)));
+      }
+
+      const rows = await context.db
+        .select()
+        .from(tasks)
+        .where(and(...conditions))
+        .orderBy(desc(tasks.completedAt), asc(tasks.title));
+
+      return rows.map(toTaskOutput);
+    }),
+
   update: protectedProcedure
     .input(
       z.object({
@@ -282,13 +330,18 @@ export const tasksRouter = {
         projectId: z.string().nullable().optional(),
         recurrenceRule: z.string().nullable().optional(),
         sortOrder: z.number().int().optional(),
+        timeZone: timeZoneSchema.optional(),
         title: z.string().trim().min(1).max(500).optional(),
       })
     )
-    .output(taskOutputSchema)
+    .output(
+      taskOutputSchema.extend({
+        unlockedMilestones: z.array(z.string()).optional(),
+      })
+    )
     .handler(async ({ context, input }) => {
       const userId = context.session.user.id;
-      const { id, ...patch } = input;
+      const { id, timeZone, ...patch } = input;
 
       if (patch.projectId) {
         await assertProjectOwned(context.db, userId, patch.projectId);
@@ -319,6 +372,30 @@ export const tasksRouter = {
 
       await spawnNextRecurrenceIfNeeded(context.db, userId, current, patch);
 
-      return toTaskOutput(row);
+      let unlockedMilestones: string[] | undefined;
+      const zone = timeZone ?? "UTC";
+      const shouldRollup =
+        patch.isCompleted !== undefined || patch.isToday !== undefined;
+      if (shouldRollup) {
+        try {
+          await upsertDayStatsAndRhythm({
+            db: context.db,
+            timeZone: zone,
+            userId,
+          });
+          unlockedMilestones = await evaluateMilestones({
+            db: context.db,
+            timeZone: zone,
+            userId,
+          });
+        } catch {
+          // Prefer mutation success over gamification rollup failures.
+        }
+      }
+
+      return {
+        ...toTaskOutput(row),
+        unlockedMilestones,
+      };
     }),
 };
