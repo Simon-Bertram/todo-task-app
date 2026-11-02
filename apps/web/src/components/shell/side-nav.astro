@@ -1,4 +1,6 @@
 ---
+import UserCard from "./user-card.astro";
+
 interface Props {
   budgetMinutes: number;
   capacityPercent: number;
@@ -92,17 +94,6 @@ const barColor = capacityBarClass(capacityPercent);
         {(plannedMinutes / 60).toFixed(1)}h / {(budgetMinutes / 60).toFixed(1)}h
       </p>
     </div>
-    <div class="flex items-center gap-3">
-      <div
-        aria-hidden="true"
-        class="flex size-9 items-center justify-center rounded-full bg-primary font-semibold text-on-primary text-sm"
-      >
-        A
-      </div>
-      <div class="min-w-0">
-        <p class="truncate font-medium text-sm text-text-primary">Alex R.</p>
-        <p class="truncate font-mono text-text-muted text-xs">Demo user</p>
-      </div>
-    </div>
+    <UserCard />
   </div>
 </aside>
