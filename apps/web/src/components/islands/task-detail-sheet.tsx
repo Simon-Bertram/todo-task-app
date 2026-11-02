@@ -7,6 +7,8 @@ import {
   QUADRANT_META,
 } from "../../lib/quadrant";
 import type { Project, Task } from "../../lib/task-helpers";
+import { showToast } from "../../lib/toast";
+import DayPicker from "./day-picker";
 
 interface Props {
   budgetMinutes: number;
@@ -22,6 +24,7 @@ const RECURRENCE = [
   { label: "Daily", value: "DAILY" },
   { label: "Weekdays", value: "WEEKDAYS" },
   { label: "Weekly", value: "WEEKLY" },
+  { label: "Monthly", value: "MONTHLY" },
 ] as const;
 
 type RecurrenceValue = (typeof RECURRENCE)[number]["value"];
@@ -44,6 +47,8 @@ export default function TaskDetailSheet({
   );
 
   const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [dueDate, setDueDate] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isUrgent, setIsUrgent] = useState(0);
   const [isImportant, setIsImportant] = useState(0);
@@ -75,6 +80,8 @@ export default function TaskDetailSheet({
       return;
     }
     setTitle(baseTask.title);
+    setNotes(baseTask.notes ?? "");
+    setDueDate(baseTask.dueDate);
     setProjectId(baseTask.projectId);
     setIsUrgent(baseTask.isUrgent);
     setIsImportant(baseTask.isImportant);
@@ -110,9 +117,11 @@ export default function TaskDetailSheet({
         recurrenceRule: recurrence,
       });
       setTaskId(null);
+      showToast("Added to Today", "success");
       location.reload();
     } catch {
       setError("Could not update Today status. Try again.");
+      showToast("Could not update Today status. Try again.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -146,6 +155,11 @@ export default function TaskDetailSheet({
     setTitle(value);
   }, []);
 
+  const onNotesInput = useCallback((event: Event) => {
+    const { value } = event.currentTarget as HTMLTextAreaElement;
+    setNotes(value);
+  }, []);
+
   const onProjectChange = useCallback((event: Event) => {
     const { value } = event.currentTarget as HTMLSelectElement;
     setProjectId(value === "" ? null : value);
@@ -169,31 +183,37 @@ export default function TaskDetailSheet({
     setError(null);
     try {
       await orpc.tasks.update({
+        dueDate,
         estimatedMinutes,
         id: baseTask.id,
         isCompleted,
         isImportant,
         isToday,
         isUrgent,
+        notes: notes.trim() ? notes.trim() : null,
         projectId,
         recurrenceRule: recurrence,
         title: nextTitle,
       });
       setTaskId(null);
+      showToast("Task saved", "success");
       location.reload();
     } catch {
       setError("Could not save task. Try again.");
+      showToast("Could not save task. Try again.", "error");
     } finally {
       setIsSaving(false);
     }
   }, [
     baseTask,
+    dueDate,
     estimatedMinutes,
     isCompleted,
     isImportant,
     isSaving,
     isToday,
     isUrgent,
+    notes,
     projectId,
     recurrence,
     title,
@@ -213,9 +233,11 @@ export default function TaskDetailSheet({
       await orpc.tasks.delete({ id: baseTask.id });
       setTaskId(null);
       setConfirmDelete(false);
+      showToast("Task deleted", "success");
       location.reload();
     } catch {
       setError("Could not delete task. Try again.");
+      showToast("Could not delete task. Try again.", "error");
     } finally {
       setIsDeleting(false);
     }
@@ -312,6 +334,25 @@ export default function TaskDetailSheet({
               </span>
             ) : null}
           </label>
+
+          <label className="block space-y-1.5">
+            <span className="font-medium text-sm text-text-secondary">
+              Notes
+            </span>
+            <textarea
+              className="min-h-24 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 py-2 text-sm text-text-primary focus:border-primary focus:outline-none"
+              onInput={onNotesInput}
+              placeholder="Optional notes (markdown supported later)"
+              value={notes}
+            />
+          </label>
+
+          <section className="space-y-2">
+            <h4 className="font-medium text-sm text-text-secondary">
+              Due date
+            </h4>
+            <DayPicker onChange={setDueDate} value={dueDate} />
+          </section>
 
           <label className="flex min-h-11 items-center gap-3 rounded-sm border border-border-contrast bg-surface-subtle px-3">
             <input

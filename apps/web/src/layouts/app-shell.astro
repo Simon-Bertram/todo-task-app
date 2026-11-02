@@ -12,6 +12,7 @@ import {
 import Layout from "./layout.astro";
 
 interface Props {
+  budgetMinutes?: number;
   mobileTitle?: string;
   projects?: Project[];
   tasks?: Task[];
@@ -23,10 +24,10 @@ const {
   mobileTitle = "PlanSage",
   tasks = [],
   projects = [],
+  budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES,
 } = Astro.props;
 const currentPath = Astro.url.pathname;
 const plannedMinutes = getTodayPlannedMinutes(tasks);
-const budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES;
 const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
 ---
 
@@ -108,8 +109,43 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
   </form>
 </dialog>
 
+<div
+  aria-live="polite"
+  class="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 lg:bottom-6"
+  id="plansage-toast-host"
+></div>
+
 <script>
   import { orpc } from "../lib/orpc";
+  import { revalidateOnFocus } from "../lib/revalidate";
+  import { showToast, type ToastDetail } from "../lib/toast";
+
+  revalidateOnFocus();
+
+  const toastHost = document.getElementById("plansage-toast-host");
+
+  document.addEventListener("plansage:toast", ((
+    event: CustomEvent<ToastDetail>
+  ) => {
+    if (!toastHost) {
+      return;
+    }
+    const { message, tone = "info" } = event.detail;
+    const el = document.createElement("div");
+    let toneClass =
+      "border-border-contrast bg-surface-elevated text-text-primary";
+    if (tone === "error") {
+      toneClass = "border-capacity-over/40 bg-capacity-over text-on-primary";
+    } else if (tone === "success") {
+      toneClass = "border-capacity-ok/40 bg-capacity-ok text-on-primary";
+    }
+    el.className = `pointer-events-auto max-w-sm rounded-sm border px-4 py-3 text-sm shadow-lg ${toneClass}`;
+    el.textContent = message;
+    toastHost.appendChild(el);
+    globalThis.setTimeout(() => {
+      el.remove();
+    }, 3200);
+  }) as EventListener);
 
   const dialog = document.getElementById(
     "quick-add-dialog"
@@ -119,21 +155,26 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
   ) as HTMLFormElement | null;
   const errorEl = document.getElementById("quick-add-error");
   const cancel = document.getElementById("quick-add-cancel");
+  const openQuickAdd = () => {
+    errorEl?.classList.add("hidden");
+    if (errorEl) {
+      errorEl.textContent = "";
+    }
+    dialog?.showModal();
+    form?.querySelector("input")?.focus();
+  };
+
   const triggers = [
     document.getElementById("quick-add-fab"),
     document.getElementById("quick-add-header"),
+    document.getElementById("quick-add-sidenav"),
   ];
 
   for (const trigger of triggers) {
-    trigger?.addEventListener("click", () => {
-      errorEl?.classList.add("hidden");
-      if (errorEl) {
-        errorEl.textContent = "";
-      }
-      dialog?.showModal();
-      form?.querySelector("input")?.focus();
-    });
+    trigger?.addEventListener("click", openQuickAdd);
   }
+
+  document.addEventListener("plansage:quick-add", openQuickAdd);
 
   cancel?.addEventListener("click", () => {
     dialog?.close();
@@ -152,12 +193,14 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
     try {
       await orpc.tasks.create(projectId ? { projectId, title } : { title });
       dialog?.close();
+      showToast("Task added", "success");
       location.reload();
     } catch {
       if (errorEl) {
         errorEl.textContent = "Could not create task. Try again.";
         errorEl.classList.remove("hidden");
       }
+      showToast("Could not create task. Try again.", "error");
     }
   });
 
@@ -170,11 +213,14 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
     }
 
     event.preventDefault();
+    button?.setAttribute("disabled", "true");
     try {
       await orpc.tasks.update({ id, isToday: true });
+      showToast("Added to Today", "success");
       location.reload();
     } catch {
-      // Keep silent for now; toast system is not wired.
+      button?.removeAttribute("disabled");
+      showToast("Could not add to Today. Try again.", "error");
     }
   });
 </script>

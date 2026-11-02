@@ -1,6 +1,12 @@
 ---
+import {
+  getDueReminderColor,
+  getDueReminderLabel,
+  getDueReminderStatus,
+} from "../../lib/due-date";
 import { formatMinutes, QUADRANT_META } from "../../lib/quadrant";
 import {
+  getLocalDateString,
   getProject,
   getTaskQuadrant,
   type Project,
@@ -25,6 +31,10 @@ const quadrant = getTaskQuadrant(task);
 const meta = QUADRANT_META[quadrant];
 const { accentClass, colorVar } = meta;
 const project = getProject(projects, task.projectId);
+const today = getLocalDateString();
+const dueStatus = getDueReminderStatus(task.dueDate, today);
+const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
+const dueColor = getDueReminderColor(dueStatus);
 ---
 
 <article
@@ -43,6 +53,7 @@ const project = getProject(projects, task.projectId);
     {task.isToday && variant === "matrix" ? (
       <Chip color="var(--color-primary)">Today</Chip>
     ) : null}
+    {dueLabel ? <Chip color={dueColor}>{dueLabel}</Chip> : null}
     <Chip>{formatMinutes(task.estimatedMinutes)} ETC</Chip>
     {project ? <Chip color={project.color}>#{project.name}</Chip> : null}
   </div>
@@ -66,7 +77,7 @@ const project = getProject(projects, task.projectId);
   >
     <span>U:{task.isUrgent}/3</span>
     <span>I:{task.isImportant}/3</span>
-    {task.dueDate ? <span>Due {task.dueDate}</span> : null}
+    {task.dueDate && !dueLabel ? <span>Due {task.dueDate}</span> : null}
   </div>
 
   {showAddToToday && !task.isToday ? (

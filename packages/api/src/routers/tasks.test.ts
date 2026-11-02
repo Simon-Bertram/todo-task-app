@@ -388,6 +388,39 @@ describe("tasksRouter", () => {
       expect(reopenedRow?.completedAt).toBeNull();
     });
 
+    it("creates the next recurring instance on complete", async () => {
+      const context = await createAuthedContext("user-1");
+      const created = await call(
+        tasksRouter.create,
+        {
+          dueDate: "2026-11-02",
+          recurrenceRule: "DAILY",
+          title: "Daily standup",
+        },
+        { context }
+      );
+
+      await call(
+        tasksRouter.update,
+        { id: created.id, isCompleted: true },
+        { context }
+      );
+
+      const listed = await call(
+        tasksRouter.list,
+        { includeCompleted: true },
+        { context }
+      );
+      const next = listed.find(
+        (task) => task.id !== created.id && task.title === "Daily standup"
+      );
+      expect(next).toMatchObject({
+        dueDate: "2026-11-03",
+        isCompleted: false,
+        recurrenceRule: "DAILY",
+      });
+    });
+
     it("returns NOT_FOUND for another user's task", async () => {
       const { userA, userB } = await createTwoUserContext();
       const created = await call(

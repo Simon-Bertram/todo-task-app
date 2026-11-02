@@ -8,10 +8,11 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects } = data;
+const { tasks, projects, dailyCapacityMinutes } = data;
 ---
 
 <AppShell
+  budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Settings"
   projects={projects}
   tasks={tasks}
@@ -26,6 +27,6 @@ const { tasks, projects } = data;
         Preferences for your daily capacity and execution board.
       </p>
     </header>
-    <CapacitySettings client:load />
+    <CapacitySettings initialMinutes={dailyCapacityMinutes} client:load />
   </div>
 </AppShell>

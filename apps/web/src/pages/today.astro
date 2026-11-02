@@ -1,5 +1,5 @@
 ---
-import TodayBoard from "../components/today/today-board.astro";
+import TodayBoard from "../components/islands/today-board";
 import AppShell from "../layouts/app-shell.astro";
 import { loadAppBoardData } from "../lib/orpc.server";
 
@@ -8,14 +8,20 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects } = data;
+const { tasks, projects, dailyCapacityMinutes } = data;
 ---
 
 <AppShell
+  budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Today"
   projects={projects}
   tasks={tasks}
   title="Today · PlanSage"
 >
-  <TodayBoard projects={projects} tasks={tasks} />
+  <TodayBoard
+    budgetMinutes={dailyCapacityMinutes}
+    projects={projects}
+    tasks={tasks}
+    client:load
+  />
 </AppShell>

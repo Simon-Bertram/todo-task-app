@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@astrojs/preact": "^6.1.1",
+    "@atlaskit/pragmatic-drag-and-drop": "^4.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^3.0.0",
     "@orpc/client": "catalog:",
     "@todo-task-app/api": "workspace:*",
     "astro": "^7.4.2",

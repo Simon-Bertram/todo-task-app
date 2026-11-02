@@ -1,10 +1,9 @@
 ---
+import DesktopMatrixBoard from "../components/islands/desktop-matrix-board";
 import MobileMatrix from "../components/islands/mobile-matrix";
-import MatrixDesktop from "../components/matrix/matrix-desktop.astro";
 import AppShell from "../layouts/app-shell.astro";
 import { loadAppBoardData } from "../lib/orpc.server";
 import {
-  DEFAULT_DAILY_CAPACITY_MINUTES,
   getTasksByQuadrant,
   getTodayPlannedMinutes,
   getTodayTasks,
@@ -15,14 +14,16 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects } = data;
+const { tasks, projects, dailyCapacityMinutes } = data;
 const tasksByQuadrant = getTasksByQuadrant(tasks);
 const plannedMinutes = getTodayPlannedMinutes(tasks);
 const todayCount = getTodayTasks(tasks).length;
 const backlogCount = tasks.filter((task) => !task.isCompleted).length;
+const filter = Astro.url.searchParams.get("filter") ?? "all";
 ---
 
 <AppShell
+  budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Matrix"
   projects={projects}
   tasks={tasks}
@@ -31,7 +32,7 @@ const backlogCount = tasks.filter((task) => !task.isCompleted).length;
   <div class="px-4 py-4 lg:px-0 lg:py-0">
     <MobileMatrix
       backlogCount={backlogCount}
-      budgetMinutes={DEFAULT_DAILY_CAPACITY_MINUTES}
+      budgetMinutes={dailyCapacityMinutes}
       plannedMinutes={plannedMinutes}
       projects={projects}
       tasksByQuadrant={tasksByQuadrant}
@@ -39,5 +40,11 @@ const backlogCount = tasks.filter((task) => !task.isCompleted).length;
       client:load
     />
   </div>
-  <MatrixDesktop projects={projects} tasks={tasks} />
+  <DesktopMatrixBoard
+    budgetMinutes={dailyCapacityMinutes}
+    initialFilter={filter}
+    projects={projects}
+    tasks={tasks}
+    client:load
+  />
 </AppShell>

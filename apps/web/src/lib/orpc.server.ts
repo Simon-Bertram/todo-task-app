@@ -14,6 +14,7 @@ import type { Project, Task } from "./task-helpers";
 const TRAILING_SLASH = /\/$/;
 
 export interface AppBoardData {
+  dailyCapacityMinutes: number;
   projects: Project[];
   tasks: Task[];
   tasksBoardPrefs: TasksBoardPrefs;
@@ -58,6 +59,7 @@ export async function loadAppBoardData(
       client.preferences.get(),
     ]);
     return {
+      dailyCapacityMinutes: preferences.dailyCapacityMinutes,
       projects,
       tasks,
       tasksBoardPrefs: preferences.tasksBoard ?? DEFAULT_TASKS_BOARD_PREFS,

@@ -9,7 +9,7 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects, tasksBoardPrefs } = data;
+const { tasks, projects, tasksBoardPrefs, dailyCapacityMinutes } = data;
 const merged = mergeTasksBoardPrefs(
   {
     due: Astro.url.searchParams.get("due"),
@@ -35,6 +35,7 @@ const initialQuery = merged.query;
 ---
 
 <AppShell
+  budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Tasks"
   projects={projects}
   tasks={tasks}

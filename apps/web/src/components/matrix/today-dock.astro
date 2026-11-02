@@ -10,13 +10,13 @@ import {
 import CapacityBar from "../ui/capacity-bar.astro";
 
 interface Props {
+  budgetMinutes?: number;
   tasks: Task[];
 }
 
-const { tasks } = Astro.props;
+const { tasks, budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES } = Astro.props;
 const todayTasks = getTodayTasks(tasks);
 const plannedMinutes = getTodayPlannedMinutes(tasks);
-const budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES;
 ---
 
 <aside

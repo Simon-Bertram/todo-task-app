@@ -1,10 +1,14 @@
-import { useCallback, useState } from "preact/hooks";
+import { useCallback, useMemo, useState } from "preact/hooks";
+import { orpc } from "../../lib/orpc";
 import {
+  defaultRatingsForQuadrant,
   formatMinutes,
+  getQuadrant,
   QUADRANT_META,
   type QuadrantId,
 } from "../../lib/quadrant";
 import type { Project, Task } from "../../lib/task-helpers";
+import { showToast } from "../../lib/toast";
 
 interface Props {
   backlogCount: number;
@@ -25,7 +29,7 @@ const SHORT_LABEL: Record<QuadrantId, string> = {
 };
 
 export default function MobileMatrix({
-  tasksByQuadrant,
+  tasksByQuadrant: initialByQuadrant,
   projects,
   plannedMinutes,
   budgetMinutes,
@@ -33,6 +37,28 @@ export default function MobileMatrix({
   backlogCount,
 }: Props) {
   const [selected, setSelected] = useState<QuadrantId>("Q1");
+  const [localTasks, setLocalTasks] = useState(() =>
+    ORDER.flatMap((id) => initialByQuadrant[id])
+  );
+  const [moveTaskId, setMoveTaskId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const tasksByQuadrant = useMemo(() => {
+    const buckets: Record<QuadrantId, Task[]> = {
+      Q1: [],
+      Q2: [],
+      Q3: [],
+      Q4: [],
+    };
+    for (const task of localTasks) {
+      if (task.isCompleted) {
+        continue;
+      }
+      buckets[getQuadrant(task.isUrgent, task.isImportant)].push(task);
+    }
+    return buckets;
+  }, [localTasks]);
+
   const tasks = tasksByQuadrant[selected];
   const meta = QUADRANT_META[selected];
   const remaining = Math.max(budgetMinutes - plannedMinutes, 0);
@@ -45,6 +71,66 @@ export default function MobileMatrix({
       setSelected(id);
     }
   }, []);
+
+  const openMove = useCallback((event: Event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    const id = button.dataset.moveTask;
+    if (id) {
+      setMoveTaskId(id);
+    }
+  }, []);
+
+  const closeMove = useCallback(() => {
+    setMoveTaskId(null);
+  }, []);
+
+  const moveToQuadrant = useCallback(
+    async (quadrant: QuadrantId) => {
+      if (!moveTaskId || isSaving) {
+        return;
+      }
+      const ratings = defaultRatingsForQuadrant(quadrant);
+      const previous = localTasks;
+      setLocalTasks((current) =>
+        current.map((task) =>
+          task.id === moveTaskId
+            ? {
+                ...task,
+                isImportant: ratings.isImportant,
+                isUrgent: ratings.isUrgent,
+              }
+            : task
+        )
+      );
+      setMoveTaskId(null);
+      setIsSaving(true);
+      try {
+        await orpc.tasks.update({
+          id: moveTaskId,
+          isImportant: ratings.isImportant,
+          isUrgent: ratings.isUrgent,
+        });
+        setSelected(quadrant);
+      } catch {
+        setLocalTasks(previous);
+        showToast("Could not move task. Try again.", "error");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [isSaving, localTasks, moveTaskId]
+  );
+
+  const onMoveTargetClick = useCallback(
+    (event: Event) => {
+      const button = event.currentTarget as HTMLButtonElement;
+      const quadrant = button.dataset.quadrant as QuadrantId | undefined;
+      if (quadrant) {
+        moveToQuadrant(quadrant).catch(() => undefined);
+      }
+    },
+    [moveToQuadrant]
+  );
 
   function projectFor(id: string | null): Project | undefined {
     if (!id) {
@@ -117,7 +203,7 @@ export default function MobileMatrix({
       <ul className="space-y-3">
         {tasks.length === 0 ? (
           <li className="rounded-sm border border-border-contrast bg-surface px-4 py-10 text-center text-sm text-text-muted">
-            No tasks in {selected}. Move items here from other quadrants later.
+            No tasks in {selected}. Use Move to quadrant on another card.
           </li>
         ) : (
           tasks.map((task) => {
@@ -162,21 +248,75 @@ export default function MobileMatrix({
                     <span>Urgency: {task.isUrgent}/3</span>
                     <span>Importance: {task.isImportant}/3</span>
                   </div>
-                  {task.isToday ? null : (
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
-                      className="mt-3 inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
-                      data-add-today={task.id}
+                      className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary"
+                      data-move-task={task.id}
+                      onClick={openMove}
                       type="button"
                     >
-                      + Add to Today ({formatMinutes(task.estimatedMinutes)})
+                      Move to quadrant
                     </button>
-                  )}
+                    {task.isToday ? null : (
+                      <button
+                        className="inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
+                        data-add-today={task.id}
+                        type="button"
+                      >
+                        + Add to Today ({formatMinutes(task.estimatedMinutes)})
+                      </button>
+                    )}
+                  </div>
                 </article>
               </li>
             );
           })
         )}
       </ul>
+
+      {moveTaskId ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end bg-black/60 sm:items-center sm:justify-center"
+          role="dialog"
+        >
+          <button
+            aria-label="Close move sheet"
+            className="absolute inset-0"
+            onClick={closeMove}
+            type="button"
+          />
+          <div className="relative z-10 w-full max-w-md rounded-t-md border border-border-contrast bg-surface p-4 sm:rounded-md">
+            <h3 className="font-semibold text-text-primary">
+              Move to quadrant
+            </h3>
+            <p className="mt-1 text-sm text-text-secondary">
+              Applies default urgency/importance for that quadrant.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {ORDER.map((id) => (
+                <button
+                  className="flex min-h-11 items-center justify-center rounded-sm border border-border-contrast px-3 text-sm text-text-primary hover:bg-surface-elevated disabled:opacity-60"
+                  data-quadrant={id}
+                  disabled={isSaving || id === selected}
+                  key={id}
+                  onClick={onMoveTargetClick}
+                  type="button"
+                >
+                  {id} {SHORT_LABEL[id]}
+                </button>
+              ))}
+            </div>
+            <button
+              className="mt-3 flex min-h-11 w-full items-center justify-center rounded-sm text-sm text-text-secondary"
+              onClick={closeMove}
+              type="button"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="sticky bottom-20 z-20 flex items-center justify-between gap-3 rounded-sm border border-border-contrast bg-canvas/95 px-3 py-3 backdrop-blur-md">
         <div>

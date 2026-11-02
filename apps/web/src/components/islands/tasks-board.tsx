@@ -7,10 +7,17 @@ import {
   useRef,
   useState,
 } from "preact/hooks";
+import {
+  countDueReminders,
+  getDueReminderColor,
+  getDueReminderLabel,
+  getDueReminderStatus,
+} from "../../lib/due-date";
 import { orpc } from "../../lib/orpc";
 import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
 import {
   filterTasksList,
+  getLocalDateString,
   hasActiveTasksBoardFilters,
   type Project,
   prefsToSearchParams,
@@ -37,6 +44,21 @@ const DUE_LABELS: Record<TasksBoardPrefs["due"], string> = {
   today: "Due today",
   upcoming: "Upcoming",
 };
+
+function buildDueBannerParts(tasks: Task[]): string[] {
+  const counts = countDueReminders(tasks, getLocalDateString());
+  const parts: string[] = [];
+  if (counts.overdue > 0) {
+    parts.push(`${counts.overdue} overdue`);
+  }
+  if (counts.today > 0) {
+    parts.push(`${counts.today} due today`);
+  }
+  if (counts.soon > 0) {
+    parts.push(`${counts.soon} due within 2 days`);
+  }
+  return parts;
+}
 
 function syncPrefsToUrl(prefs: TasksBoardPrefs, query: string): void {
   const params = prefsToSearchParams(prefs, query);
@@ -194,174 +216,88 @@ export default function TasksBoard({
     setQuery("");
   }, []);
 
+  const openQuickAdd = useCallback(() => {
+    document.dispatchEvent(new CustomEvent("plansage:quick-add"));
+  }, []);
+
+  const dueBannerParts = useMemo(() => buildDueBannerParts(tasks), [tasks]);
+
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="font-semibold text-2xl text-text-primary tracking-tight">
-          Tasks
-        </h1>
-        <p className="text-sm text-text-secondary">
-          Search and filter all open tasks. Sort and filters are saved to your
-          account.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="font-semibold text-2xl text-text-primary tracking-tight">
+            Tasks
+          </h1>
+          <p className="text-sm text-text-secondary">
+            Search and filter all open tasks. Sort and filters are saved to your
+            account.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-11 shrink-0 items-center rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm"
+          onClick={openQuickAdd}
+          type="button"
+        >
+          Add task
+        </button>
       </header>
 
-      <div className="space-y-3 rounded-md border border-border-contrast bg-surface p-4">
-        <label className="block space-y-1.5">
-          <span className="font-medium text-sm text-text-secondary">
-            Search
-          </span>
-          <input
-            className={SELECT_CLASS}
-            onInput={onSearchInput}
-            placeholder="Search title or project…"
-            type="search"
-            value={query}
-          />
-        </label>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="block space-y-1.5">
-            <span className="font-medium text-sm text-text-secondary">
-              Project
-            </span>
-            <select
-              className={SELECT_CLASS}
-              onChange={onProjectChange}
-              value={prefs.project ?? "all"}
-            >
-              <option value="all">All projects</option>
-              <option value="inbox">Inbox</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  #{project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block space-y-1.5">
-            <span className="font-medium text-sm text-text-secondary">
-              Due date
-            </span>
-            <select
-              className={SELECT_CLASS}
-              onChange={onDueChange}
-              value={prefs.due}
-            >
-              <option value="all">All</option>
-              <option value="overdue">Overdue</option>
-              <option value="today">Today</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="none">No due date</option>
-            </select>
-          </label>
-
-          <label className="block space-y-1.5">
-            <span className="font-medium text-sm text-text-secondary">
-              Importance
-            </span>
-            <select
-              className={SELECT_CLASS}
-              onChange={onImportanceChange}
-              value={
-                prefs.importanceMin === null
-                  ? "any"
-                  : String(prefs.importanceMin)
-              }
-            >
-              <option value="any">Any</option>
-              <option value="1">≥ 1</option>
-              <option value="2">≥ 2</option>
-              <option value="3">≥ 3</option>
-            </select>
-          </label>
-
-          <label className="block space-y-1.5">
-            <span className="font-medium text-sm text-text-secondary">
-              Urgency
-            </span>
-            <select
-              className={SELECT_CLASS}
-              onChange={onUrgencyChange}
-              value={
-                prefs.urgencyMin === null ? "any" : String(prefs.urgencyMin)
-              }
-            >
-              <option value="any">Any</option>
-              <option value="1">≥ 1</option>
-              <option value="2">≥ 2</option>
-              <option value="3">≥ 3</option>
-            </select>
-          </label>
-
-          <label className="block space-y-1.5">
-            <span className="font-medium text-sm text-text-secondary">
-              Sort
-            </span>
-            <select
-              className={SELECT_CLASS}
-              onChange={onSortChange}
-              value={prefs.sort}
-            >
-              <option value="due">Due date</option>
-              <option value="importance">Importance</option>
-              <option value="urgency">Urgency</option>
-              <option value="title">Title</option>
-            </select>
-          </label>
+      {dueBannerParts.length > 0 ? (
+        <div
+          className="rounded-md border border-capacity-warn/40 bg-capacity-warn/10 px-4 py-3 text-sm text-text-primary"
+          role="status"
+        >
+          <p className="font-medium">Due reminders</p>
+          <p className="mt-0.5 text-text-secondary">
+            {dueBannerParts.join(" · ")}
+          </p>
         </div>
-      </div>
+      ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="tabular-metrics font-mono text-text-muted text-xs">
-          {visibleTasks.length} task{visibleTasks.length === 1 ? "" : "s"}
-        </p>
+      <TasksFiltersForm
+        onDueChange={onDueChange}
+        onImportanceChange={onImportanceChange}
+        onProjectChange={onProjectChange}
+        onSearchInput={onSearchInput}
+        onSortChange={onSortChange}
+        onUrgencyChange={onUrgencyChange}
+        prefs={prefs}
+        projects={projects}
+        query={query}
+      />
 
-        {filtersActive ? (
-          <>
-            {projectLabel ? (
-              <FilterChip
-                label={`Project: ${projectLabel}`}
-                onClear={clearProject}
-              />
-            ) : null}
-            {prefs.due === "all" ? null : (
-              <FilterChip label={DUE_LABELS[prefs.due]} onClear={clearDue} />
-            )}
-            {prefs.importanceMin === null ? null : (
-              <FilterChip
-                label={`Importance ≥ ${prefs.importanceMin}`}
-                onClear={clearImportance}
-              />
-            )}
-            {prefs.urgencyMin === null ? null : (
-              <FilterChip
-                label={`Urgency ≥ ${prefs.urgencyMin}`}
-                onClear={clearUrgency}
-              />
-            )}
-            {query.trim() ? (
-              <FilterChip
-                label={`Search: ${query.trim()}`}
-                onClear={clearQuery}
-              />
-            ) : null}
-            <button
-              className="inline-flex min-h-9 items-center rounded-sm px-2 font-medium text-primary text-xs hover:underline"
-              onClick={clearFilters}
-              type="button"
-            >
-              Clear all
-            </button>
-          </>
-        ) : null}
-      </div>
+      <ActiveFilterChips
+        clearDue={clearDue}
+        clearFilters={clearFilters}
+        clearImportance={clearImportance}
+        clearProject={clearProject}
+        clearQuery={clearQuery}
+        clearUrgency={clearUrgency}
+        filtersActive={filtersActive}
+        prefs={prefs}
+        projectLabel={projectLabel}
+        query={query}
+        visibleCount={visibleTasks.length}
+      />
 
       {visibleTasks.length === 0 ? (
-        <p className="rounded-md border border-border-contrast bg-surface p-6 text-sm text-text-secondary">
-          No tasks match these filters.
-        </p>
+        <div className="space-y-4 rounded-md border border-border-contrast bg-surface p-6">
+          <p className="text-sm text-text-secondary">
+            {filtersActive
+              ? "No tasks match these filters."
+              : "No tasks yet. Capture one to get started."}
+          </p>
+          {filtersActive ? null : (
+            <button
+              className="inline-flex min-h-11 items-center rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm"
+              onClick={openQuickAdd}
+              type="button"
+            >
+              Add task
+            </button>
+          )}
+        </div>
       ) : (
         <ul className="space-y-2">
           {visibleTasks.map((task) => (
@@ -369,6 +305,202 @@ export default function TasksBoard({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function TasksFiltersForm({
+  prefs,
+  projects,
+  query,
+  onSearchInput,
+  onProjectChange,
+  onDueChange,
+  onImportanceChange,
+  onUrgencyChange,
+  onSortChange,
+}: {
+  onDueChange: (event: Event) => void;
+  onImportanceChange: (event: Event) => void;
+  onProjectChange: (event: Event) => void;
+  onSearchInput: (event: Event) => void;
+  onSortChange: (event: Event) => void;
+  onUrgencyChange: (event: Event) => void;
+  prefs: TasksBoardPrefs;
+  projects: Project[];
+  query: string;
+}) {
+  return (
+    <div className="space-y-3 rounded-md border border-border-contrast bg-surface p-4">
+      <label className="block space-y-1.5">
+        <span className="font-medium text-sm text-text-secondary">Search</span>
+        <input
+          className={SELECT_CLASS}
+          onInput={onSearchInput}
+          placeholder="Search title or project…"
+          type="search"
+          value={query}
+        />
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="block space-y-1.5">
+          <span className="font-medium text-sm text-text-secondary">
+            Project
+          </span>
+          <select
+            className={SELECT_CLASS}
+            onChange={onProjectChange}
+            value={prefs.project ?? "all"}
+          >
+            <option value="all">All projects</option>
+            <option value="inbox">Inbox</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                #{project.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="font-medium text-sm text-text-secondary">
+            Due date
+          </span>
+          <select
+            className={SELECT_CLASS}
+            onChange={onDueChange}
+            value={prefs.due}
+          >
+            <option value="all">All</option>
+            <option value="overdue">Overdue</option>
+            <option value="today">Today</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="none">No due date</option>
+          </select>
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="font-medium text-sm text-text-secondary">
+            Importance
+          </span>
+          <select
+            className={SELECT_CLASS}
+            onChange={onImportanceChange}
+            value={
+              prefs.importanceMin === null ? "any" : String(prefs.importanceMin)
+            }
+          >
+            <option value="any">Any</option>
+            <option value="1">≥ 1</option>
+            <option value="2">≥ 2</option>
+            <option value="3">≥ 3</option>
+          </select>
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="font-medium text-sm text-text-secondary">
+            Urgency
+          </span>
+          <select
+            className={SELECT_CLASS}
+            onChange={onUrgencyChange}
+            value={prefs.urgencyMin === null ? "any" : String(prefs.urgencyMin)}
+          >
+            <option value="any">Any</option>
+            <option value="1">≥ 1</option>
+            <option value="2">≥ 2</option>
+            <option value="3">≥ 3</option>
+          </select>
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="font-medium text-sm text-text-secondary">Sort</span>
+          <select
+            className={SELECT_CLASS}
+            onChange={onSortChange}
+            value={prefs.sort}
+          >
+            <option value="due">Due date</option>
+            <option value="importance">Importance</option>
+            <option value="urgency">Urgency</option>
+            <option value="title">Title</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function ActiveFilterChips({
+  visibleCount,
+  filtersActive,
+  projectLabel,
+  prefs,
+  query,
+  clearProject,
+  clearDue,
+  clearImportance,
+  clearUrgency,
+  clearQuery,
+  clearFilters,
+}: {
+  clearDue: () => void;
+  clearFilters: () => void;
+  clearImportance: () => void;
+  clearProject: () => void;
+  clearQuery: () => void;
+  clearUrgency: () => void;
+  filtersActive: boolean;
+  prefs: TasksBoardPrefs;
+  projectLabel: string | null;
+  query: string;
+  visibleCount: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <p className="tabular-metrics font-mono text-text-muted text-xs">
+        {visibleCount} task{visibleCount === 1 ? "" : "s"}
+      </p>
+
+      {filtersActive ? (
+        <>
+          {projectLabel ? (
+            <FilterChip
+              label={`Project: ${projectLabel}`}
+              onClear={clearProject}
+            />
+          ) : null}
+          {prefs.due === "all" ? null : (
+            <FilterChip label={DUE_LABELS[prefs.due]} onClear={clearDue} />
+          )}
+          {prefs.importanceMin === null ? null : (
+            <FilterChip
+              label={`Importance ≥ ${prefs.importanceMin}`}
+              onClear={clearImportance}
+            />
+          )}
+          {prefs.urgencyMin === null ? null : (
+            <FilterChip
+              label={`Urgency ≥ ${prefs.urgencyMin}`}
+              onClear={clearUrgency}
+            />
+          )}
+          {query.trim() ? (
+            <FilterChip
+              label={`Search: ${query.trim()}`}
+              onClear={clearQuery}
+            />
+          ) : null}
+          <button
+            className="inline-flex min-h-9 items-center rounded-sm px-2 font-medium text-primary text-xs hover:underline"
+            onClick={clearFilters}
+            type="button"
+          >
+            Clear all
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -397,6 +529,10 @@ function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
   const project = projects.find((item) => item.id === task.projectId);
   const quadrant = getQuadrant(task.isUrgent, task.isImportant);
   const meta = QUADRANT_META[quadrant];
+  const today = getLocalDateString();
+  const dueStatus = getDueReminderStatus(task.dueDate, today);
+  const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
+  const dueColor = getDueReminderColor(dueStatus);
 
   return (
     <li>
@@ -408,7 +544,15 @@ function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
         <span className="min-w-0 flex-1 truncate font-medium text-sm text-text-primary">
           {task.title}
         </span>
-        {task.dueDate ? (
+        {dueLabel ? (
+          <span
+            className="shrink-0 font-mono text-xs"
+            style={{ color: dueColor }}
+          >
+            {dueLabel}
+          </span>
+        ) : null}
+        {!dueLabel && task.dueDate ? (
           <span className="shrink-0 font-mono text-text-muted text-xs">
             {task.dueDate}
           </span>

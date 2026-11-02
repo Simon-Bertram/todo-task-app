@@ -38,6 +38,7 @@ describe("preferencesRouter", () => {
         context,
       });
 
+      expect(result.dailyCapacityMinutes).toBe(300);
       expect(result.tasksBoard).toEqual(DEFAULT_TASKS_BOARD_PREFS);
     });
 
@@ -75,6 +76,25 @@ describe("preferencesRouter", () => {
       });
 
       expect(result.tasksBoard).toEqual(DEFAULT_TASKS_BOARD_PREFS);
+    });
+  });
+
+  describe("updateDailyCapacity", () => {
+    it("persists capacity for the session user", async () => {
+      const context = await createAuthedContext("user-1");
+      const saved = await call(
+        preferencesRouter.updateDailyCapacity,
+        { dailyCapacityMinutes: 240 },
+        { context }
+      );
+      expect(saved).toEqual({ dailyCapacityMinutes: 240 });
+
+      const rows = await context.db
+        .select({ dailyCapacityMinutes: user.dailyCapacityMinutes })
+        .from(user)
+        .where(eq(user.id, "user-1"))
+        .limit(1);
+      expect(rows[0]?.dailyCapacityMinutes).toBe(240);
     });
   });
 

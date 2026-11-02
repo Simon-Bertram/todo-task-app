@@ -12,11 +12,16 @@ import QuadrantPanel from "./quadrant-panel.astro";
 import TodayDock from "./today-dock.astro";
 
 interface Props {
+  budgetMinutes?: number;
   projects: Project[];
   tasks: Task[];
 }
 
-const { tasks, projects } = Astro.props;
+const {
+  tasks,
+  projects,
+  budgetMinutes = DEFAULT_DAILY_CAPACITY_MINUTES,
+} = Astro.props;
 const filter = Astro.url.searchParams.get("filter") ?? "all";
 const byQuadrant = getTasksByQuadrant(tasks);
 
@@ -37,9 +42,7 @@ const q4 = applyFilter(byQuadrant.Q4);
 const backlogCount = tasks.filter((task) => !task.isCompleted).length;
 const todayCount = getTodayTasks(tasks).length;
 const plannedMinutes = getTodayPlannedMinutes(tasks);
-const percent = Math.round(
-  (plannedMinutes / DEFAULT_DAILY_CAPACITY_MINUTES) * 100
-);
+const percent = Math.round((plannedMinutes / budgetMinutes) * 100);
 ---
 
 <div class="hidden min-h-[calc(100svh-0px)] lg:flex">
@@ -82,5 +85,5 @@ const percent = Math.round(
       <QuadrantPanel projects={projects} quadrant="Q4" tasks={q4} />
     </div>
   </div>
-  <TodayDock tasks={tasks} />
+  <TodayDock budgetMinutes={budgetMinutes} tasks={tasks} />
 </div>

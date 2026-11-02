@@ -6,6 +6,7 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
+import { nextDueDateForRecurrence } from "../lib/recurrence";
 
 const prioritySchema = z.number().int().min(0).max(3);
 const dueDateSchema = z
@@ -64,6 +65,102 @@ async function assertProjectOwned(
       message: "Project not found",
     });
   }
+}
+
+interface TaskPatch {
+  dueDate?: string | null;
+  dueTime?: string | null;
+  estimatedMinutes?: number;
+  isCompleted?: boolean;
+  isImportant?: number;
+  isToday?: boolean;
+  isUrgent?: number;
+  notes?: string | null;
+  projectId?: string | null;
+  recurrenceRule?: string | null;
+  sortOrder?: number;
+  title?: string;
+}
+
+function buildTaskUpdates(patch: TaskPatch): Partial<TaskRow> {
+  const updates: Partial<TaskRow> = {};
+  if (patch.title !== undefined) {
+    updates.title = patch.title;
+  }
+  if (patch.notes !== undefined) {
+    updates.notes = patch.notes;
+  }
+  if (patch.dueDate !== undefined) {
+    updates.dueDate = patch.dueDate;
+  }
+  if (patch.dueTime !== undefined) {
+    updates.dueTime = patch.dueTime;
+  }
+  if (patch.estimatedMinutes !== undefined) {
+    updates.estimatedMinutes = patch.estimatedMinutes;
+  }
+  if (patch.isUrgent !== undefined) {
+    updates.isUrgent = patch.isUrgent;
+  }
+  if (patch.isImportant !== undefined) {
+    updates.isImportant = patch.isImportant;
+  }
+  if (patch.isToday !== undefined) {
+    updates.isToday = patch.isToday;
+  }
+  if (patch.projectId !== undefined) {
+    updates.projectId = patch.projectId;
+  }
+  if (patch.recurrenceRule !== undefined) {
+    updates.recurrenceRule = patch.recurrenceRule;
+  }
+  if (patch.sortOrder !== undefined) {
+    updates.sortOrder = patch.sortOrder;
+  }
+  if (patch.isCompleted !== undefined) {
+    updates.isCompleted = patch.isCompleted;
+    updates.completedAt = patch.isCompleted ? new Date() : null;
+  }
+  return updates;
+}
+
+async function spawnNextRecurrenceIfNeeded(
+  db: Database,
+  userId: string,
+  current: TaskRow,
+  patch: TaskPatch
+): Promise<void> {
+  const becameCompleted =
+    patch.isCompleted === true && current.isCompleted === false;
+  const recurrenceRule =
+    patch.recurrenceRule === undefined
+      ? current.recurrenceRule
+      : patch.recurrenceRule;
+  if (!(becameCompleted && recurrenceRule)) {
+    return;
+  }
+  const nextDue = nextDueDateForRecurrence(
+    recurrenceRule,
+    patch.dueDate === undefined ? current.dueDate : patch.dueDate
+  );
+  if (!nextDue) {
+    return;
+  }
+  await db.insert(tasks).values({
+    dueDate: nextDue,
+    dueTime: current.dueTime,
+    estimatedMinutes: current.estimatedMinutes,
+    id: crypto.randomUUID(),
+    isImportant: current.isImportant,
+    isToday: false,
+    isUrgent: current.isUrgent,
+    notes: current.notes,
+    projectId: current.projectId,
+    recurrenceRule,
+    sortOrder: current.sortOrder,
+    title: current.title,
+    userId,
+  });
 }
 
 export const tasksRouter = {
@@ -197,44 +294,17 @@ export const tasksRouter = {
         await assertProjectOwned(context.db, userId, patch.projectId);
       }
 
-      const updates: Partial<TaskRow> = {};
+      const updates = buildTaskUpdates(patch);
 
-      if (patch.title !== undefined) {
-        updates.title = patch.title;
-      }
-      if (patch.notes !== undefined) {
-        updates.notes = patch.notes;
-      }
-      if (patch.dueDate !== undefined) {
-        updates.dueDate = patch.dueDate;
-      }
-      if (patch.dueTime !== undefined) {
-        updates.dueTime = patch.dueTime;
-      }
-      if (patch.estimatedMinutes !== undefined) {
-        updates.estimatedMinutes = patch.estimatedMinutes;
-      }
-      if (patch.isUrgent !== undefined) {
-        updates.isUrgent = patch.isUrgent;
-      }
-      if (patch.isImportant !== undefined) {
-        updates.isImportant = patch.isImportant;
-      }
-      if (patch.isToday !== undefined) {
-        updates.isToday = patch.isToday;
-      }
-      if (patch.projectId !== undefined) {
-        updates.projectId = patch.projectId;
-      }
-      if (patch.recurrenceRule !== undefined) {
-        updates.recurrenceRule = patch.recurrenceRule;
-      }
-      if (patch.sortOrder !== undefined) {
-        updates.sortOrder = patch.sortOrder;
-      }
-      if (patch.isCompleted !== undefined) {
-        updates.isCompleted = patch.isCompleted;
-        updates.completedAt = patch.isCompleted ? new Date() : null;
+      const existing = await context.db
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+        .limit(1);
+
+      const [current] = existing;
+      if (!current) {
+        throw new ORPCError("NOT_FOUND", { message: "Task not found" });
       }
 
       const [row] = await context.db
@@ -246,6 +316,8 @@ export const tasksRouter = {
       if (!row) {
         throw new ORPCError("NOT_FOUND", { message: "Task not found" });
       }
+
+      await spawnNextRecurrenceIfNeeded(context.db, userId, current, patch);
 
       return toTaskOutput(row);
     }),
