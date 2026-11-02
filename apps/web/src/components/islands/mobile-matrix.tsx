@@ -1,4 +1,9 @@
 import { useCallback, useMemo, useState } from "preact/hooks";
+import {
+  getDueReminderColor,
+  getDueReminderLabel,
+  getDueReminderStatus,
+} from "../../lib/due-date";
 import { orpc } from "../../lib/orpc";
 import {
   defaultRatingsForQuadrant,
@@ -7,7 +12,11 @@ import {
   QUADRANT_META,
   type QuadrantId,
 } from "../../lib/quadrant";
-import type { Project, Task } from "../../lib/task-helpers";
+import {
+  getLocalDateString,
+  type Project,
+  type Task,
+} from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
 
 interface Props {
@@ -63,6 +72,7 @@ export default function MobileMatrix({
   const meta = QUADRANT_META[selected];
   const remaining = Math.max(budgetMinutes - plannedMinutes, 0);
   const percent = Math.round((plannedMinutes / budgetMinutes) * 100);
+  const today = getLocalDateString();
 
   const onTabClick = useCallback((event: Event) => {
     const button = event.currentTarget as HTMLButtonElement;
@@ -208,6 +218,13 @@ export default function MobileMatrix({
         ) : (
           tasks.map((task) => {
             const project = projectFor(task.projectId);
+            const dueStatus = getDueReminderStatus(task.dueDate, today);
+            const dueLabel = getDueReminderLabel(
+              dueStatus,
+              task.dueDate,
+              today
+            );
+            const dueColor = getDueReminderColor(dueStatus);
             return (
               <li key={task.id}>
                 <article
@@ -217,6 +234,18 @@ export default function MobileMatrix({
                     {task.isToday ? (
                       <span className="inline-flex h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-[10px] text-primary">
                         Today ({formatMinutes(task.estimatedMinutes)})
+                      </span>
+                    ) : null}
+                    {dueLabel ? (
+                      <span
+                        className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+                        style={{
+                          backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
+                          borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
+                          color: dueColor,
+                        }}
+                      >
+                        {dueLabel}
                       </span>
                     ) : null}
                     <span className="inline-flex h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-[10px] text-text-secondary">
@@ -247,6 +276,9 @@ export default function MobileMatrix({
                   <div className="tabular-metrics mt-2 flex gap-3 font-mono text-text-muted text-xs">
                     <span>Urgency: {task.isUrgent}/3</span>
                     <span>Importance: {task.isImportant}/3</span>
+                    {!dueLabel && task.dueDate ? (
+                      <span>Due {task.dueDate}</span>
+                    ) : null}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
