@@ -1,0 +1,73 @@
+---
+import AvatarPicker from "../../components/islands/avatar-picker";
+import Layout from "../../layouts/layout.astro";
+import { loadSessionUser } from "../../lib/session.server";
+
+const user = await loadSessionUser(Astro.request);
+if (!user) {
+  return Astro.redirect("/login");
+}
+if (user.image) {
+  return Astro.redirect("/today");
+}
+---
+
+<Layout title="Choose avatar · PlanSage">
+  <div class="flex min-h-svh items-start justify-center bg-canvas px-4 py-10">
+    <div class="w-full max-w-xl space-y-6">
+      <header>
+        <p class="font-mono text-text-muted text-xs uppercase tracking-wide">
+          PlanSage
+        </p>
+        <h1
+          class="mt-2 font-semibold text-2xl tracking-tight text-text-primary"
+        >
+          Set up your profile
+        </h1>
+        <p class="mt-1 text-sm text-text-secondary">
+          Welcome, {user.name}. Pick how you appear in the app.
+        </p>
+      </header>
+      <AvatarPicker
+        initialName={user.name}
+        redirectTo="/today"
+        variant="onboarding"
+        client:load
+      />
+    </div>
+  </div>
+  <div
+    aria-live="polite"
+    class="pointer-events-none fixed inset-x-0 bottom-6 z-60 flex flex-col items-center gap-2 px-4"
+    id="plansage-toast-host"
+  ></div>
+</Layout>
+
+<script>
+  import type { ToastDetail } from "../../lib/toast";
+
+  const toastHost = document.getElementById("plansage-toast-host");
+
+  document.addEventListener("plansage:toast", ((
+    event: CustomEvent<ToastDetail>
+  ) => {
+    if (!toastHost) {
+      return;
+    }
+    const { message, tone = "info" } = event.detail;
+    const el = document.createElement("div");
+    let toneClass =
+      "border-border-contrast bg-surface-elevated text-text-primary";
+    if (tone === "error") {
+      toneClass = "border-capacity-over/40 bg-capacity-over text-on-primary";
+    } else if (tone === "success") {
+      toneClass = "border-capacity-ok/40 bg-capacity-ok text-on-primary";
+    }
+    el.className = `pointer-events-auto max-w-sm rounded-sm border px-4 py-3 text-sm shadow-lg ${toneClass}`;
+    el.textContent = message;
+    toastHost.appendChild(el);
+    globalThis.setTimeout(() => {
+      el.remove();
+    }, 3200);
+  }) as EventListener);
+</script>

@@ -1,12 +1,14 @@
 import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
+import { avatarsRouter } from "./avatars";
 import { gamificationRouter } from "./gamification";
 import { preferencesRouter } from "./preferences";
 import { projectsRouter } from "./projects";
 import { tasksRouter } from "./tasks";
 
 export const appRouter = {
+  avatars: avatarsRouter,
   gamification: gamificationRouter,
   healthCheck: publicProcedure.handler(() => "OK"),
   preferences: preferencesRouter,

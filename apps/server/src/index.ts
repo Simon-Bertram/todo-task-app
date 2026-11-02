@@ -91,4 +91,25 @@ app.use("/*", async (c, next) => {
 
 app.get("/", (c) => c.text("OK"));
 
+const AVATAR_FILE = /^[0-9a-f-]{36}\.png$/i;
+
+app.get("/media/avatars/:userId/:file", async (c) => {
+  const userId = c.req.param("userId");
+  const file = c.req.param("file");
+  if (!(userId && file && AVATAR_FILE.test(file))) {
+    return c.notFound();
+  }
+
+  const key = `${userId}/${file}`;
+  const object = await ENV.AVATARS.get(key);
+  if (!object) {
+    return c.notFound();
+  }
+
+  const headers = new Headers();
+  headers.set("Content-Type", object.httpMetadata?.contentType ?? "image/png");
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  return new Response(object.body, { headers });
+});
+
 export default app;

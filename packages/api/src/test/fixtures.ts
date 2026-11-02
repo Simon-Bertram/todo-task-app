@@ -7,7 +7,46 @@ import {
   seedUser,
 } from "@todo-task-app/db/test";
 
-import type { Context } from "../context";
+import type { AvatarsBucket, Context } from "../context";
+
+function createMemoryAvatarsBucket(): AvatarsBucket {
+  const store = new Map<string, ArrayBuffer>();
+  return {
+    get(key) {
+      const value = store.get(key);
+      if (!value) {
+        return Promise.resolve(null);
+      }
+      return Promise.resolve({
+        arrayBuffer: () => Promise.resolve(value),
+        body: null,
+      });
+    },
+    async put(key, value) {
+      if (value instanceof ArrayBuffer) {
+        store.set(key, value);
+        return;
+      }
+      if (ArrayBuffer.isView(value)) {
+        store.set(
+          key,
+          value.buffer.slice(
+            value.byteOffset,
+            value.byteOffset + value.byteLength
+          ) as ArrayBuffer
+        );
+        return;
+      }
+      if (typeof value === "string") {
+        store.set(key, new TextEncoder().encode(value).buffer as ArrayBuffer);
+        return;
+      }
+      if (value instanceof Blob) {
+        store.set(key, await value.arrayBuffer());
+      }
+    },
+  };
+}
 
 export function createSession(userId: string, email?: string): Session {
   const now = new Date();
@@ -33,6 +72,16 @@ export function createSession(userId: string, email?: string): Session {
   } as Session;
 }
 
+function baseContext(db: Context["db"], session: Context["session"]): Context {
+  return {
+    assetBaseUrl: "http://localhost:3000",
+    avatars: createMemoryAvatarsBucket(),
+    db,
+    hfToken: "",
+    session,
+  };
+}
+
 export async function createAuthedContext(
   userId: string,
   options?: {
@@ -51,18 +100,12 @@ export async function createAuthedContext(
       userId,
     });
   }
-  return {
-    db,
-    session: createSession(userId, options?.user?.email),
-  };
+  return baseContext(db, createSession(userId, options?.user?.email));
 }
 
 export async function createUnauthedContext(): Promise<Context> {
   const db = await createTestDb();
-  return {
-    db,
-    session: null,
-  };
+  return baseContext(db, null);
 }
 
 export async function createTwoUserContext(): Promise<{
@@ -75,13 +118,7 @@ export async function createTwoUserContext(): Promise<{
   await seedUser(db, { id: "user-b" });
   return {
     db,
-    userA: {
-      db,
-      session: createSession("user-a"),
-    },
-    userB: {
-      db,
-      session: createSession("user-b"),
-    },
+    userA: baseContext(db, createSession("user-a")),
+    userB: baseContext(db, createSession("user-b")),
   };
 }

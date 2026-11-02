@@ -1,4 +1,5 @@
 ---
+import type { SessionUser } from "../../lib/session.server";
 import UserCard from "./user-card.astro";
 
 interface Props {
@@ -6,9 +7,10 @@ interface Props {
   capacityPercent: number;
   currentPath: string;
   plannedMinutes: number;
+  user: SessionUser;
 }
 
-const { currentPath, capacityPercent, plannedMinutes, budgetMinutes } =
+const { currentPath, capacityPercent, plannedMinutes, budgetMinutes, user } =
   Astro.props;
 
 const links = [
@@ -94,6 +96,6 @@ const barColor = capacityBarClass(capacityPercent);
         {(plannedMinutes / 60).toFixed(1)}h / {(budgetMinutes / 60).toFixed(1)}h
       </p>
     </div>
-    <UserCard />
+    <UserCard user={user} />
   </div>
 </aside>

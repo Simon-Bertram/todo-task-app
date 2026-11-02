@@ -370,6 +370,9 @@ importers:
 
   packages/api:
     dependencies:
+      '@huggingface/inference':
+        specifier: ^4.13.32
+        version: 4.13.32
       '@orpc/client':
         specifier: 'catalog:'
         version: 2.0.0-beta.46
@@ -1343,6 +1346,17 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@huggingface/inference@4.13.32':
+    resolution: {integrity: sha512-8ciIAPAV+Ck/om1PkvQ+flogKcoi6XEs4MDuwX9HeaYfmPdF1ooWXLsYo0wU5fRwxiYkqPaN4TuDUBXed3ywIA==}
+    engines: {node: '>=18'}
+
+  '@huggingface/jinja@0.5.11':
+    resolution: {integrity: sha512-YzEzwM5oQf4r0vs7ifWQ+yuVR1YkAHrjERQ+a8WRsStHHp4NRBg+NesjiFc+X2AFUpRvvrIeHDS1xFy9jY/IjQ==}
+    engines: {node: '>=18'}
+
+  '@huggingface/tasks@0.21.61':
+    resolution: {integrity: sha512-bAki2SyAkxYbzYCAcOmPYq++CzCHI1CkxeVQnF2jkXAh60wnIuR+jZJ+Eha1aaI049bB1aO8H+icr4C/kvLnuw==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -5094,6 +5108,15 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@huggingface/inference@4.13.32':
+    dependencies:
+      '@huggingface/jinja': 0.5.11
+      '@huggingface/tasks': 0.21.61
+
+  '@huggingface/jinja@0.5.11': {}
+
+  '@huggingface/tasks@0.21.61': {}
 
   '@img/colour@1.1.0': {}
 

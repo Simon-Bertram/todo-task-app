@@ -3,6 +3,7 @@ import TaskDetailSheet from "../components/islands/task-detail-sheet";
 import BottomNav from "../components/shell/bottom-nav.astro";
 import MobileTopBar from "../components/shell/mobile-top-bar.astro";
 import SideNav from "../components/shell/side-nav.astro";
+import { loadSessionUser } from "../lib/session.server";
 import {
   DEFAULT_DAILY_CAPACITY_MINUTES,
   getTodayPlannedMinutes,
@@ -29,6 +30,10 @@ const {
 const currentPath = Astro.url.pathname;
 const plannedMinutes = getTodayPlannedMinutes(tasks);
 const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
+const user = await loadSessionUser(Astro.request);
+if (!user) {
+  return Astro.redirect("/login");
+}
 ---
 
 <Layout title={title}>
@@ -38,9 +43,10 @@ const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
       capacityPercent={capacityPercent}
       currentPath={currentPath}
       plannedMinutes={plannedMinutes}
+      user={user}
     />
     <div class="flex min-w-0 flex-1 flex-col">
-      <MobileTopBar title={mobileTitle} />
+      <MobileTopBar title={mobileTitle} user={user} />
       <main class="flex-1 overflow-x-hidden pb-24 lg:pb-0">
         <slot />
       </main>

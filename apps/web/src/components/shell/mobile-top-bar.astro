@@ -1,9 +1,14 @@
 ---
+import { initialsFromName } from "@todo-task-app/api/lib/avatars";
+import type { SessionUser } from "../../lib/session.server";
+
 interface Props {
   title?: string;
+  user?: SessionUser | null;
 }
 
-const { title = "PlanSage" } = Astro.props;
+const { title = "PlanSage", user = null } = Astro.props;
+const initials = user ? initialsFromName(user.name) : "?";
 ---
 
 <header
@@ -23,11 +28,21 @@ const { title = "PlanSage" } = Astro.props;
     >
       +
     </button>
-    <div
-      aria-hidden="true"
-      class="flex size-9 items-center justify-center rounded-full bg-primary font-semibold text-on-primary text-sm"
-    >
-      A
-    </div>
+    {user?.image ? (
+      <img
+        alt=""
+        class="size-9 rounded-full object-cover"
+        height="36"
+        src={user.image}
+        width="36"
+      />
+    ) : (
+      <div
+        aria-hidden="true"
+        class="flex size-9 items-center justify-center rounded-full bg-primary font-semibold text-on-primary text-sm"
+      >
+        {initials}
+      </div>
+    )}
   </div>
 </header>

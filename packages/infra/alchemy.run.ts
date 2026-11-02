@@ -3,6 +3,7 @@ import {
   type InferEnv,
   KV,
   providers,
+  R2,
   Website,
   Worker,
 } from "@alchemy.run/cloudflare";
@@ -24,6 +25,8 @@ export const db = D1.Database("database", {
   migrations: "../../packages/db/src/migrations",
 });
 
+export const avatarsBucket = R2.Bucket("avatars");
+
 export const server = Worker(
   "server",
   Stack.useSync((stack) => {
@@ -38,6 +41,7 @@ export const server = Worker(
       },
       domain: "api.todo.sarl",
       env: {
+        AVATARS: avatarsBucket,
         BETTER_AUTH_SECRET: Redacted("BETTER_AUTH_SECRET"),
         BETTER_AUTH_URL: isCustomDomainStage ? API_ORIGIN : Worker.URL,
         CORS_ORIGIN: isCustomDomainStage
@@ -45,6 +49,7 @@ export const server = Worker(
           : ConfigString("CORS_ORIGIN"),
         DB: db,
         EMAIL_FROM: ConfigString("EMAIL_FROM"),
+        HF_TOKEN: Redacted("HF_TOKEN"),
         NODE_ENV: isCustomDomainStage ? "production" : "development",
         RESEND_API_KEY: Redacted("RESEND_API_KEY"),
       },
