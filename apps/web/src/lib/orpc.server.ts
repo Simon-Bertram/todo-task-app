@@ -9,6 +9,7 @@ import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-pre
 import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
 
 import { ENV } from "../env.public";
+import { mergeServiceBindingHeaders } from "./rpc-fetch-headers";
 import type { Project, Task } from "./task-helpers";
 
 const TRAILING_SLASH = /\/$/;
@@ -29,10 +30,7 @@ export function createServerClient(request: Request): AppRouterClient {
       // workers.dev Worker is blocked (Cloudflare error 1042).
       return env.SERVER.fetch(requestUrl, {
         ...init,
-        headers: {
-          ...init?.headers,
-          cookie,
-        },
+        headers: mergeServiceBindingHeaders(init?.headers, cookie),
       });
     },
     headers: cookie ? { cookie } : {},
