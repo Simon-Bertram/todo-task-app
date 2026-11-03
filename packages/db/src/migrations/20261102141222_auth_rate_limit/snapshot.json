@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "5e888333-8244-4b85-86f2-01606d3517c4",
-  "prevIds": [
-    "43b21d91-5370-4f74-8a85-9393644a86f5"
-  ],
+  "prevIds": ["43b21d91-5370-4f74-8a85-9393644a86f5"],
   "ddl": [
     {
       "name": "account",
@@ -1161,13 +1159,9 @@
     {
       "table": "account",
       "name": "fk_account_user_id_user_id_fk",
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1176,13 +1170,9 @@
     {
       "table": "session",
       "name": "fk_session_user_id_user_id_fk",
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1191,13 +1181,9 @@
     {
       "table": "user_day_stats",
       "name": "fk_user_day_stats_user_id_user_id_fk",
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1206,13 +1192,9 @@
     {
       "table": "user_milestones",
       "name": "fk_user_milestones_user_id_user_id_fk",
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1221,13 +1203,9 @@
     {
       "table": "projects",
       "name": "fk_projects_user_id_user_id_fk",
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1236,13 +1214,9 @@
     {
       "table": "subtasks",
       "name": "fk_subtasks_task_id_tasks_id_fk",
-      "columns": [
-        "task_id"
-      ],
+      "columns": ["task_id"],
       "tableTo": "tasks",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1251,13 +1225,9 @@
     {
       "table": "tasks",
       "name": "fk_tasks_blocked_by_task_id_tasks_id_fk",
-      "columns": [
-        "blocked_by_task_id"
-      ],
+      "columns": ["blocked_by_task_id"],
       "tableTo": "tasks",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1266,13 +1236,9 @@
     {
       "table": "tasks",
       "name": "fk_tasks_project_id_projects_id_fk",
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "projects",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1281,13 +1247,9 @@
     {
       "table": "tasks",
       "name": "fk_tasks_user_id_user_id_fk",
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1296,119 +1258,91 @@
     {
       "table": "user_day_stats",
       "name": "user_day_stats_pk",
-      "columns": [
-        "user_id",
-        "local_date"
-      ],
+      "columns": ["user_id", "local_date"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "user_milestones",
       "name": "user_milestones_pk",
-      "columns": [
-        "user_id",
-        "key"
-      ],
+      "columns": ["user_id", "key"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "account",
       "name": "account_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "rate_limit",
       "name": "rate_limit_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "session",
       "name": "session_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "user",
       "name": "user_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "verification",
       "name": "verification_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "projects",
       "name": "projects_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "subtasks",
       "name": "subtasks_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "tasks",
       "name": "tasks_pk",
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },
     {
       "table": "rate_limit",
       "name": "rate_limit_key_unique",
-      "columns": [
-        "key"
-      ],
+      "columns": ["key"],
       "nameExplicit": false,
       "entityType": "uniques"
     },
     {
       "table": "session",
       "name": "session_token_unique",
-      "columns": [
-        "token"
-      ],
+      "columns": ["token"],
       "nameExplicit": false,
       "entityType": "uniques"
     },
     {
       "table": "user",
       "name": "user_email_unique",
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nameExplicit": false,
       "entityType": "uniques"
     }

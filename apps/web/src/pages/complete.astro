@@ -9,7 +9,9 @@ const timeZoneParam = Astro.url.searchParams.get("tz");
 const timeZone =
   timeZoneParam && timeZoneParam.length > 0 ? timeZoneParam : "UTC";
 
-const data = await loadCompletedBoardData(Astro.request, range, timeZone);
+const data = await loadCompletedBoardData(Astro.request, range, timeZone, {
+  requestId: Astro.locals.requestId,
+});
 if (data === "unauthorized") {
   return Astro.redirect("/login");
 }

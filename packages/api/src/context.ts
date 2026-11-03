@@ -19,5 +19,6 @@ export interface Context {
   avatars: AvatarsBucket;
   db: Database;
   hfToken: string;
+  requestId: string;
   session: Session | null;
 }

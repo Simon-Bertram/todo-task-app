@@ -1,0 +1,46 @@
+---
+import { userMessageForUnknownError } from "@todo-task-app/api/lib/app-error";
+
+import Layout from "../layouts/layout.astro";
+import { referenceIdForError } from "../lib/orpc-errors";
+
+interface Props {
+  error: unknown;
+}
+
+const { error } = Astro.props;
+const message = userMessageForUnknownError(error);
+const referenceId =
+  referenceIdForError(error, Astro.locals.requestId) ??
+  Astro.locals.requestId ??
+  "unknown";
+---
+
+<Layout bare title="Something went wrong · PlanSage">
+  <main
+    class="flex min-h-svh flex-col items-center justify-center bg-canvas px-6 py-16 text-text-primary"
+  >
+    <div class="w-full max-w-md space-y-6 text-center">
+      <p class="font-mono text-primary text-sm tracking-wide">PlanSage</p>
+      <h1 class="font-semibold text-2xl text-text-primary">
+        We couldn’t load this page
+      </h1>
+      <p class="text-sm text-text-secondary leading-relaxed">
+        {message}
+        Try again in a moment. If it keeps happening, share this reference with
+        support.
+      </p>
+      <p class="font-mono text-text-muted text-xs">
+        Reference: <span id="error-reference">{referenceId}</span>
+      </p>
+      <p>
+        <a
+          class="inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-4 font-medium text-on-primary text-sm"
+          href="/today"
+        >
+          Back to Today
+        </a>
+      </p>
+    </div>
+  </main>
+</Layout>

@@ -78,6 +78,7 @@ function baseContext(db: Context["db"], session: Context["session"]): Context {
     avatars: createMemoryAvatarsBucket(),
     db,
     hfToken: "",
+    requestId: "test-request-id",
     session,
   };
 }

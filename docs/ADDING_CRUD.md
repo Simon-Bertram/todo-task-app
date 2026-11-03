@@ -2,7 +2,7 @@
 
 A practical vertical-slice guide for this Better-T-Stack monorepo. Use it when adding a new resource (or finishing CRUD on an existing one). Worked example: **projects** and **tasks** (linked via `project_id`).
 
-Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). oRPC details: [`.agents/skills/orpc/SKILL.md`](../.agents/skills/orpc/SKILL.md).
+Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). oRPC details: [`.agents/skills/orpc/SKILL.md`](../.agents/skills/orpc/SKILL.md). Error reporting / `500.astro` / request ids: [ERROR_REPORTING.md](./ERROR_REPORTING.md).
 
 ---
 
@@ -106,6 +106,7 @@ export const thingsRouter = {
 - Prefer `ORPCError("NOT_FOUND")` when the row is missing or not owned (avoid leaking existence across users)
 - Use `ORPCError("BAD_REQUEST")` when a related FK is invalid (e.g. `projectId` belonging to another user)—see `assertProjectOwned` in [`tasks.ts`](../packages/api/src/routers/tasks.ts)
 - Validate inputs with Zod (`.input` / `.output`)
+- Unexpected failures are logged with a shared `requestId` (see [ERROR_REPORTING.md](./ERROR_REPORTING.md)); do not leak stacks or Zod issues to the UI
 
 ### List filters
 

@@ -2,6 +2,7 @@ import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
 import { avatarsRouter } from "./avatars";
+import { errorsRouter } from "./errors";
 import { gamificationRouter } from "./gamification";
 import { preferencesRouter } from "./preferences";
 import { projectsRouter } from "./projects";
@@ -9,6 +10,7 @@ import { tasksRouter } from "./tasks";
 
 export const appRouter = {
   avatars: avatarsRouter,
+  errors: errorsRouter,
   gamification: gamificationRouter,
   healthCheck: publicProcedure.handler(() => "OK"),
   preferences: preferencesRouter,

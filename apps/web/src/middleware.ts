@@ -1,4 +1,9 @@
 import { defineMiddleware } from "astro:middleware";
+import {
+  createRequestId,
+  REQUEST_ID_HEADER,
+  resolveRequestId,
+} from "@todo-task-app/api/lib/app-error";
 
 import { loadSessionUser } from "./lib/session.server";
 
@@ -19,6 +24,11 @@ function isAppPath(pathname: string): boolean {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  context.locals.requestId = resolveRequestId(
+    context.request.headers.get(REQUEST_ID_HEADER),
+    createRequestId()
+  );
+
   const { pathname } = context.url;
 
   if (pathname === "/onboarding/avatar") {

@@ -17,6 +17,7 @@
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^3.0.0",
     "@better-auth/core": "1.7.12",
     "@orpc/client": "catalog:",
+    "@orpc/cloudflare": "catalog:",
     "@todo-task-app/api": "workspace:*",
     "astro": "^7.4.2",
     "better-auth": "catalog:",

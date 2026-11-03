@@ -170,6 +170,9 @@ catalogs:
     '@orpc/client':
       specifier: 2.0.0-beta.46
       version: 2.0.0-beta.46
+    '@orpc/cloudflare':
+      specifier: 2.0.0-beta.46
+      version: 2.0.0-beta.46
     '@orpc/openapi':
       specifier: 2.0.0-beta.46
       version: 2.0.0-beta.46
@@ -236,6 +239,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@orpc/cloudflare':
+        specifier: 'catalog:'
+        version: 2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)
       '@orpc/openapi':
         specifier: 'catalog:'
         version: 2.0.0-beta.46(crossws@0.3.5)
@@ -303,6 +309,9 @@ importers:
       '@orpc/client':
         specifier: 'catalog:'
         version: 2.0.0-beta.46
+      '@orpc/cloudflare':
+        specifier: 'catalog:'
+        version: 2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)
       '@todo-task-app/api':
         specifier: workspace:*
         version: link:../../packages/api
@@ -1639,8 +1648,22 @@ packages:
   '@orpc/client@2.0.0-beta.46':
     resolution: {integrity: sha512-+z3VFBOUwbUHCo1Tz2oQH0u0MWIegK2aRSR3N+/hJBbMRQ3UOw07OWQXafZmRSXbKA5tuayaUOjgDWlnrSU0pw==}
 
+  '@orpc/cloudflare@2.0.0-beta.46':
+    resolution: {integrity: sha512-jbM6x0ax8Ry8XBb2PB04lGuqmKbyoQ2esdpF5S5EjX7H5jUBFDn4OwLPB3mL+RffvBCFP0Bl/Qw6Fgq9IZagbQ==}
+
   '@orpc/contract@2.0.0-beta.46':
     resolution: {integrity: sha512-4JcV+OvCl0hg2qOuFPnAqFIsZeAR5sqBFQjtIvUWXiLxnF8mqRSqDfDiknL/uY26+NIcj2ED5B802FsoC2uV/A==}
+
+  '@orpc/experimental-lock@2.0.0-beta.46':
+    resolution: {integrity: sha512-gXKz5gg+QUhwcpLrLEltSLRKL/bKXCyUmL5japcXl4Q3Rp2mWJhoVrh5ROrbYXujD2SBMvSf9s1g6sWx4mQcGw==}
+    peerDependencies:
+      '@upstash/redis': '>=1.35.6'
+      redis: '>=6.0.0'
+    peerDependenciesMeta:
+      '@upstash/redis':
+        optional: true
+      redis:
+        optional: true
 
   '@orpc/json-schema@2.0.0-beta.46':
     resolution: {integrity: sha512-SwOdulv2eNy90+a9iv4jWUvi80PZrpldtZ0RKjhPdGIqh19Wb0o6jlm+SsVD76a/m9eT81Hu94z99AJnBt5PcQ==}
@@ -1657,6 +1680,28 @@ packages:
       '@types/swagger-ui':
         optional: true
       swagger-ui:
+        optional: true
+
+  '@orpc/publisher@2.0.0-beta.46':
+    resolution: {integrity: sha512-BeRXiDHV6E8PoDS+nm4ICp/aQPZslEHQjs6+Rf3j0TyMWhOK3afoOXfPqWYfDXQ+binwhDuXh30+oYxYLOgzOQ==}
+    peerDependencies:
+      '@upstash/redis': '>=1.35.6'
+      redis: '>=6.0.0'
+    peerDependenciesMeta:
+      '@upstash/redis':
+        optional: true
+      redis:
+        optional: true
+
+  '@orpc/ratelimit@2.0.0-beta.46':
+    resolution: {integrity: sha512-JqaPsOEepfsAx/ubWTNHRgYM1eIxtYzrIir+OSs1imNy4sdEmh5BB/u66P2DgkSr4SNl9GQxZGnIatTPgNK8Dg==}
+    peerDependencies:
+      '@upstash/redis': '>=1.35.6'
+      redis: '>=6.0.0'
+    peerDependenciesMeta:
+      '@upstash/redis':
+        optional: true
+      redis:
         optional: true
 
   '@orpc/server@2.0.0-beta.46':
@@ -5352,11 +5397,35 @@ snapshots:
       '@standard-server/fetch': 0.11.0
       '@standard-server/peer': 0.11.0
 
+  '@orpc/cloudflare@2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)':
+    dependencies:
+      '@orpc/client': 2.0.0-beta.46
+      '@orpc/experimental-lock': 2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)
+      '@orpc/publisher': 2.0.0-beta.46(redis@6.3.0)
+      '@orpc/ratelimit': 2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)
+      '@orpc/shared': 2.0.0-beta.46
+      '@standard-server/core': 0.11.0
+    transitivePeerDependencies:
+      - '@upstash/redis'
+      - crossws
+      - fastify
+      - redis
+
   '@orpc/contract@2.0.0-beta.46':
     dependencies:
       '@orpc/client': 2.0.0-beta.46
       '@orpc/shared': 2.0.0-beta.46
       '@standard-schema/spec': 1.1.0
+
+  '@orpc/experimental-lock@2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)':
+    dependencies:
+      '@orpc/server': 2.0.0-beta.46(crossws@0.3.5)
+      '@orpc/shared': 2.0.0-beta.46
+    optionalDependencies:
+      redis: 6.3.0
+    transitivePeerDependencies:
+      - crossws
+      - fastify
 
   '@orpc/json-schema@2.0.0-beta.46(crossws@0.3.5)':
     dependencies:
@@ -5382,6 +5451,25 @@ snapshots:
       '@standard-server/core': 0.11.0
       '@standard-server/fetch': 0.11.0
       rou3: 1.0.0
+    transitivePeerDependencies:
+      - crossws
+      - fastify
+
+  '@orpc/publisher@2.0.0-beta.46(redis@6.3.0)':
+    dependencies:
+      '@orpc/client': 2.0.0-beta.46
+      '@orpc/shared': 2.0.0-beta.46
+      '@standard-server/core': 0.11.0
+    optionalDependencies:
+      redis: 6.3.0
+
+  '@orpc/ratelimit@2.0.0-beta.46(crossws@0.3.5)(redis@6.3.0)':
+    dependencies:
+      '@orpc/server': 2.0.0-beta.46(crossws@0.3.5)
+      '@orpc/shared': 2.0.0-beta.46
+      '@standard-server/core': 0.11.0
+    optionalDependencies:
+      redis: 6.3.0
     transitivePeerDependencies:
       - crossws
       - fastify

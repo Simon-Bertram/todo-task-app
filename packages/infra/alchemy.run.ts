@@ -55,6 +55,9 @@ export const server = Worker(
       },
       main: "../../apps/server/src/index.ts",
       name: "todo-server",
+      observability: {
+        traces: { enabled: true },
+      },
       workersDev: false,
     };
   })
@@ -99,6 +102,9 @@ export default Stack(
         SESSION: KV.Namespace("session"),
       },
       name: "todo-web",
+      observability: {
+        traces: { enabled: true },
+      },
       rootDir: "../../apps/web",
       workersDev: false,
     });

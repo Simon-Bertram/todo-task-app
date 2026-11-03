@@ -1,9 +1,17 @@
+import { experimental_CloudflareTracer as CloudflareTracer } from "@orpc/cloudflare";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferenceHandlerPlugin } from "@orpc/openapi/plugins";
-import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
+import type { Context as ApiContext } from "@todo-task-app/api/context";
+import {
+  createRequestId,
+  logStructuredError,
+  REQUEST_ID_HEADER,
+  resolveRequestId,
+  serializeOrpcError,
+} from "@todo-task-app/api/lib/app-error";
 import { appRouter } from "@todo-task-app/api/routers/index";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -11,17 +19,36 @@ import { logger } from "hono/logger";
 
 import { createContext } from "./context";
 import { ENV } from "./env.server";
+import { logOrpcError } from "./log-orpc-error";
 import { createAuth } from "./services";
 
-const app = new Hono();
+new CloudflareTracer().enable();
+
+interface AppVariables {
+  requestId: string;
+}
+
+const app = new Hono<{ Variables: AppVariables }>();
 
 app.use(logger());
+
+app.use("/*", async (c, next) => {
+  const requestId = resolveRequestId(
+    c.req.header(REQUEST_ID_HEADER),
+    createRequestId()
+  );
+  c.set("requestId", requestId);
+  c.header(REQUEST_ID_HEADER, requestId);
+  await next();
+});
+
 app.use(
   "/*",
   cors({
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", REQUEST_ID_HEADER],
     allowMethods: ["GET", "POST", "OPTIONS"],
     credentials: true,
+    exposeHeaders: [REQUEST_ID_HEADER],
     origin: ENV.CORS_ORIGIN,
   })
 );
@@ -37,12 +64,29 @@ const openAPIGenerator = new OpenAPIGenerator({
   converters: [new ZodToJsonSchemaConverter()],
 });
 
+async function withOrpcErrorLogging<T>(options: {
+  context: ApiContext;
+  next: () => Promise<T>;
+  path?: readonly string[];
+  request?: {
+    headers?: Headers | Record<string, string | string[] | undefined>;
+  };
+}): Promise<T> {
+  try {
+    return await options.next();
+  } catch (error) {
+    logOrpcError(error, {
+      path: options.path,
+      requestHeaders: options.request?.headers,
+      requestId: options.context.requestId,
+      userId: options.context.session?.user?.id ?? null,
+    });
+    throw error;
+  }
+}
+
 export const apiHandler = new OpenAPIHandler(appRouter, {
-  interceptors: [
-    onError((error) => {
-      console.error(error);
-    }),
-  ],
+  interceptors: [withOrpcErrorLogging],
   plugins: [
     new OpenAPIReferenceHandlerPlugin({
       provider: "scalar",
@@ -55,11 +99,7 @@ export const apiHandler = new OpenAPIHandler(appRouter, {
 });
 
 export const rpcHandler = new RPCHandler(appRouter, {
-  interceptors: [
-    onError((error) => {
-      console.error(error);
-    }),
-  ],
+  interceptors: [withOrpcErrorLogging],
 });
 
 app.use("/*", async (c, next) => {
@@ -71,7 +111,9 @@ app.use("/*", async (c, next) => {
   });
 
   if (rpcResult.matched) {
-    return c.newResponse(rpcResult.response.body, rpcResult.response);
+    const response = new Response(rpcResult.response.body, rpcResult.response);
+    response.headers.set(REQUEST_ID_HEADER, c.get("requestId"));
+    return response;
   }
 
   // OpenAPI/Scalar documents the authenticated surface — keep it off production.
@@ -82,7 +124,12 @@ app.use("/*", async (c, next) => {
     });
 
     if (apiResult.matched) {
-      return c.newResponse(apiResult.response.body, apiResult.response);
+      const response = new Response(
+        apiResult.response.body,
+        apiResult.response
+      );
+      response.headers.set(REQUEST_ID_HEADER, c.get("requestId"));
+      return response;
     }
   }
 
@@ -109,7 +156,26 @@ app.get("/media/avatars/:userId/:file", async (c) => {
   const headers = new Headers();
   headers.set("Content-Type", object.httpMetadata?.contentType ?? "image/png");
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set(REQUEST_ID_HEADER, c.get("requestId"));
   return new Response(object.body, { headers });
+});
+
+app.onError((error, c) => {
+  const requestId = c.get("requestId") ?? createRequestId();
+  const serialized = serializeOrpcError(error);
+  logStructuredError("hono.error", {
+    code: serialized.code,
+    message: serialized.message,
+    path: c.req.path,
+    requestId,
+  });
+  return c.json(
+    {
+      error: "Internal Server Error",
+      requestId,
+    },
+    500
+  );
 });
 
 export default app;

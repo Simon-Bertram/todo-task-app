@@ -11,7 +11,11 @@ import {
 } from "../lib/orpc.server";
 import { loadSessionUser } from "../lib/session.server";
 
-const data = await loadAppBoardData(Astro.request, { includeCompleted: true });
+const requestId = Astro.locals.requestId;
+const data = await loadAppBoardData(Astro.request, {
+  includeCompleted: true,
+  requestId,
+});
 if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
@@ -30,7 +34,7 @@ let rhythmBest = 0;
 let rhythmCurrent = 0;
 
 try {
-  const client = createServerClient(Astro.request);
+  const client = createServerClient(Astro.request, { requestId });
   const prefs = await client.preferences.get();
   ({
     celebrations,

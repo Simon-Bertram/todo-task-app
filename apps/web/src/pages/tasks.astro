@@ -4,7 +4,9 @@ import AppShell from "../layouts/app-shell.astro";
 import { loadAppBoardData } from "../lib/orpc.server";
 import { mergeTasksBoardPrefs } from "../lib/task-helpers";
 
-const data = await loadAppBoardData(Astro.request);
+const data = await loadAppBoardData(Astro.request, {
+  requestId: Astro.locals.requestId,
+});
 if (data === "unauthorized") {
   return Astro.redirect("/login");
 }

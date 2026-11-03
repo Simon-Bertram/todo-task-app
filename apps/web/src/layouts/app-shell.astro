@@ -122,11 +122,21 @@ if (!user) {
 ></div>
 
 <script>
-  import { orpc } from "../lib/orpc";
+  import { orpc, reportWindowError } from "../lib/orpc";
   import { revalidateOnFocus } from "../lib/revalidate";
   import { showToast, type ToastDetail } from "../lib/toast";
 
   revalidateOnFocus();
+
+  globalThis.addEventListener("error", (event: ErrorEvent) => {
+    reportWindowError(event.error ?? event.message).catch(() => undefined);
+  });
+  globalThis.addEventListener(
+    "unhandledrejection",
+    (event: PromiseRejectionEvent) => {
+      reportWindowError(event.reason).catch(() => undefined);
+    }
+  );
 
   const toastHost = document.getElementById("plansage-toast-host");
 

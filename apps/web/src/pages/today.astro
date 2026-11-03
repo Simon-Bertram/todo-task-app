@@ -3,7 +3,10 @@ import TodayBoard from "../components/islands/today-board";
 import AppShell from "../layouts/app-shell.astro";
 import { loadAppBoardData } from "../lib/orpc.server";
 
-const data = await loadAppBoardData(Astro.request, { includeCompleted: true });
+const data = await loadAppBoardData(Astro.request, {
+  includeCompleted: true,
+  requestId: Astro.locals.requestId,
+});
 if (data === "unauthorized") {
   return Astro.redirect("/login");
 }

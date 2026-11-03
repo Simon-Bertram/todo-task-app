@@ -12,6 +12,7 @@ declare global {
   // biome-ignore lint/style/noNamespace: Astro App.Locals contract
   namespace App {
     interface Locals {
+      requestId: string;
       runtime: {
         env: CloudflareEnv;
       };

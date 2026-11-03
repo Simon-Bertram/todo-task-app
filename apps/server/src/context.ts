@@ -17,11 +17,16 @@ export async function createContext({
   const session = await createAuth(db).api.getSession({
     headers: context.req.raw.headers,
   });
+  const requestId = context.get("requestId");
   return {
     assetBaseUrl: ENV.BETTER_AUTH_URL.replace(TRAILING_SLASH, ""),
     avatars: ENV.AVATARS,
     db,
     hfToken: ENV.HF_TOKEN ?? "",
+    requestId:
+      typeof requestId === "string" && requestId.length > 0
+        ? requestId
+        : crypto.randomUUID(),
     session,
   };
 }

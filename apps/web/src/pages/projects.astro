@@ -3,7 +3,9 @@ import ProjectBoard from "../components/islands/project-board";
 import AppShell from "../layouts/app-shell.astro";
 import { loadAppBoardData } from "../lib/orpc.server";
 
-const data = await loadAppBoardData(Astro.request);
+const data = await loadAppBoardData(Astro.request, {
+  requestId: Astro.locals.requestId,
+});
 if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
