@@ -10,7 +10,7 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects, dailyCapacityMinutes } = data;
+const { tasks, projects, dailyCapacityMinutes, taskProgressControl } = data;
 const rawFilter = Astro.url.searchParams.get("project");
 let initialFilter = "all";
 if (rawFilter === "inbox") {
@@ -24,6 +24,7 @@ if (rawFilter === "inbox") {
   budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Projects"
   projects={projects}
+  taskProgressControl={taskProgressControl}
   tasks={tasks}
   title="Projects · PlanSage"
 >
@@ -31,6 +32,7 @@ if (rawFilter === "inbox") {
     <ProjectBoard
       initialFilter={initialFilter}
       projects={projects}
+      taskProgressControl={taskProgressControl}
       tasks={tasks}
       client:load
     />

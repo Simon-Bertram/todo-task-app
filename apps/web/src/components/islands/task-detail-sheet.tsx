@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 import {
   type CelebrationIntensity,
   celebrateTaskComplete,
@@ -11,15 +17,22 @@ import {
   getQuadrant,
   QUADRANT_META,
 } from "../../lib/quadrant";
-import type { Project, Task } from "../../lib/task-helpers";
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
+} from "../../lib/task-helpers";
+import { isLongTask } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
 import DayPicker from "./day-picker";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
+import TaskProgress from "./task-progress";
 
 interface Props {
   budgetMinutes: number;
   plannedMinutes: number;
   projects: Project[];
+  taskProgressControl?: TaskProgressControl;
   tasks: Task[];
 }
 
@@ -56,25 +69,33 @@ function completionIntensity(options: {
 }
 
 export default function TaskDetailSheet({
-  tasks,
+  tasks: initialTasks,
   projects,
   plannedMinutes,
   budgetMinutes,
+  taskProgressControl = "pie",
 }: Props) {
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [focusProgress, setFocusProgress] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localProjects, setLocalProjects] = useState(projects);
+  const [localTasks, setLocalTasks] = useState(initialTasks);
+  const progressSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setLocalProjects(projects);
   }, [projects]);
 
+  useEffect(() => {
+    setLocalTasks(initialTasks);
+  }, [initialTasks]);
+
   const baseTask = useMemo(
-    () => tasks.find((task) => task.id === taskId) ?? null,
-    [taskId, tasks]
+    () => localTasks.find((task) => task.id === taskId) ?? null,
+    [taskId, localTasks]
   );
 
   const [title, setTitle] = useState("");
@@ -84,9 +105,17 @@ export default function TaskDetailSheet({
   const [isUrgent, setIsUrgent] = useState(0);
   const [isImportant, setIsImportant] = useState(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
+  const [progressPercent, setProgressPercent] = useState(0);
   const [recurrence, setRecurrence] = useState<RecurrenceValue>(null);
   const [isToday, setIsToday] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+
+  const openTask = useCallback((id: string, focus: string | null = null) => {
+    setError(null);
+    setConfirmDelete(false);
+    setFocusProgress(focus === "progress");
+    setTaskId(id);
+  }, []);
 
   useEffect(() => {
     function onOpen(event: Event) {
@@ -94,17 +123,25 @@ export default function TaskDetailSheet({
       const button = target?.closest?.(".task-open") as HTMLElement | null;
       const id = button?.dataset.taskId;
       if (id) {
-        setError(null);
-        setConfirmDelete(false);
-        setTaskId(id);
+        openTask(id, button?.dataset.focus ?? null);
+      }
+    }
+
+    function onOpenEvent(event: Event) {
+      const custom = event as CustomEvent<{ focus?: string; taskId: string }>;
+      const id = custom.detail?.taskId;
+      if (id) {
+        openTask(id, custom.detail.focus ?? null);
       }
     }
 
     document.addEventListener("click", onOpen);
+    document.addEventListener("plansage:open-task", onOpenEvent);
     return () => {
       document.removeEventListener("click", onOpen);
+      document.removeEventListener("plansage:open-task", onOpenEvent);
     };
-  }, []);
+  }, [openTask]);
 
   useEffect(() => {
     if (!baseTask) {
@@ -117,6 +154,7 @@ export default function TaskDetailSheet({
     setIsUrgent(baseTask.isUrgent);
     setIsImportant(baseTask.isImportant);
     setEstimatedMinutes(baseTask.estimatedMinutes);
+    setProgressPercent(baseTask.progressPercent);
     setIsToday(baseTask.isToday);
     setIsCompleted(baseTask.isCompleted);
     setRecurrence(
@@ -124,6 +162,34 @@ export default function TaskDetailSheet({
         ?.value ?? null
     );
   }, [baseTask]);
+
+  useEffect(() => {
+    if (!(focusProgress && baseTask && isLongTask(estimatedMinutes))) {
+      return;
+    }
+    const node = progressSectionRef.current;
+    node?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const focusable = node?.querySelector<HTMLElement>(
+      'button, input, [tabindex="0"]'
+    );
+    focusable?.focus();
+    setFocusProgress(false);
+  }, [baseTask, estimatedMinutes, focusProgress]);
+
+  const onProgressPersisted = useCallback(
+    (next: number) => {
+      if (!baseTask) {
+        return;
+      }
+      setProgressPercent(next);
+      setLocalTasks((current) =>
+        current.map((task) =>
+          task.id === baseTask.id ? { ...task, progressPercent: next } : task
+        )
+      );
+    },
+    [baseTask]
+  );
 
   const close = useCallback(() => {
     setTaskId(null);
@@ -230,7 +296,7 @@ export default function TaskDetailSheet({
         title: nextTitle,
       });
       if (becameCompleted) {
-        const remainingTodayCount = tasks.filter(
+        const remainingTodayCount = localTasks.filter(
           (task) => task.isToday && !task.isCompleted && task.id !== baseTask.id
         ).length;
         await celebrateTaskComplete(
@@ -265,11 +331,11 @@ export default function TaskDetailSheet({
     isSaving,
     isToday,
     isUrgent,
+    localTasks,
     notes,
     plannedMinutes,
     projectId,
     recurrence,
-    tasks,
     title,
   ]);
 
@@ -505,6 +571,19 @@ export default function TaskDetailSheet({
               </p>
             ) : null}
           </section>
+
+          {isLongTask(estimatedMinutes) ? (
+            <section className="space-y-2" ref={progressSectionRef}>
+              <TaskProgress
+                control={taskProgressControl}
+                interactive
+                onPersisted={onProgressPersisted}
+                progressPercent={progressPercent}
+                size="sheet"
+                taskId={baseTask.id}
+              />
+            </section>
+          ) : null}
 
           <section className="space-y-2">
             <h4 className="font-medium text-sm text-text-secondary">

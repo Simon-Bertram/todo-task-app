@@ -11,7 +11,13 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects, tasksBoardPrefs, dailyCapacityMinutes } = data;
+const {
+  tasks,
+  projects,
+  tasksBoardPrefs,
+  dailyCapacityMinutes,
+  taskProgressControl,
+} = data;
 const merged = mergeTasksBoardPrefs(
   {
     due: Astro.url.searchParams.get("due"),
@@ -40,6 +46,7 @@ const initialQuery = merged.query;
   budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Tasks"
   projects={projects}
+  taskProgressControl={taskProgressControl}
   tasks={tasks}
   title="Tasks · PlanSage"
 >
@@ -48,6 +55,7 @@ const initialQuery = merged.query;
       initialPrefs={initialPrefs}
       initialQuery={initialQuery}
       projects={projects}
+      taskProgressControl={taskProgressControl}
       tasks={tasks}
       client:load
     />

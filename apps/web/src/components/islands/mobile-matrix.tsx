@@ -14,16 +14,21 @@ import {
 } from "../../lib/quadrant";
 import {
   getLocalDateString,
+  isLongTask,
   type Project,
   type Task,
+  type TaskProgressControl,
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
+import { useTaskProgressSync } from "../../lib/use-task-progress-sync";
+import TaskProgress from "./task-progress";
 
 interface Props {
   backlogCount: number;
   budgetMinutes: number;
   plannedMinutes: number;
   projects: Project[];
+  taskProgressControl?: TaskProgressControl;
   tasksByQuadrant: Record<QuadrantId, Task[]>;
   todayCount: number;
 }
@@ -44,11 +49,13 @@ export default function MobileMatrix({
   budgetMinutes,
   todayCount,
   backlogCount,
+  taskProgressControl = "pie",
 }: Props) {
   const [selected, setSelected] = useState<QuadrantId>("Q1");
   const [localTasks, setLocalTasks] = useState(() =>
     ORDER.flatMap((id) => initialByQuadrant[id])
   );
+  useTaskProgressSync(setLocalTasks);
   const [moveTaskId, setMoveTaskId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -216,93 +223,17 @@ export default function MobileMatrix({
             No tasks in {selected}. Use Move to quadrant on another card.
           </li>
         ) : (
-          tasks.map((task) => {
-            const project = projectFor(task.projectId);
-            const dueStatus = getDueReminderStatus(task.dueDate, today);
-            const dueLabel = getDueReminderLabel(
-              dueStatus,
-              task.dueDate,
-              today
-            );
-            const dueColor = getDueReminderColor(dueStatus);
-            return (
-              <li key={task.id}>
-                <article
-                  className={`rounded-sm border border-border-contrast bg-surface p-3 pl-4 ${meta.accentClass}`}
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {task.isToday ? (
-                      <span className="inline-flex h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-[10px] text-primary">
-                        Today ({formatMinutes(task.estimatedMinutes)})
-                      </span>
-                    ) : null}
-                    {dueLabel ? (
-                      <span
-                        className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
-                        style={{
-                          backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
-                          borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
-                          color: dueColor,
-                        }}
-                      >
-                        {dueLabel}
-                      </span>
-                    ) : null}
-                    <span className="inline-flex h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-[10px] text-text-secondary">
-                      {formatMinutes(task.estimatedMinutes)} ETC
-                    </span>
-                    {project ? (
-                      <span
-                        className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
-                        style={{
-                          backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
-                          borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
-                          color: project.color,
-                        }}
-                      >
-                        #{project.name}
-                      </span>
-                    ) : null}
-                  </div>
-                  <h3 className="mt-2 font-semibold text-base text-text-primary">
-                    <button
-                      className="task-open text-left"
-                      data-task-id={task.id}
-                      type="button"
-                    >
-                      {task.title}
-                    </button>
-                  </h3>
-                  <div className="tabular-metrics mt-2 flex gap-3 font-mono text-text-muted text-xs">
-                    <span>Urgency: {task.isUrgent}/3</span>
-                    <span>Importance: {task.isImportant}/3</span>
-                    {!dueLabel && task.dueDate ? (
-                      <span>Due {task.dueDate}</span>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary"
-                      data-move-task={task.id}
-                      onClick={openMove}
-                      type="button"
-                    >
-                      Move to quadrant
-                    </button>
-                    {task.isToday ? null : (
-                      <button
-                        className="inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
-                        data-add-today={task.id}
-                        type="button"
-                      >
-                        + Add to Today ({formatMinutes(task.estimatedMinutes)})
-                      </button>
-                    )}
-                  </div>
-                </article>
-              </li>
-            );
-          })
+          tasks.map((task) => (
+            <MobileMatrixTaskCard
+              accentClass={meta.accentClass}
+              control={taskProgressControl}
+              key={task.id}
+              onMove={openMove}
+              project={projectFor(task.projectId)}
+              task={task}
+              today={today}
+            />
+          ))
         )}
       </ul>
 
@@ -367,5 +298,124 @@ export default function MobileMatrix({
         </a>
       </div>
     </div>
+  );
+}
+
+function MobileMatrixTaskCard({
+  task,
+  project,
+  today,
+  accentClass,
+  control,
+  onMove,
+}: {
+  accentClass: string;
+  control: TaskProgressControl;
+  onMove: (event: Event) => void;
+  project: Project | null | undefined;
+  task: Task;
+  today: string;
+}) {
+  const dueStatus = getDueReminderStatus(task.dueDate, today);
+  const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
+  const dueColor = getDueReminderColor(dueStatus);
+  const showProgress = isLongTask(task.estimatedMinutes);
+
+  return (
+    <li>
+      <article
+        className={`rounded-sm border border-border-contrast bg-surface p-3 pl-4 ${accentClass}`}
+      >
+        <div className="flex flex-wrap gap-2">
+          {task.isToday ? (
+            <span className="inline-flex h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-[10px] text-primary">
+              Today ({formatMinutes(task.estimatedMinutes)})
+            </span>
+          ) : null}
+          {dueLabel ? (
+            <span
+              className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
+                borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
+                color: dueColor,
+              }}
+            >
+              {dueLabel}
+            </span>
+          ) : null}
+          <span className="inline-flex h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-[10px] text-text-secondary">
+            {formatMinutes(task.estimatedMinutes)} ETC
+          </span>
+          {project ? (
+            <span
+              className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
+                borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
+                color: project.color,
+              }}
+            >
+              #{project.name}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-2 flex items-start gap-3">
+          <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary">
+            <button
+              className="task-open text-left"
+              data-task-id={task.id}
+              type="button"
+            >
+              {task.title}
+            </button>
+          </h3>
+          {showProgress && control === "pie" ? (
+            <TaskProgress
+              control={control}
+              interactive={false}
+              progressPercent={task.progressPercent}
+              size="compact"
+              taskId={task.id}
+            />
+          ) : null}
+        </div>
+        {showProgress && control === "slider" ? (
+          <div className="mt-2">
+            <TaskProgress
+              control={control}
+              interactive={false}
+              progressPercent={task.progressPercent}
+              size="compact"
+              taskId={task.id}
+            />
+          </div>
+        ) : null}
+        <div className="tabular-metrics mt-2 flex gap-3 font-mono text-text-muted text-xs">
+          <span>Urgency: {task.isUrgent}/3</span>
+          <span>Importance: {task.isImportant}/3</span>
+          {!dueLabel && task.dueDate ? <span>Due {task.dueDate}</span> : null}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary"
+            data-move-task={task.id}
+            onClick={onMove}
+            type="button"
+          >
+            Move to quadrant
+          </button>
+          {task.isToday ? null : (
+            <button
+              className="inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
+              data-add-today={task.id}
+              type="button"
+            >
+              + Add to Today ({formatMinutes(task.estimatedMinutes)})
+            </button>
+          )}
+        </div>
+      </article>
+    </li>
   );
 }

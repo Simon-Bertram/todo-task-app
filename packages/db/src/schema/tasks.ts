@@ -34,6 +34,7 @@ export const tasks = sqliteTable(
     isToday: integer("is_today", { mode: "boolean" }).default(false).notNull(),
     isUrgent: integer("is_urgent").default(0).notNull(),
     notes: text("notes"),
+    progressPercent: integer("progress_percent").default(0).notNull(),
     projectId: text("project_id").references(() => projects.id, {
       onDelete: "set null",
     }),

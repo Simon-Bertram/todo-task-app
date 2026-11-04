@@ -231,6 +231,12 @@ export function createAuth(
           required: false,
           type: "boolean",
         },
+        taskProgressControl: {
+          defaultValue: "pie",
+          input: false,
+          required: false,
+          type: "string",
+        },
         tasksBoardPrefs: {
           input: false,
           required: false,

@@ -16,19 +16,21 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects, dailyCapacityMinutes } = data;
+const { tasks, projects, dailyCapacityMinutes, taskProgressControl } = data;
 ---
 
 <AppShell
   budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Complete"
   projects={projects}
+  taskProgressControl={taskProgressControl}
   tasks={tasks}
   title="Complete · PlanSage"
 >
   <CompleteBoard
     projects={projects}
     range={range}
+    taskProgressControl={taskProgressControl}
     tasks={tasks}
     timeZone={timeZone}
     client:load

@@ -23,21 +23,27 @@ import {
   QUADRANT_META,
   type QuadrantId,
 } from "../../lib/quadrant";
+import { stopPointerPropagation } from "../../lib/stop-pointer";
 import {
   getLocalDateString,
   getProject,
   getTaskQuadrant,
   getTodayPlannedMinutes,
   getTodayTasks,
+  isLongTask,
   type Project,
   type Task,
+  type TaskProgressControl,
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
+import { useTaskProgressSync } from "../../lib/use-task-progress-sync";
+import TaskProgress from "./task-progress";
 
 interface Props {
   budgetMinutes: number;
   initialFilter?: string;
   projects: Project[];
+  taskProgressControl?: TaskProgressControl;
   tasks: Task[];
 }
 
@@ -56,8 +62,10 @@ export default function DesktopMatrixBoard({
   projects,
   budgetMinutes,
   initialFilter = "all",
+  taskProgressControl = "pie",
 }: Props) {
   const [tasks, setTasks] = useState(initialTasks);
+  useTaskProgressSync(setTasks);
   const [filter, setFilter] = useState(initialFilter);
   const [dockHoverMinutes, setDockHoverMinutes] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -236,6 +244,7 @@ export default function DesktopMatrixBoard({
         <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3">
           {ORDER.map((quadrant) => (
             <QuadrantDrop
+              control={taskProgressControl}
               key={quadrant}
               projects={projects}
               quadrant={quadrant}
@@ -260,7 +269,9 @@ function QuadrantDrop({
   quadrant,
   tasks,
   projects,
+  control,
 }: {
+  control: TaskProgressControl;
   projects: Project[];
   quadrant: QuadrantId;
   tasks: Task[];
@@ -319,7 +330,12 @@ function QuadrantDrop({
           </p>
         ) : (
           tasks.map((task) => (
-            <DraggableTaskCard key={task.id} projects={projects} task={task} />
+            <DraggableTaskCard
+              control={control}
+              key={task.id}
+              projects={projects}
+              task={task}
+            />
           ))
         )}
       </div>
@@ -330,7 +346,9 @@ function QuadrantDrop({
 function DraggableTaskCard({
   task,
   projects,
+  control,
 }: {
+  control: TaskProgressControl;
   projects: Project[];
   task: Task;
 }) {
@@ -343,6 +361,7 @@ function DraggableTaskCard({
   const dueStatus = getDueReminderStatus(task.dueDate, today);
   const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
   const dueColor = getDueReminderColor(dueStatus);
+  const showProgress = isLongTask(task.estimatedMinutes);
 
   useEffect(() => {
     const element = ref.current as HTMLElement | null;
@@ -403,15 +422,39 @@ function DraggableTaskCard({
           </span>
         ) : null}
       </div>
-      <h3 className="mt-2 font-semibold text-base text-text-primary leading-snug">
-        <button
-          className="task-open text-left hover:text-primary"
-          data-task-id={task.id}
-          type="button"
-        >
-          {task.title}
-        </button>
-      </h3>
+      <div className="mt-2 flex items-start gap-2">
+        <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary leading-snug">
+          <button
+            className="task-open text-left hover:text-primary"
+            data-task-id={task.id}
+            type="button"
+          >
+            {task.title}
+          </button>
+        </h3>
+        {showProgress && control === "pie" ? (
+          <div className="shrink-0" onPointerDown={stopPointerPropagation}>
+            <TaskProgress
+              control={control}
+              interactive={false}
+              progressPercent={task.progressPercent}
+              size="compact"
+              taskId={task.id}
+            />
+          </div>
+        ) : null}
+      </div>
+      {showProgress && control === "slider" ? (
+        <div className="mt-2" onPointerDown={stopPointerPropagation}>
+          <TaskProgress
+            control={control}
+            interactive={false}
+            progressPercent={task.progressPercent}
+            size="compact"
+            taskId={task.id}
+          />
+        </div>
+      ) : null}
       <div className="tabular-metrics mt-3 flex flex-wrap items-center gap-3 font-mono text-text-muted text-xs">
         <span>U:{task.isUrgent}/3</span>
         <span>I:{task.isImportant}/3</span>

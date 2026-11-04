@@ -28,6 +28,13 @@
   --color-capacity-warn: #f59e0b;
   --color-capacity-over: #f43f5e;
 
+  --color-progress-empty: #64748b;
+  --color-progress-track: #1e293b;
+  --color-progress-low: #0f766e;
+  --color-progress-mid: #14b8a6;
+  --color-progress-high: #d97706;
+  --color-progress-done: #16a34a;
+
   --radius-xs: 0.25rem;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;

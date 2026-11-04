@@ -19,16 +19,20 @@ import {
   filterTasksList,
   getLocalDateString,
   hasActiveTasksBoardFilters,
+  isLongTask,
   type Project,
   prefsToSearchParams,
   sortTasksList,
   type Task,
+  type TaskProgressControl,
 } from "../../lib/task-helpers";
+import TaskProgress from "./task-progress";
 
 interface Props {
   initialPrefs: TasksBoardPrefs;
   initialQuery: string;
   projects: Project[];
+  taskProgressControl?: TaskProgressControl;
   tasks: Task[];
 }
 
@@ -88,6 +92,7 @@ export default function TasksBoard({
   projects,
   initialPrefs,
   initialQuery,
+  taskProgressControl = "pie",
 }: Props) {
   const [prefs, setPrefs] = useState<TasksBoardPrefs>(initialPrefs);
   const [query, setQuery] = useState(initialQuery);
@@ -301,7 +306,12 @@ export default function TasksBoard({
       ) : (
         <ul className="space-y-2">
           {visibleTasks.map((task) => (
-            <TaskRow key={task.id} projects={projects} task={task} />
+            <TaskRow
+              control={taskProgressControl}
+              key={task.id}
+              projects={projects}
+              task={task}
+            />
           ))}
         </ul>
       )}
@@ -525,7 +535,15 @@ function FilterChip({
   );
 }
 
-function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
+function TaskRow({
+  task,
+  projects,
+  control,
+}: {
+  control: TaskProgressControl;
+  projects: Project[];
+  task: Task;
+}) {
   const project = projects.find((item) => item.id === task.projectId);
   const quadrant = getQuadrant(task.isUrgent, task.isImportant);
   const meta = QUADRANT_META[quadrant];
@@ -533,11 +551,12 @@ function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
   const dueStatus = getDueReminderStatus(task.dueDate, today);
   const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
   const dueColor = getDueReminderColor(dueStatus);
+  const showProgress = isLongTask(task.estimatedMinutes);
 
   return (
-    <li>
+    <li className="flex items-stretch gap-2">
       <button
-        className="task-open flex min-h-11 w-full items-center gap-3 rounded-md border border-border-contrast bg-surface px-4 py-3 text-left hover:bg-surface-elevated"
+        className="task-open flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-md border border-border-contrast bg-surface px-4 py-3 text-left hover:bg-surface-elevated"
         data-task-id={task.id}
         type="button"
       >
@@ -579,6 +598,17 @@ function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
           {formatMinutes(task.estimatedMinutes)}
         </span>
       </button>
+      {showProgress ? (
+        <div className="flex shrink-0 items-center rounded-md border border-border-contrast bg-surface px-2">
+          <TaskProgress
+            control={control}
+            interactive={false}
+            progressPercent={task.progressPercent}
+            size="compact"
+            taskId={task.id}
+          />
+        </div>
+      ) : null}
     </li>
   );
 }

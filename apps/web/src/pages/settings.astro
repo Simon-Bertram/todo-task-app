@@ -25,13 +25,14 @@ if (!sessionUser) {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects, dailyCapacityMinutes } = data;
+const { tasks, projects, dailyCapacityMinutes, taskProgressControl } = data;
 
 let celebrations: "subtle" | "off" = "subtle";
 let onboardingCompletedAt: Date | null = null;
 let rhythmOptIn = false;
 let rhythmBest = 0;
 let rhythmCurrent = 0;
+let initialTaskProgressControl = taskProgressControl;
 
 try {
   const client = createServerClient(Astro.request, { requestId });
@@ -43,6 +44,7 @@ try {
     rhythmCurrent,
     rhythmOptIn,
   } = prefs);
+  initialTaskProgressControl = prefs.taskProgressControl;
 } catch (error) {
   if (isUnauthorized(error)) {
     return Astro.redirect("/login");
@@ -54,6 +56,7 @@ try {
   budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Settings"
   projects={projects}
+  taskProgressControl={initialTaskProgressControl}
   tasks={tasks}
   title="Settings · PlanSage"
 >
@@ -84,6 +87,7 @@ try {
     <GamificationSettings
       initialCelebrations={celebrations}
       initialRhythmOptIn={rhythmOptIn}
+      initialTaskProgressControl={initialTaskProgressControl}
       rhythmBest={rhythmBest}
       rhythmCurrent={rhythmCurrent}
       client:load

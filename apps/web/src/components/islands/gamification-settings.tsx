@@ -4,6 +4,7 @@ import {
   setCelebrationsPref,
 } from "../../lib/celebrate";
 import { orpc } from "../../lib/orpc";
+import type { TaskProgressControl } from "../../lib/task-helpers";
 
 interface MilestoneRow {
   key: string;
@@ -23,6 +24,7 @@ interface WeeklyStats {
 interface Props {
   initialCelebrations: CelebrationsPref;
   initialRhythmOptIn: boolean;
+  initialTaskProgressControl?: TaskProgressControl;
   rhythmBest: number;
   rhythmCurrent: number;
 }
@@ -30,11 +32,14 @@ interface Props {
 export default function GamificationSettings({
   initialCelebrations,
   initialRhythmOptIn,
+  initialTaskProgressControl = "pie",
   rhythmBest,
   rhythmCurrent,
 }: Props) {
   const [celebrations, setCelebrations] =
     useState<CelebrationsPref>(initialCelebrations);
+  const [taskProgressControl, setTaskProgressControl] =
+    useState<TaskProgressControl>(initialTaskProgressControl);
   const [rhythmOptIn, setRhythmOptIn] = useState(initialRhythmOptIn);
   const [current, setCurrent] = useState(rhythmCurrent);
   const [best, setBest] = useState(rhythmBest);
@@ -89,6 +94,21 @@ export default function GamificationSettings({
     }
   }, []);
 
+  const onTaskProgressControlChange = useCallback(async (event: Event) => {
+    const { value } = event.currentTarget as HTMLSelectElement;
+    const next = value as TaskProgressControl;
+    setTaskProgressControl(next);
+    setStatus(null);
+    try {
+      await orpc.preferences.updateTaskProgressControl({
+        taskProgressControl: next,
+      });
+      setStatus("Progress control saved.");
+    } catch {
+      setError("Could not save progress control.");
+    }
+  }, []);
+
   const onRhythmToggle = useCallback(async (event: Event) => {
     const { checked } = event.currentTarget as HTMLInputElement;
     setRhythmOptIn(checked);
@@ -127,6 +147,30 @@ export default function GamificationSettings({
           >
             <option value="subtle">Subtle</option>
             <option value="off">Off</option>
+          </select>
+        </label>
+      </section>
+
+      <section className="space-y-4 rounded-md border border-border-contrast bg-surface p-5">
+        <div>
+          <h2 className="font-semibold text-text-primary">
+            Long-task progress
+          </h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Control shown on tasks with ETC over 60 minutes. Applies app-wide.
+          </p>
+        </div>
+        <label className="block space-y-1.5">
+          <span className="font-medium text-sm text-text-secondary">
+            Progress UI
+          </span>
+          <select
+            className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary"
+            onChange={onTaskProgressControlChange}
+            value={taskProgressControl}
+          >
+            <option value="pie">Quartered pie</option>
+            <option value="slider">Percentage slider</option>
           </select>
         </label>
       </section>

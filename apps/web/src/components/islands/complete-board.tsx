@@ -6,11 +6,19 @@ import {
   formatCompletedAt,
 } from "../../lib/completed-range";
 import { getQuadrant, QUADRANT_META } from "../../lib/quadrant";
-import { getProject, type Project, type Task } from "../../lib/task-helpers";
+import {
+  getProject,
+  isLongTask,
+  type Project,
+  type Task,
+  type TaskProgressControl,
+} from "../../lib/task-helpers";
+import TaskProgress from "./task-progress";
 
 interface Props {
   projects: Project[];
   range: CompletedRangeId;
+  taskProgressControl?: TaskProgressControl;
   tasks: Task[];
   timeZone: string;
 }
@@ -20,6 +28,7 @@ export default function CompleteBoard({
   projects,
   range,
   timeZone,
+  taskProgressControl = "pie",
 }: Props) {
   const grouped = useMemo(() => {
     const map = new Map<string, Task[]>();
@@ -91,9 +100,9 @@ export default function CompleteBoard({
                   const quadrant = getQuadrant(task.isUrgent, task.isImportant);
                   const meta = QUADRANT_META[quadrant];
                   return (
-                    <li key={task.id}>
+                    <li className="flex items-stretch gap-2" key={task.id}>
                       <button
-                        className="task-open flex min-h-11 w-full items-start gap-3 rounded-sm border border-border-contrast bg-surface px-3 py-3 text-left hover:bg-surface-elevated"
+                        className="task-open flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-sm border border-border-contrast bg-surface px-3 py-3 text-left hover:bg-surface-elevated"
                         data-task-id={task.id}
                         type="button"
                       >
@@ -113,6 +122,17 @@ export default function CompleteBoard({
                           </span>
                         </span>
                       </button>
+                      {isLongTask(task.estimatedMinutes) ? (
+                        <div className="flex shrink-0 items-center rounded-sm border border-border-contrast bg-surface px-2">
+                          <TaskProgress
+                            control={taskProgressControl}
+                            interactive={false}
+                            progressPercent={task.progressPercent}
+                            size="compact"
+                            taskId={task.id}
+                          />
+                        </div>
+                      ) : null}
                     </li>
                   );
                 })}

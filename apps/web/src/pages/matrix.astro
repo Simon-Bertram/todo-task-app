@@ -16,7 +16,7 @@ if (data === "unauthorized") {
   return Astro.redirect("/login");
 }
 
-const { tasks, projects, dailyCapacityMinutes } = data;
+const { tasks, projects, dailyCapacityMinutes, taskProgressControl } = data;
 const tasksByQuadrant = getTasksByQuadrant(tasks);
 const plannedMinutes = getTodayPlannedMinutes(tasks);
 const todayCount = getTodayTasks(tasks).length;
@@ -28,6 +28,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
   budgetMinutes={dailyCapacityMinutes}
   mobileTitle="PlanSage / Matrix"
   projects={projects}
+  taskProgressControl={taskProgressControl}
   tasks={tasks}
   title="Matrix · PlanSage"
 >
@@ -37,6 +38,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
       budgetMinutes={dailyCapacityMinutes}
       plannedMinutes={plannedMinutes}
       projects={projects}
+      taskProgressControl={taskProgressControl}
       tasksByQuadrant={tasksByQuadrant}
       todayCount={todayCount}
       client:load
@@ -46,6 +48,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
     budgetMinutes={dailyCapacityMinutes}
     initialFilter={filter}
     projects={projects}
+    taskProgressControl={taskProgressControl}
     tasks={tasks}
     client:load
   />

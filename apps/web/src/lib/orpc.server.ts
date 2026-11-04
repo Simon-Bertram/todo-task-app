@@ -19,7 +19,7 @@ import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-boar
 
 import { ENV } from "../env.public";
 import { mergeServiceBindingHeaders } from "./rpc-fetch-headers";
-import type { Project, Task } from "./task-helpers";
+import type { Project, Task, TaskProgressControl } from "./task-helpers";
 
 new CloudflareTracer().enable();
 
@@ -28,6 +28,7 @@ const TRAILING_SLASH = /\/$/;
 export interface AppBoardData {
   dailyCapacityMinutes: number;
   projects: Project[];
+  taskProgressControl: TaskProgressControl;
   tasks: Task[];
   tasksBoardPrefs: TasksBoardPrefs;
 }
@@ -107,6 +108,7 @@ export async function loadAppBoardData(
     return {
       dailyCapacityMinutes: preferences.dailyCapacityMinutes,
       projects,
+      taskProgressControl: preferences.taskProgressControl,
       tasks,
       tasksBoardPrefs: preferences.tasksBoard ?? DEFAULT_TASKS_BOARD_PREFS,
     };
@@ -136,6 +138,7 @@ export async function loadCompletedBoardData(
     return {
       dailyCapacityMinutes: preferences.dailyCapacityMinutes,
       projects,
+      taskProgressControl: preferences.taskProgressControl,
       tasks,
       tasksBoardPrefs: preferences.tasksBoard ?? DEFAULT_TASKS_BOARD_PREFS,
     };

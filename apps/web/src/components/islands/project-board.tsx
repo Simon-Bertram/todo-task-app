@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { orpc } from "../../lib/orpc";
 import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
-import type { Project, Task } from "../../lib/task-helpers";
+import {
+  isLongTask,
+  type Project,
+  type Task,
+  type TaskProgressControl,
+} from "../../lib/task-helpers";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
+import TaskProgress from "./task-progress";
 
 interface Props {
   initialFilter: string;
   projects: Project[];
+  taskProgressControl?: TaskProgressControl;
   tasks: Task[];
 }
 
@@ -65,6 +72,7 @@ export default function ProjectBoard({
   projects,
   tasks,
   initialFilter,
+  taskProgressControl = "pie",
 }: Props) {
   const [filter, setFilter] = useState<FilterKey>(initialFilter);
   const [panel, setPanel] = useState<PanelMode>({ kind: "closed" });
@@ -207,6 +215,7 @@ export default function ProjectBoard({
       />
 
       <TaskListSection
+        control={taskProgressControl}
         filteredTasks={filteredTasks}
         onAddTask={onAddTaskHeader}
         projects={projects}
@@ -390,7 +399,9 @@ function TaskListSection({
   projects,
   selectedProject,
   onAddTask,
+  control,
 }: {
+  control: TaskProgressControl;
   filteredTasks: Task[];
   onAddTask: () => void;
   projects: Project[];
@@ -417,7 +428,12 @@ function TaskListSection({
       ) : (
         <ul className="space-y-2">
           {filteredTasks.map((task) => (
-            <TaskRow key={task.id} projects={projects} task={task} />
+            <TaskRow
+              control={control}
+              key={task.id}
+              projects={projects}
+              task={task}
+            />
           ))}
         </ul>
       )}
@@ -425,15 +441,24 @@ function TaskListSection({
   );
 }
 
-function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
+function TaskRow({
+  task,
+  projects,
+  control,
+}: {
+  control: TaskProgressControl;
+  projects: Project[];
+  task: Task;
+}) {
   const project = projects.find((item) => item.id === task.projectId);
   const quadrant = getQuadrant(task.isUrgent, task.isImportant);
   const meta = QUADRANT_META[quadrant];
+  const showProgress = isLongTask(task.estimatedMinutes);
 
   return (
-    <li>
+    <li className="flex items-stretch gap-2">
       <button
-        className="task-open flex min-h-11 w-full items-center gap-3 rounded-md border border-border-contrast bg-surface px-4 py-3 text-left hover:bg-surface-elevated"
+        className="task-open flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-md border border-border-contrast bg-surface px-4 py-3 text-left hover:bg-surface-elevated"
         data-task-id={task.id}
         type="button"
       >
@@ -462,6 +487,17 @@ function TaskRow({ task, projects }: { projects: Project[]; task: Task }) {
           {formatMinutes(task.estimatedMinutes)}
         </span>
       </button>
+      {showProgress ? (
+        <div className="flex shrink-0 items-center rounded-md border border-border-contrast bg-surface px-2">
+          <TaskProgress
+            control={control}
+            interactive={false}
+            progressPercent={task.progressPercent}
+            size="compact"
+            taskId={task.id}
+          />
+        </div>
+      ) : null}
     </li>
   );
 }

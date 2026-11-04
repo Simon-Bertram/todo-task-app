@@ -18,7 +18,7 @@ This repo uses **Better-T-Stack**, not the original “single Worker / embedded 
 | Real-time | Optimistic UI + focus / `visibilitychange` revalidation only |
 | Scheduled jobs (Post-V1) | Cloudflare Workers Cron Triggers on the existing `apps/server` Worker via Alchemy—not a third Worker and not Astro |
 
-**V1 scope:** Eisenhower Matrix planning UI, time-budgeted Today execution view, capacity engine (incl. 1-3-5 filter), projects/categories, task CRUD with recurrence-on-complete, desktop DnD + mobile sheet/toggle flows, Matrix ↔ Today information architecture below, **Complete** archive view with range filters, capacity-aligned day progress / setup checklist, and restrained completion confetti (`canvas-confetti`).
+**V1 scope:** Eisenhower Matrix planning UI, time-budgeted Today execution view, capacity engine (incl. 1-3-5 filter), projects/categories, task CRUD with recurrence-on-complete, desktop DnD + mobile sheet/toggle flows, Matrix ↔ Today information architecture below, **Complete** archive view with range filters, long-task progress indicator for ETC &gt; 60 (pie default / slider; Settings-selectable; GSAP micro-motion — §4.2.3), capacity-aligned day progress / setup checklist, and restrained completion confetti (`canvas-confetti`).
 
 **V1 non-goals:** Durable Objects, WebSockets, multi-tenant workspaces (schema may reserve optional `workspace_id` only), Cmd+K quick capture, Focus Mode / Pomodoro, two-way calendar sync, weekly analytics dashboard, sequential blockers / sub-checklists UI, and Workers Cron governance automation (see Post-V1 §§4.6–4.7). Also out of scope: points economies, public leaderboards / social flairs, daily login bonuses, streak freezes / rescues, volume XP, and heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page embeds, default sound/haptics). Schema may still reserve columns/tables for Post-V1 without exposing UI.
 
@@ -88,6 +88,7 @@ Each task contains:
 - **Title & Description:** Markdown-supported notes.
 - **Due Date & Optional Due Time:** ISO8601 (`due_date` as `YYYY-MM-DD`; time optional if modeled separately later).
 - **Estimated Time to Complete (ETC):** Minutes (e.g. 15, 30, 60, 90).
+- **Progress (long tasks):** `progress_percent` 0–100 when ETC &gt; 60 — see §4.2.3.
 - **Category / Project:** Color-coded project/label (`project_id`).
 - **Priority ratings:** `is_urgent` and `is_important` are integers **0–3** (0 = None, 1 = Low, 2 = Medium, 3 = High).
 
@@ -153,6 +154,98 @@ URL: `/complete?range=this_week|last_week|last_month|last_year|all`.
 **API:** `tasks.listCompleted` with `{ range, timeZone }`. Index: `(user_id, is_completed, completed_at)`.
 
 Empty state per range (e.g. “No completions this week”). Archive + light reflection—not a scoreboard.
+
+### 4.2.3 Long-task progress indicator (V1)
+
+For tasks with **ETC &gt; 60 minutes**, surface a progress control so users can mark how far along a long task is. This is **per-task work progress**, not the day-capacity “Done today” bar in §4.8.
+
+**Eligibility:** Show only when `estimated_minutes > 60`. Shorter tasks omit the control entirely.
+
+**Settings (global):** Users choose one app-wide control in Settings:
+
+| Value | UI | Default |
+|-------|-----|---------|
+| `pie` | Quartered circle/pie | **Yes** |
+| `slider` | Percentage slider + progress bar | No |
+
+Persist as `user.task_progress_control` (`'pie' | 'slider'`, default `'pie'`) via preferences oRPC (same pattern as `celebrations` / daily capacity).
+
+**Per-task value:** `tasks.progress_percent` INTEGER **0–100** is the single source of truth. Do not derive progress from `actual_minutes` in V1. Completing a task leaves the percent as-is for archive reflection; reopening keeps the last value. Display always tracks the stored percent (including non-quarter values from slider mode).
+
+#### Pie mode
+
+- Visual: four equal sectors representing 0 / 25 / 50 / 75 / 100%.
+- **Primary gesture (sheet / desktop interactive):** tap anywhere on the pie to advance one quarter — `0 → 25 → 50 → 75 → 100`; at 100%, next tap resets to `0`. Writes multiples of 25 into `progress_percent`.
+- **Large sheet only (optional):** tapping a specific quadrant may jump to that absolute percent (25 / 50 / 75 / 100); whole-pie tap remains advance for discoverability.
+- GSAP animates the newly filled quarter (see Motion below). Show a numeric `%` beside/under the pie so color is not the only signal.
+
+#### Slider mode
+
+- Range **0–100**, **step 5**.
+- A progress bar mirrors the value; scrubbing the slider animates the bar (GSAP).
+- Writes the chosen integer percent to `progress_percent`.
+- Persist mutations on `change` / pointer-up (not every `input` tick); still animate the bar on `input` for feel.
+
+#### Mobile vs desktop layout
+
+Mobile-first rule: **list rows show status; precise editing happens in a large hit-target surface** (task bottom sheet). Accidental progress bumps while scrolling are worse than one extra tap.
+
+| Surface | What the user sees | Interaction |
+|---------|--------------------|-------------|
+| Today / Matrix card | Compact indicator (pie ~32–40px visual inside a **≥ 44×44px** tap target, or a thin full-width bar ~6–8px under the title) + optional `%` text | **Tap indicator → open task bottom sheet** focused on progress (does **not** advance on the card) |
+| Task bottom sheet (mobile) | Large control: pie **≥ 120px**, or full-width slider (thumb ≥ 44px, track ≥ 8px) + live bar + “Progress” label | Primary place to change `progress_percent` |
+| Desktop detail / wide Today | Inline interactive pie or slider when spacing keeps ≥ 44×44px | Same semantics as sheet |
+| Matrix density | Compact read-only indicator | Edits via detail / sheet |
+
+Keep progress controls away from the Today checkbox and DnD handle so targets do not overlap. Vertical list scroll wins over horizontal slider until the thumb is clearly captured.
+
+#### Colors (CSS variables)
+
+Progress fills read as “approaching done,” not capacity-warning red. Avoid purple gradients and glow-heavy treatments.
+
+| Progress | Token | Suggested value | Notes |
+|----------|-------|-----------------|-------|
+| 0% | `--progress-empty` | slate/stone muted stroke | Empty track only |
+| 1–49% | `--progress-low` | `#0f766e` (deep teal) | Early work |
+| 50–74% | `--progress-mid` | `#14b8a6` (teal) | Midway |
+| 75–99% | `--progress-high` | `#d97706` (soft amber) | Nearly there (warm, not alert-red) |
+| 100% | `--progress-done` | `#16a34a` (green) | Complete; brief success pulse |
+
+Track/background: low-contrast `--progress-track`. Meet WCAG contrast for any `%` label.
+
+#### Motion (GSAP)
+
+- Library: **GSAP core**, **dynamic import** only inside the progress islands (same discipline as `canvas-confetti`). Code-split per island; stay within the island JS budget where possible.
+- Honor `prefers-reduced-motion: reduce` (instant set, no tween).
+- **Pie tap:** tween next sector fill (SVG `stroke-dashoffset` or path opacity), `duration ~0.35`, `ease: "back.out(1.4)"`, optional 1.02 scale punch then settle.
+- **Approaching completion (75%→100%):** crossfade fill toward `--progress-done`; at 100% a single soft scale pulse — **not** confetti or fireworks.
+- **Slider / bar:** on input, `gsap.to` width/`scaleX` with `duration ~0.25`, `ease: "power3.out"`, color tween across the stops above; scrubbing uses `overwrite: "auto"`.
+
+Restrained GSAP for these progress micro-interactions is **allowed**. Heavy GSAP celebration / fireworks stacks remain banned (§4.8).
+
+#### Components
+
+GSAP is framework-agnostic and does not require React. Per stack conventions:
+
+- Public entrypoints: Astro components `apps/web/src/components/task-progress-pie.astro` and `apps/web/src/components/task-progress-slider.astro`.
+- Each embeds a **Preact island** that owns DOM refs and dynamically `import('gsap')`.
+- Parents pass `taskId`, `progressPercent`, and mount only the component matching `task_progress_control`.
+
+#### Persistence
+
+| State | Where | How |
+|-------|-------|-----|
+| Task progress | `tasks.progress_percent` | `tasks.update` (session-scoped); optimistic UI + rollback/toast; focus / `visibilitychange` revalidation |
+| Control preference | `user.task_progress_control` | preferences oRPC; default `'pie'` |
+| Animation | Ephemeral (GSAP only) | Never stored |
+
+Do **not** use `localStorage` as source of truth (breaks multi-device sync).
+
+#### Accessibility
+
+- Accessible name e.g. “Task progress, 50 percent”.
+- Sheet pie: Enter / Space advances one quarter when focused.
+- Slider: expose `aria-valuemin` / `aria-valuemax` / `aria-valuenow`.
 
 ### 4.3 "Today's Tasks" Screen & Capacity Engine
 
@@ -227,7 +320,7 @@ Gamification must reinforce **finishing what fits today**, not session count or 
 - Public leaderboards, social flairs, roles
 - VIP/Diamond titles from spend or raw completion volume
 - Volume XP that encourages stuffing Today past capacity
-- Heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page, GSAP fireworks) or sound/haptics by default
+- Heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page, GSAP fireworks) or sound/haptics by default. **Exception:** restrained GSAP for long-task progress micro-interactions (§4.2.3) is allowed; do not expand that into celebration fireworks.
 
 **V1 / near-term**
 
@@ -255,6 +348,7 @@ Gamification must reinforce **finishing what fits today**, not session count or 
 | Avatar objects | Cloudflare R2 | Alchemy-provisioned; served via server Worker |
 | Text-to-image | Hugging Face Inference Providers | `FLUX.1-schnell` for avatar generate |
 | Hosting | Cloudflare Workers via Alchemy | `packages/infra` (web + server) |
+| Task progress motion | GSAP core (dynamic import) | Long-task pie / slider islands only (§4.2.3); not celebration fireworks |
 | Scheduled jobs (Post-V1) | Worker Cron Triggers | On `apps/server` via Alchemy |
 
 ## 6. D1 Schema Guidance (Drizzle)
@@ -271,6 +365,7 @@ Add product prefs as columns on `user` (or a 1:1 prefs table keyed by `user_id`)
 - `daily_capacity_minutes` INTEGER DEFAULT 300
 - `onboarding_completed_at` INTEGER NULL (timestamp_ms) — setup checklist dismissed (not avatar gate)
 - `celebrations` TEXT DEFAULT `'subtle'` — `subtle` | `off` (completion confetti)
+- `task_progress_control` TEXT DEFAULT `'pie'` — `pie` | `slider` (long-task progress UI; §4.2.3)
 - `rhythm_opt_in` INTEGER DEFAULT 0 — Post-V1 protected-day rhythm
 - `rhythm_current` INTEGER DEFAULT 0 — Post-V1
 - `rhythm_best` INTEGER DEFAULT 0 — Post-V1
@@ -306,6 +401,7 @@ tasks
   is_urgent INTEGER DEFAULT 0     -- 0–3
   is_important INTEGER DEFAULT 0  -- 0–3
   estimated_minutes INTEGER DEFAULT 30
+  progress_percent INTEGER DEFAULT 0  -- 0–100; UI when estimated_minutes > 60 (§4.2.3)
   actual_minutes INTEGER DEFAULT 0  -- reserved (Focus Mode)
   due_date TEXT                   -- YYYY-MM-DD
   is_today INTEGER DEFAULT 0
@@ -362,18 +458,18 @@ user_milestones
 
 ## 7. Mobile-First & Non-Functional Requirements
 
-- **Touch targets:** Primary controls ≥ 44×44px.
-- **Bottom sheets:** Task details, recurrence, project moves, and quadrant moves on mobile use swipeable bottom sheets (not centered modals).
+- **Touch targets:** Primary controls ≥ 44×44px (including compact long-task progress indicators and slider thumbs; §4.2.3).
+- **Bottom sheets:** Task details, recurrence, project moves, quadrant moves, and long-task progress editing on mobile use swipeable bottom sheets (not centered modals).
 - **Performance budget:**
   - Initial page load: &lt; 1.2s over 4G
-  - Island JS payload: &lt; 35KB gzipped
+  - Island JS payload: &lt; 35KB gzipped (dynamic-import GSAP only inside progress islands; §4.2.3)
   - D1 query latency: &lt; 30ms median
-- **Optimistic UI:** Checkbox toggles and reorders update Preact/local state immediately; rollback + toast on failure.
+- **Optimistic UI:** Checkbox toggles, reorders, and `progress_percent` updates update Preact/local state immediately; rollback + toast on failure.
 
 ## 8. Agent checklist for feature work
 
 1. Confirm behavior against this PRD and edit order in [AGENTS.md](../AGENTS.md). Respect **V1 vs Post-V1** labels—do not build Post-V1 surfaces unless the task explicitly asks for them.
 2. Schema first (`packages/db`) → oRPC (`packages/api`) → server only if needed → `apps/web` islands → infra only for new bindings or cron.
 3. Enforce `user_id` scoping on every read/write.
-4. Prefer Preact islands for Matrix DnD, Today capacity UI, and drawers; follow §4.2.1 for Matrix ↔ Today presentation.
+4. Prefer Preact islands for Matrix DnD, Today capacity UI, drawers, and long-task progress (Astro wrappers + Preact + dynamic GSAP; §4.2.3); follow §4.2.1 for Matrix ↔ Today presentation.
 5. Run `pnpm exec ultracite fix` / `pnpm check` before finishing.

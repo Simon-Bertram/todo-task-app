@@ -30,10 +30,19 @@ export interface Task {
   isToday: boolean;
   isUrgent: number;
   notes: string | null;
+  progressPercent: number;
   projectId: string | null;
   recurrenceRule: string | null;
   sortOrder: number;
   title: string;
+}
+
+export type TaskProgressControl = "pie" | "slider";
+
+export const LONG_TASK_MINUTES = 60;
+
+export function isLongTask(estimatedMinutes: number): boolean {
+  return estimatedMinutes > LONG_TASK_MINUTES;
 }
 
 export interface TasksBoardUrlParams {

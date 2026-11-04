@@ -1,0 +1,25 @@
+---
+import TaskProgressPie from "./islands/task-progress-pie";
+
+interface Props {
+  interactive?: boolean;
+  progressPercent: number;
+  size?: "compact" | "inline" | "sheet";
+  taskId: string;
+}
+
+const {
+  taskId,
+  progressPercent,
+  size = "compact",
+  interactive = false,
+} = Astro.props;
+---
+
+<TaskProgressPie
+  interactive={interactive}
+  progressPercent={progressPercent}
+  size={size}
+  taskId={taskId}
+  client:load
+/>

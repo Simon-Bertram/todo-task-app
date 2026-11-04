@@ -17,6 +17,7 @@ const dueDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .nullable();
 const estimatedMinutesSchema = z.number().int().min(1).max(480);
+const progressPercentSchema = z.number().int().min(0).max(100);
 
 const taskOutputSchema = z.object({
   completedAt: z.date().nullable(),
@@ -28,6 +29,7 @@ const taskOutputSchema = z.object({
   isToday: z.boolean(),
   isUrgent: z.number().int(),
   notes: z.string().nullable(),
+  progressPercent: z.number().int(),
   projectId: z.string().nullable(),
   recurrenceRule: z.string().nullable(),
   sortOrder: z.number().int(),
@@ -47,6 +49,7 @@ function toTaskOutput(row: TaskRow) {
     isToday: row.isToday,
     isUrgent: row.isUrgent,
     notes: row.notes,
+    progressPercent: row.progressPercent,
     projectId: row.projectId,
     recurrenceRule: row.recurrenceRule,
     sortOrder: row.sortOrder,
@@ -84,6 +87,7 @@ interface TaskPatch {
   isToday?: boolean;
   isUrgent?: number;
   notes?: string | null;
+  progressPercent?: number;
   projectId?: string | null;
   recurrenceRule?: string | null;
   sortOrder?: number;
@@ -106,6 +110,9 @@ function buildTaskUpdates(patch: TaskPatch): Partial<TaskRow> {
   }
   if (patch.estimatedMinutes !== undefined) {
     updates.estimatedMinutes = patch.estimatedMinutes;
+  }
+  if (patch.progressPercent !== undefined) {
+    updates.progressPercent = patch.progressPercent;
   }
   if (patch.isUrgent !== undefined) {
     updates.isUrgent = patch.isUrgent;
@@ -182,6 +189,7 @@ export const tasksRouter = {
         isToday: z.boolean().optional(),
         isUrgent: prioritySchema.optional(),
         notes: z.string().nullable().optional(),
+        progressPercent: progressPercentSchema.optional(),
         projectId: z.string().nullable().optional(),
         recurrenceRule: z.string().nullable().optional(),
         title: z.string().trim().min(1).max(500),
@@ -208,6 +216,7 @@ export const tasksRouter = {
           isToday: input.isToday ?? false,
           isUrgent: input.isUrgent ?? 0,
           notes: input.notes ?? null,
+          progressPercent: input.progressPercent ?? 0,
           projectId,
           recurrenceRule: input.recurrenceRule ?? null,
           title: input.title,
@@ -327,6 +336,7 @@ export const tasksRouter = {
         isToday: z.boolean().optional(),
         isUrgent: prioritySchema.optional(),
         notes: z.string().nullable().optional(),
+        progressPercent: progressPercentSchema.optional(),
         projectId: z.string().nullable().optional(),
         recurrenceRule: z.string().nullable().optional(),
         sortOrder: z.number().int().optional(),

@@ -24,6 +24,7 @@ export const user = sqliteTable("user", {
   rhythmOptIn: integer("rhythm_opt_in", { mode: "boolean" })
     .default(false)
     .notNull(),
+  taskProgressControl: text("task_progress_control").default("pie").notNull(),
   tasksBoardPrefs: text("tasks_board_prefs"),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

@@ -19,6 +19,7 @@ export const dailyCapacityMinutesSchema = z
   .max(MAX_DAILY_CAPACITY_MINUTES);
 
 export const celebrationsSchema = z.enum(["subtle", "off"]);
+export const taskProgressControlSchema = z.enum(["pie", "slider"]);
 
 const preferencesOutputSchema = z.object({
   celebrations: celebrationsSchema,
@@ -27,6 +28,7 @@ const preferencesOutputSchema = z.object({
   rhythmBest: z.number().int(),
   rhythmCurrent: z.number().int(),
   rhythmOptIn: z.boolean(),
+  taskProgressControl: taskProgressControlSchema,
   tasksBoard: tasksBoardPrefsSchema,
 });
 
@@ -65,6 +67,7 @@ export const preferencesRouter = {
           rhythmBest: user.rhythmBest,
           rhythmCurrent: user.rhythmCurrent,
           rhythmOptIn: user.rhythmOptIn,
+          taskProgressControl: user.taskProgressControl,
           tasksBoardPrefs: user.tasksBoardPrefs,
         })
         .from(user)
@@ -76,6 +79,9 @@ export const preferencesRouter = {
       const celebrationsParsed = celebrationsSchema.safeParse(
         row?.celebrations
       );
+      const taskProgressParsed = taskProgressControlSchema.safeParse(
+        row?.taskProgressControl
+      );
       return {
         celebrations: celebrationsParsed.success
           ? celebrationsParsed.data
@@ -85,6 +91,9 @@ export const preferencesRouter = {
         rhythmBest: row?.rhythmBest ?? 0,
         rhythmCurrent: row?.rhythmCurrent ?? 0,
         rhythmOptIn: row?.rhythmOptIn ?? false,
+        taskProgressControl: taskProgressParsed.success
+          ? taskProgressParsed.data
+          : "pie",
         tasksBoard: parseTasksBoardPrefs(raw),
       };
     }),
@@ -116,6 +125,18 @@ export const preferencesRouter = {
         .where(eq(user.id, userId));
 
       return { dailyCapacityMinutes };
+    }),
+
+  updateTaskProgressControl: protectedProcedure
+    .input(z.object({ taskProgressControl: taskProgressControlSchema }))
+    .output(z.object({ taskProgressControl: taskProgressControlSchema }))
+    .handler(async ({ context, input }) => {
+      const userId = context.session.user.id;
+      await context.db
+        .update(user)
+        .set({ taskProgressControl: input.taskProgressControl })
+        .where(eq(user.id, userId));
+      return { taskProgressControl: input.taskProgressControl };
     }),
 
   updateTasksBoard: protectedProcedure

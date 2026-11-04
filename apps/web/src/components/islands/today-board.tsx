@@ -23,6 +23,7 @@ import {
   getCapacityBucket,
   QUADRANT_META,
 } from "../../lib/quadrant";
+import { stopPointerPropagation } from "../../lib/stop-pointer";
 import {
   getLocalDateString,
   getProject,
@@ -30,14 +31,22 @@ import {
   getTodayExecutionProgress,
   getTodayPlannedMinutes,
   getTodayTasks,
+  isLongTask,
   type Project,
   type Task,
+  type TaskProgressControl,
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
+import {
+  useIsDesktopLg,
+  useTaskProgressSync,
+} from "../../lib/use-task-progress-sync";
+import TaskProgress from "./task-progress";
 
 interface Props {
   budgetMinutes: number;
   projects: Project[];
+  taskProgressControl?: TaskProgressControl;
   tasks: Task[];
 }
 
@@ -125,8 +134,11 @@ export default function TodayBoard({
   tasks: initialTasks,
   projects,
   budgetMinutes,
+  taskProgressControl = "pie",
 }: Props) {
   const [tasks, setTasks] = useState(initialTasks);
+  useTaskProgressSync(setTasks);
+  const isDesktop = useIsDesktopLg();
   const todayTasks = useMemo(() => getTodayTasks(tasks), [tasks]);
   const plannedMinutes = getTodayPlannedMinutes(tasks);
   const tone = capacityTone(plannedMinutes, budgetMinutes);
@@ -355,7 +367,13 @@ export default function TodayBoard({
                 </li>
               ) : (
                 items.map((task) => (
-                  <TodayTaskRow key={task.id} projects={projects} task={task} />
+                  <TodayTaskRow
+                    control={taskProgressControl}
+                    interactive={isDesktop}
+                    key={task.id}
+                    projects={projects}
+                    task={task}
+                  />
                 ))
               )}
             </ul>
@@ -366,7 +384,17 @@ export default function TodayBoard({
   );
 }
 
-function TodayTaskRow({ task, projects }: { projects: Project[]; task: Task }) {
+function TodayTaskRow({
+  task,
+  projects,
+  control,
+  interactive,
+}: {
+  control: TaskProgressControl;
+  interactive: boolean;
+  projects: Project[];
+  task: Task;
+}) {
   const ref = useRef<HTMLLIElement>(null);
   const [dragging, setDragging] = useState(false);
   const [isOver, setIsOver] = useState(false);
@@ -377,6 +405,7 @@ function TodayTaskRow({ task, projects }: { projects: Project[]; task: Task }) {
   const dueStatus = getDueReminderStatus(task.dueDate, today);
   const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
   const dueColor = getDueReminderColor(dueStatus);
+  const showProgress = isLongTask(task.estimatedMinutes);
 
   useEffect(() => {
     const element = ref.current as HTMLLIElement | null;
@@ -450,15 +479,39 @@ function TodayTaskRow({ task, projects }: { projects: Project[]; task: Task }) {
           </span>
         ) : null}
       </div>
-      <h3 className="mt-2 font-semibold text-base text-text-primary">
-        <button
-          className="task-open text-left hover:text-primary"
-          data-task-id={task.id}
-          type="button"
-        >
-          {task.title}
-        </button>
-      </h3>
+      <div className="mt-2 flex items-start gap-3">
+        <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary">
+          <button
+            className="task-open text-left hover:text-primary"
+            data-task-id={task.id}
+            type="button"
+          >
+            {task.title}
+          </button>
+        </h3>
+        {showProgress && control === "pie" ? (
+          <div className="shrink-0" onPointerDown={stopPointerPropagation}>
+            <TaskProgress
+              control={control}
+              interactive={interactive}
+              progressPercent={task.progressPercent}
+              size={interactive ? "inline" : "compact"}
+              taskId={task.id}
+            />
+          </div>
+        ) : null}
+      </div>
+      {showProgress && control === "slider" ? (
+        <div className="mt-2" onPointerDown={stopPointerPropagation}>
+          <TaskProgress
+            control={control}
+            interactive={interactive}
+            progressPercent={task.progressPercent}
+            size={interactive ? "inline" : "compact"}
+            taskId={task.id}
+          />
+        </div>
+      ) : null}
       <p className="mt-2 font-mono text-text-muted text-xs">
         Drag to reorder within Today
       </p>
