@@ -1,0 +1,26 @@
+# PlanSage — https://todo.sarl
+User-agent: *
+Allow: /
+Disallow: /today
+Disallow: /matrix
+Disallow: /tasks
+Disallow: /projects
+Disallow: /complete
+Disallow: /settings
+Disallow: /dashboard
+Disallow: /onboarding
+
+# Allow AI crawlers for citation / generative engine discovery
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://todo.sarl/sitemap.xml

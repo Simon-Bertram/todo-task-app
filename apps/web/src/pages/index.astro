@@ -5,6 +5,7 @@ import hero480Jpg from "../assets/hero-skyline-480.jpg";
 import hero480Webp from "../assets/hero-skyline-480.webp";
 import hero682Avif from "../assets/hero-skyline-682.avif";
 import hero682Webp from "../assets/hero-skyline-682.webp";
+import JsonLd from "../components/seo/json-ld.astro";
 import SignInForm from "../components/sign-in-form.astro";
 import Layout from "../layouts/layout.astro";
 
@@ -12,10 +13,85 @@ const sizes = "100vw";
 const avifSrcset = `${hero480Avif.src} 480w, ${hero682Avif.src} 682w`;
 const webpSrcset = `${hero480Webp.src} 480w, ${hero682Webp.src} 682w`;
 const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
+
+const pageTitle = "PlanSage — Intentional daily execution";
+const pageDescription =
+  "Stop drowning in endless checklists. Prioritize with the Eisenhower Matrix and a time-budgeted Today view so you finish only what fits today.";
+
+const faqs = [
+  {
+    answer:
+      "PlanSage is a personal task manager for overloaded professionals and indie hackers. It combines an Eisenhower Matrix with a time-budgeted Today board so you plan what matters and finish only what fits your day.",
+    question: "What is PlanSage?",
+  },
+  {
+    answer:
+      "Each task has urgency and importance scores from 0 to 3. Scores of 2 or higher place work into Do First, Schedule, Streamline, or Drop so priorities stay visual and actionable.",
+    question: "How does the Eisenhower Matrix work in PlanSage?",
+  },
+  {
+    answer:
+      "Today uses a configurable focus budget from 2 to 8 hours (default 5 hours / 300 minutes). A live workload bar turns amber near your limit and red when you overcommit.",
+    question: "What is the Today capacity budget?",
+  },
+  {
+    answer:
+      "The 1-3-5 filter recommends one major task, a few medium tasks, and several quick wins so your daily mix stays realistic instead of stacking only big work.",
+    question: "What is the 1-3-5 filter?",
+  },
+  {
+    answer:
+      "PlanSage is for overloaded professionals and indie hackers who need visual prioritization and realistic daily capacity—not another infinite checklist.",
+    question: "Who is PlanSage for?",
+  },
+] as const;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      description: pageDescription,
+      name: "PlanSage",
+      url: "https://todo.sarl/",
+    },
+    {
+      "@type": "SoftwareApplication",
+      applicationCategory: "ProductivityApplication",
+      description: pageDescription,
+      featureList: [
+        "Eisenhower Matrix with urgency and importance scores",
+        "Time-budgeted Today board with 2–8 hour capacity",
+        "Live workload bar with green, amber, and red states",
+        "1-3-5 recommended daily mix filter",
+      ],
+      name: "PlanSage",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      operatingSystem: "Web",
+      url: "https://todo.sarl/",
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((faq) => ({
+        "@type": "Question",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+        name: faq.question,
+      })),
+    },
+  ],
+};
 ---
 
 <!-- Hero photo: Lerone Pieters / Unsplash — prebaked AVIF/WebP for Alchemy passthrough -->
-<Layout bare title="PlanSage — Intentional daily execution">
+<Layout bare canonicalPath="/" description={pageDescription} title={pageTitle}>
+  <JsonLd data={jsonLd} />
   <main class="relative min-h-svh overflow-hidden">
     <picture class="absolute inset-0 size-full">
       <source sizes={sizes} srcset={avifSrcset} type="image/avif">
@@ -41,11 +117,11 @@ const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
       class="relative z-10 mx-auto flex min-h-svh w-full max-w-6xl flex-col justify-between gap-10 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:gap-16 lg:px-12 lg:py-16"
     >
       <div class="max-w-xl shrink-0 pt-4 lg:pt-0">
-        <p
+        <h1
           class="font-semibold text-5xl text-text-primary tracking-[-0.03em] sm:text-6xl lg:text-7xl"
         >
           PlanSage
-        </p>
+        </h1>
         <p
           class="mt-4 max-w-md text-base text-text-primary sm:text-lg"
           data-hero-tagline
@@ -87,10 +163,37 @@ const jpegSrcset = `${hero480Jpg.src} 480w, ${heroSkyline.src} 682w`;
       </div>
 
       <div class="w-full max-w-md lg:ml-auto">
-        <SignInForm heading="Sign in" variant="glass" />
+        <SignInForm heading="Sign in" headingLevel={2} variant="glass" />
       </div>
     </div>
   </main>
+
+  <section
+    class="relative z-10 border-border-contrast border-t bg-canvas px-5 py-16 sm:px-8 lg:px-12"
+    id="faq"
+  >
+    <div class="mx-auto max-w-3xl">
+      <h2 class="font-semibold text-2xl text-text-primary tracking-tight">
+        Frequently asked questions
+      </h2>
+      <p class="mt-2 text-sm text-text-secondary sm:text-base">
+        Straight answers about how PlanSage helps you prioritize and protect
+        your day.
+      </p>
+      <dl class="mt-10 space-y-8">
+        {faqs.map((faq) => (
+          <div>
+            <dt class="font-medium text-base text-text-primary">
+              {faq.question}
+            </dt>
+            <dd class="mt-2 text-sm text-text-secondary leading-relaxed sm:text-base">
+              {faq.answer}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
 </Layout>
 
 <script>

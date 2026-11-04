@@ -62,6 +62,7 @@ describe("projectsRouter", () => {
       expect(project).toMatchObject({
         color: "#3b82f6",
         name: "Work",
+        notes: null,
       });
       expect(project.id).toBeTruthy();
     });
@@ -77,6 +78,21 @@ describe("projectsRouter", () => {
       expect(project).toMatchObject({
         color: "#ef4444",
         name: "Urgent",
+        notes: null,
+      });
+    });
+
+    it("persists optional notes", async () => {
+      const context = await createAuthedContext("user-1");
+      const project = await call(
+        projectsRouter.create,
+        { name: "With notes", notes: "Kickoff Friday" },
+        { context }
+      );
+
+      expect(project).toMatchObject({
+        name: "With notes",
+        notes: "Kickoff Friday",
       });
     });
 
@@ -159,7 +175,36 @@ describe("projectsRouter", () => {
         color: "#22c55e",
         id: created.id,
         name: "Shipped",
+        notes: null,
       });
+    });
+
+    it("patches notes and clears them to null", async () => {
+      const context = await createAuthedContext("user-1");
+      const created = await call(
+        projectsRouter.create,
+        { name: "Draft", notes: "Initial" },
+        { context }
+      );
+
+      const withNotes = await call(
+        projectsRouter.update,
+        { id: created.id, notes: "Updated brief" },
+        { context }
+      );
+      expect(withNotes.notes).toBe("Updated brief");
+
+      const cleared = await call(
+        projectsRouter.update,
+        { id: created.id, notes: null },
+        { context }
+      );
+      expect(cleared.notes).toBeNull();
+
+      const listed = await call(projectsRouter.list, undefined, { context });
+      expect(
+        listed.find((project) => project.id === created.id)?.notes
+      ).toBeNull();
     });
 
     it("returns NOT_FOUND for another user's project", async () => {

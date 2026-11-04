@@ -9,11 +9,13 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const DEFAULT_COLOR = "#3b82f6";
 
 const colorSchema = z.string().regex(HEX_COLOR, "Color must be #RRGGBB");
+const notesSchema = z.string().nullable().optional();
 
 const projectOutputSchema = z.object({
   color: z.string(),
   id: z.string(),
   name: z.string(),
+  notes: z.string().nullable(),
 });
 
 type ProjectRow = typeof projects.$inferSelect;
@@ -23,6 +25,7 @@ function toProjectOutput(row: ProjectRow) {
     color: row.color,
     id: row.id,
     name: row.name,
+    notes: row.notes ?? null,
   };
 }
 
@@ -32,6 +35,7 @@ export const projectsRouter = {
       z.object({
         color: colorSchema.optional(),
         name: z.string().trim().min(1).max(100),
+        notes: notesSchema,
       })
     )
     .output(projectOutputSchema)
@@ -44,6 +48,7 @@ export const projectsRouter = {
           color: input.color ?? DEFAULT_COLOR,
           id,
           name: input.name,
+          notes: input.notes ?? null,
           userId,
         })
         .returning();
@@ -83,12 +88,16 @@ export const projectsRouter = {
           color: projects.color,
           id: projects.id,
           name: projects.name,
+          notes: projects.notes,
         })
         .from(projects)
         .where(eq(projects.userId, userId))
         .orderBy(asc(projects.sortOrder), asc(projects.createdAt));
 
-      return rows;
+      return rows.map((row) => ({
+        ...row,
+        notes: row.notes ?? null,
+      }));
     }),
 
   update: protectedProcedure
@@ -97,6 +106,7 @@ export const projectsRouter = {
         color: colorSchema.optional(),
         id: z.string().min(1),
         name: z.string().trim().min(1).max(100).optional(),
+        notes: notesSchema,
         sortOrder: z.number().int().optional(),
       })
     )
@@ -111,6 +121,9 @@ export const projectsRouter = {
       }
       if (patch.color !== undefined) {
         updates.color = patch.color;
+      }
+      if (patch.notes !== undefined) {
+        updates.notes = patch.notes;
       }
       if (patch.sortOrder !== undefined) {
         updates.sortOrder = patch.sortOrder;

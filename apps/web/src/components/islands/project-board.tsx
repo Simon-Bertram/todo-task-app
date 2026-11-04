@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { orpc } from "../../lib/orpc";
 import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
 import type { Project, Task } from "../../lib/task-helpers";
+import ProjectNotesDisclosure from "./project-notes-disclosure";
 
 interface Props {
   initialFilter: string;
@@ -159,6 +160,10 @@ export default function ProjectBoard({
     openCreateTask(selectedProject?.id ?? null);
   }, [openCreateTask, selectedProject]);
 
+  const onProjectNotesSaved = useCallback(() => {
+    location.reload();
+  }, []);
+
   let taskListTitle = "All tasks";
   if (filter === "inbox") {
     taskListTitle = "Inbox";
@@ -196,6 +201,7 @@ export default function ProjectBoard({
         onAddTask={onAddTaskForProject}
         onEdit={onEditProjectClick}
         onFilter={onProjectRowFilter}
+        onNotesSaved={onProjectNotesSaved}
         openTasks={openTasks}
         projects={projects}
       />
@@ -296,10 +302,12 @@ function ProjectList({
   onFilter,
   onAddTask,
   onEdit,
+  onNotesSaved,
 }: {
   onAddTask: (event: Event) => void;
   onEdit: (event: Event) => void;
   onFilter: (event: Event) => void;
+  onNotesSaved: () => void;
   openTasks: Task[];
   projects: Project[];
 }) {
@@ -360,6 +368,14 @@ function ProjectList({
               >
                 Edit
               </button>
+            </div>
+            <div className="mt-3">
+              <ProjectNotesDisclosure
+                key={project.id}
+                notes={project.notes}
+                onSaved={onNotesSaved}
+                projectId={project.id}
+              />
             </div>
           </li>
         );
@@ -468,6 +484,9 @@ function BoardPanel({
   const [projectColor, setProjectColor] = useState(
     panel.kind === "project-edit" ? panel.project.color : COLOR_PRESETS[0]
   );
+  const [projectNotes, setProjectNotes] = useState(
+    panel.kind === "project-edit" ? (panel.project.notes ?? "") : ""
+  );
   const [taskTitle, setTaskTitle] = useState("");
   const [taskProjectId, setTaskProjectId] = useState<string | null>(
     panel.kind === "task-create" ? panel.projectId : null
@@ -508,21 +527,27 @@ function BoardPanel({
     }
   }, []);
 
+  const onProjectNotesChange = useCallback((value: string) => {
+    setProjectNotes(value);
+  }, []);
+
   const onSaveProject = useCallback(async () => {
     const name = projectName.trim();
     if (!name || isBusy) {
       return;
     }
+    const notes = projectNotes.trim() ? projectNotes.trim() : null;
     setIsBusy(true);
     setError(null);
     try {
       if (panel.kind === "project-create") {
-        await orpc.projects.create({ color: projectColor, name });
+        await orpc.projects.create({ color: projectColor, name, notes });
       } else if (panel.kind === "project-edit") {
         await orpc.projects.update({
           color: projectColor,
           id: panel.project.id,
           name,
+          notes,
         });
       }
       onClose();
@@ -532,7 +557,7 @@ function BoardPanel({
     } finally {
       setIsBusy(false);
     }
-  }, [isBusy, onClose, panel, projectColor, projectName]);
+  }, [isBusy, onClose, panel, projectColor, projectName, projectNotes]);
 
   const onDeleteProject = useCallback(async () => {
     if (panel.kind !== "project-edit" || isBusy) {
@@ -617,9 +642,11 @@ function BoardPanel({
                 panel.kind === "project-edit" ? onDeleteProject : undefined
               }
               onNameInput={onProjectNameInput}
+              onNotesChange={onProjectNotesChange}
               onSave={onSaveProject}
               projectColor={projectColor}
               projectName={projectName}
+              projectNotes={projectNotes}
               showDelete={panel.kind === "project-edit"}
             />
           ) : null}
@@ -655,11 +682,13 @@ function BoardPanel({
 function ProjectFormFields({
   projectName,
   projectColor,
+  projectNotes,
   error,
   isBusy,
   showDelete,
   confirmDelete,
   onNameInput,
+  onNotesChange,
   onColorClick,
   onSave,
   onDelete,
@@ -670,9 +699,11 @@ function ProjectFormFields({
   onColorClick: (event: Event) => void;
   onDelete?: () => void;
   onNameInput: (event: Event) => void;
+  onNotesChange: (value: string) => void;
   onSave: () => void;
   projectColor: string;
   projectName: string;
+  projectNotes: string;
   showDelete: boolean;
 }) {
   return (
@@ -711,6 +742,11 @@ function ProjectFormFields({
           })}
         </div>
       </fieldset>
+      <ProjectNotesDisclosure
+        mode="draft"
+        onChange={onNotesChange}
+        value={projectNotes}
+      />
       {error ? (
         <p className="text-capacity-over text-sm" role="alert">
           {error}

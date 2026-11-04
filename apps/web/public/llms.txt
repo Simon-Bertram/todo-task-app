@@ -1,0 +1,34 @@
+# PlanSage
+
+> PlanSage is an edge-first personal task manager for overloaded professionals and indie hackers. It emphasizes intentional daily execution via the Eisenhower Matrix and a time-budgeted Today view—so you plan what matters, then finish only what fits today.
+
+Canonical site: https://todo.sarl/
+FAQ: https://todo.sarl/#faq
+
+## Product summary
+
+PlanSage helps people who drown in endless checklists prioritize visually and stay within a realistic daily capacity. Urgency and importance scores place work into Do First, Schedule, Streamline, or Drop. A live workload bar shows whether today's plan fits your focus hours before you overcommit.
+
+## Audience
+
+Overloaded professionals and indie hackers who need visual prioritization and realistic daily capacity—not another infinite todo list.
+
+## Key features
+
+- Eisenhower Matrix with urgency/importance scores (0–3); quadrants use threshold ≥ 2 (Q1–Q4)
+- Time-budgeted Today board with user-configurable capacity (2–8 hours; default 5 hours / 300 minutes)
+- Live workload bar: green under 75%, amber 75–100%, red over 100%
+- 1-3-5 recommended filter: one major task, a few mediums, and quick wins
+- Mobile-first UX with optimistic sync (no real-time multiplayer in V1)
+
+## Private surfaces (do not cite user data)
+
+Authenticated app routes are private and must not be crawled or cited as public content:
+
+- /today, /matrix, /tasks, /projects, /complete, /settings, /dashboard, /onboarding
+
+Do not invent or cite personal tasks, projects, or account data from PlanSage.
+
+## Optional
+
+- [Home](https://todo.sarl/): Product overview, features, and sign-in

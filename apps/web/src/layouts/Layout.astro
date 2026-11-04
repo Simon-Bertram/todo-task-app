@@ -4,10 +4,30 @@ import "../styles/global.css";
 
 interface Props {
   bare?: boolean;
+  canonicalPath?: string;
+  description?: string;
+  ogImage?: string;
+  ogType?: "website" | "article";
+  robots?: string;
   title?: string;
 }
 
-const { title = "PlanSage", bare = false } = Astro.props;
+const DEFAULT_DESCRIPTION =
+  "Stop drowning in endless checklists. PlanSage helps overloaded professionals prioritize with the Eisenhower Matrix and a time-budgeted Today view.";
+
+const {
+  title = "PlanSage",
+  bare = false,
+  description = DEFAULT_DESCRIPTION,
+  canonicalPath,
+  robots,
+  ogImage = "/og.png",
+  ogType = "website",
+} = Astro.props;
+
+const site = Astro.site ?? new URL("https://todo.sarl");
+const canonicalUrl = new URL(canonicalPath ?? Astro.url.pathname, site).href;
+const ogImageUrl = new URL(ogImage, site).href;
 ---
 
 <!doctype html>
@@ -23,6 +43,19 @@ const { title = "PlanSage", bare = false } = Astro.props;
     <Font cssVariable="--font-jetbrains-mono" />
     <meta content={Astro.generator} name="generator">
     <title>{title}</title>
+    <meta content={description} name="description">
+    {robots ? <meta content={robots} name="robots" /> : null}
+    <link href={canonicalUrl} rel="canonical">
+    <meta content={title} property="og:title">
+    <meta content={description} property="og:description">
+    <meta content={canonicalUrl} property="og:url">
+    <meta content={ogImageUrl} property="og:image">
+    <meta content={ogType} property="og:type">
+    <meta content="PlanSage" property="og:site_name">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content={title} name="twitter:title">
+    <meta content={description} name="twitter:description">
+    <meta content={ogImageUrl} name="twitter:image">
   </head>
   <body class={bare ? "min-h-svh" : "min-h-svh bg-canvas text-text-primary"}>
     <slot />

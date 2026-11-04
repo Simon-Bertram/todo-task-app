@@ -1,6 +1,7 @@
 ---
 interface Props {
   heading?: string;
+  headingLevel?: 1 | 2;
   showHeading?: boolean;
   variant?: "glass" | "solid";
 }
@@ -8,8 +9,11 @@ interface Props {
 const {
   variant = "solid",
   heading = "Welcome back",
+  headingLevel = 1,
   showHeading = true,
 } = Astro.props;
+
+const HeadingTag = headingLevel === 2 ? "h2" : "h1";
 
 const shellClass =
   variant === "glass"
@@ -22,7 +26,7 @@ const headingClass = showHeading
 ---
 
 <div class={shellClass} id="login">
-  <h1 class={headingClass} id="signin-heading">{heading}</h1>
+  <HeadingTag class={headingClass} id="signin-heading">{heading}</HeadingTag>
 
   <form aria-labelledby="signin-heading" class="space-y-4" id="signin-form">
     <div class="space-y-1.5">

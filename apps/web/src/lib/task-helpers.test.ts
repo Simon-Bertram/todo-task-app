@@ -36,8 +36,8 @@ function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
 
 describe("getProject", () => {
   const projects: Project[] = [
-    { color: "#111", id: "p1", name: "Alpha" },
-    { color: "#222", id: "p2", name: "Beta" },
+    { color: "#111", id: "p1", name: "Alpha", notes: null },
+    { color: "#222", id: "p2", name: "Beta", notes: null },
   ];
 
   it("returns null when projectId is null or unknown", () => {
@@ -182,8 +182,8 @@ describe("matchesDueDateFilter", () => {
 
 describe("filterTasksList and sortTasksList", () => {
   const projects: Project[] = [
-    { color: "#111", id: "p1", name: "Alpha" },
-    { color: "#222", id: "p2", name: "Beta" },
+    { color: "#111", id: "p1", name: "Alpha", notes: null },
+    { color: "#222", id: "p2", name: "Beta", notes: null },
   ];
 
   const tasks = [

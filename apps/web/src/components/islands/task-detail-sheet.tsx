@@ -14,6 +14,7 @@ import {
 import type { Project, Task } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
 import DayPicker from "./day-picker";
+import ProjectNotesDisclosure from "./project-notes-disclosure";
 
 interface Props {
   budgetMinutes: number;
@@ -65,6 +66,11 @@ export default function TaskDetailSheet({
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localProjects, setLocalProjects] = useState(projects);
+
+  useEffect(() => {
+    setLocalProjects(projects);
+  }, [projects]);
 
   const baseTask = useMemo(
     () => tasks.find((task) => task.id === taskId) ?? null,
@@ -291,13 +297,28 @@ export default function TaskDetailSheet({
     }
   }, [baseTask, confirmDelete, isDeleting]);
 
+  const onProjectNotesSaved = useCallback(
+    (savedNotes: string | null) => {
+      if (!projectId) {
+        return;
+      }
+      setLocalProjects((current) =>
+        current.map((project) =>
+          project.id === projectId ? { ...project, notes: savedNotes } : project
+        )
+      );
+      showToast("Project notes saved", "success");
+    },
+    [projectId]
+  );
+
   if (!baseTask) {
     return null;
   }
 
   const quadrant = getQuadrant(isUrgent, isImportant);
   const meta = QUADRANT_META[quadrant];
-  const selectedProject = projects.find((item) => item.id === projectId);
+  const selectedProject = localProjects.find((item) => item.id === projectId);
   const projectedPlanned = isToday
     ? plannedMinutes
     : plannedMinutes + estimatedMinutes;
@@ -382,6 +403,15 @@ export default function TaskDetailSheet({
               </span>
             ) : null}
           </label>
+
+          {selectedProject ? (
+            <ProjectNotesDisclosure
+              key={selectedProject.id}
+              notes={selectedProject.notes}
+              onSaved={onProjectNotesSaved}
+              projectId={selectedProject.id}
+            />
+          ) : null}
 
           <label className="block space-y-1.5">
             <span className="font-medium text-sm text-text-secondary">

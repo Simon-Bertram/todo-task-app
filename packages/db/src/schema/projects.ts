@@ -12,6 +12,7 @@ export const projects = sqliteTable(
       .notNull(),
     id: text("id").primaryKey(),
     name: text("name").notNull(),
+    notes: text("notes"),
     sortOrder: integer("sort_order").default(0).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

@@ -17,6 +17,7 @@ export interface Project {
   color: string;
   id: string;
   name: string;
+  notes: string | null;
 }
 
 export interface Task {
