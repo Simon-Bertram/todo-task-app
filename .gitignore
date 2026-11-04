@@ -18,6 +18,10 @@ local.db-*
 # Environment variables
 .env
 .env*.local
+perf/.env.perf
+perf/.auth/
+perf/results/
+perf/.lighthouseci/
 
 # IDEs and editors
 .vscode/*

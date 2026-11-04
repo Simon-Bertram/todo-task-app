@@ -1,0 +1,6 @@
+.env.perf
+.auth/
+results/
+.lighthouseci/
+node_modules/
+*.log

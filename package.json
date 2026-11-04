@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "perf"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -19,6 +20,13 @@
     "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
     "fix": "ultracite fix",
     "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
+    "perf:api": "pnpm --filter @todo-task-app/perf api",
+    "perf:auth": "pnpm --filter @todo-task-app/perf auth",
+    "perf:check": "pnpm --filter @todo-task-app/perf check",
+    "perf:compare": "node ./perf/compare.mjs",
+    "perf:crud": "pnpm --filter @todo-task-app/perf crud",
+    "perf:islands": "pnpm --filter @todo-task-app/perf islands",
+    "perf:lh": "pnpm --filter @todo-task-app/perf lh",
     "test": "turbo run test"
   },
   "dependencies": {

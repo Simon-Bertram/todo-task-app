@@ -1,0 +1,22 @@
+{
+  "name": "@todo-task-app/perf",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api": "node ./measure-api-latency.mjs",
+    "auth": "node ./auth-setup.mjs",
+    "check": "node ./check.mjs",
+    "compare": "node ./compare.mjs",
+    "crud": "node ./crud-bench.mjs",
+    "islands": "node ./measure-island-js.mjs",
+    "lh": "node ./run-lhci.mjs"
+  },
+  "dependencies": {
+    "@orpc/client": "catalog:",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@types/node": "catalog:"
+  }
+}

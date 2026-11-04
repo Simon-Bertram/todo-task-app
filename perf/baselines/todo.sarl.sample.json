@@ -1,0 +1,72 @@
+{
+  "timestamp": "1970-01-01T00:00:00.000Z",
+  "baseUrl": "https://todo.sarl",
+  "compareHint": "Replace with a real summary.json from pnpm perf:check. Intentional pre-progress code baseline: git commit f066a9b (parent of 3880c09).",
+  "crud": {
+    "kind": "crud",
+    "baseUrl": "https://todo.sarl",
+    "commitHint": "Compare against baseline f066a9b (pre-3880c09) when available",
+    "timestamp": "1970-01-01T00:00:00.000Z",
+    "scenarios": [
+      {
+        "name": "create_quick_add",
+        "fixture": "short",
+        "settleMs": 800,
+        "rpcMs": 120,
+        "inpOrClickDelayMs": 40,
+        "reloadCount": 1
+      },
+      {
+        "name": "update_sheet_save",
+        "fixture": "short",
+        "settleMs": 900,
+        "rpcMs": 130,
+        "inpOrClickDelayMs": 50,
+        "reloadCount": 1
+      },
+      {
+        "name": "complete_sheet_save",
+        "fixture": "short",
+        "settleMs": 1000,
+        "rpcMs": 150,
+        "inpOrClickDelayMs": 50,
+        "reloadCount": 1
+      },
+      {
+        "name": "create_quick_add",
+        "fixture": "long",
+        "settleMs": 850,
+        "rpcMs": 120,
+        "inpOrClickDelayMs": 40,
+        "reloadCount": 1
+      },
+      {
+        "name": "progress_pie_commit",
+        "fixture": "long",
+        "settleMs": 400,
+        "rpcMs": 140,
+        "inpOrClickDelayMs": 60,
+        "reloadCount": 0
+      },
+      {
+        "name": "add_to_today_sheet",
+        "fixture": "long",
+        "settleMs": 950,
+        "rpcMs": 140,
+        "inpOrClickDelayMs": 50,
+        "reloadCount": 1
+      },
+      {
+        "name": "update_sheet_save",
+        "fixture": "long",
+        "settleMs": 1000,
+        "rpcMs": 150,
+        "inpOrClickDelayMs": 50,
+        "reloadCount": 1
+      }
+    ]
+  },
+  "api": null,
+  "islands": null,
+  "lighthouse": null
+}

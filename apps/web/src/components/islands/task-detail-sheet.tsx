@@ -438,6 +438,7 @@ export default function TaskDetailSheet({
             </span>
             <input
               className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 font-semibold text-lg text-text-primary focus:border-primary focus:outline-none"
+              data-testid="task-detail-title"
               onInput={onTitleInput}
               type="text"
               value={title}
@@ -502,6 +503,7 @@ export default function TaskDetailSheet({
             <input
               checked={isCompleted}
               className="size-4 accent-[--color-primary)]"
+              data-testid="task-detail-completed"
               onChange={onCompletedChange}
               type="checkbox"
             />
@@ -620,6 +622,7 @@ export default function TaskDetailSheet({
           <div className="space-y-2 pb-2">
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm disabled:opacity-60"
+              data-testid="task-detail-save"
               disabled={busy}
               onClick={onSave}
               type="button"
@@ -628,6 +631,7 @@ export default function TaskDetailSheet({
             </button>
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
+              data-testid="task-detail-add-today"
               disabled={busy}
               onClick={markToday}
               type="button"

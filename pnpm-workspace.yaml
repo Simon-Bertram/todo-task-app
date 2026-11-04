@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - perf
 allowBuilds:
   esbuild: true
   sharp: true

@@ -77,6 +77,7 @@ if (!user) {
     </p>
     <input
       class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+      data-testid="quick-add-title"
       name="title"
       placeholder="Task title…"
       required
@@ -111,6 +112,7 @@ if (!user) {
       </button>
       <button
         class="min-h-11 rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm"
+        data-testid="quick-add-submit"
         type="submit"
       >
         Add
