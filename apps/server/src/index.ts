@@ -13,6 +13,11 @@ import {
   serializeOrpcError,
 } from "@todo-task-app/api/lib/app-error";
 import { appRouter } from "@todo-task-app/api/routers/index";
+import { sharedCookieDomain } from "@todo-task-app/auth";
+import {
+  appendHostOnlySessionCookieExpiry,
+  cookieHeaderHasDuplicateSessionTokens,
+} from "@todo-task-app/auth/session-cookie";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -21,6 +26,24 @@ import { createContext } from "./context";
 import { ENV } from "./env.server";
 import { logOrpcError } from "./log-orpc-error";
 import { createAuth } from "./services";
+
+const sharedAuthCookieDomain = sharedCookieDomain(
+  ENV.BETTER_AUTH_URL,
+  ENV.CORS_ORIGIN
+);
+
+function maybeClearHostOnlySessionCookie(
+  response: Response,
+  cookieHeader: string | null
+): Response {
+  if (!sharedAuthCookieDomain) {
+    return response;
+  }
+  if (!cookieHeaderHasDuplicateSessionTokens(cookieHeader)) {
+    return response;
+  }
+  return appendHostOnlySessionCookieExpiry(response);
+}
 
 new CloudflareTracer().enable();
 
@@ -53,11 +76,17 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => {
+app.on(["POST", "GET"], "/api/auth/*", async (c) => {
   const auth = createAuth(undefined, (promise) => {
     c.executionCtx.waitUntil(promise);
   });
-  return auth.handler(c.req.raw);
+  const response = await auth.handler(c.req.raw);
+  if (!sharedAuthCookieDomain) {
+    return response;
+  }
+  // Expire leftover host-only session cookies on the API host after Domain=
+  // was enabled — Set-Cookie with Domain= does not overwrite HostOnly twins.
+  return appendHostOnlySessionCookieExpiry(response);
 });
 
 const openAPIGenerator = new OpenAPIGenerator({
@@ -113,7 +142,10 @@ app.use("/*", async (c, next) => {
   if (rpcResult.matched) {
     const response = new Response(rpcResult.response.body, rpcResult.response);
     response.headers.set(REQUEST_ID_HEADER, c.get("requestId"));
-    return response;
+    return maybeClearHostOnlySessionCookie(
+      response,
+      c.req.header("cookie") ?? null
+    );
   }
 
   // OpenAPI/Scalar documents the authenticated surface — keep it off production.

@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/client";
 import {
   AVATAR_GALLERY_PATHS,
   initialsFromName,
@@ -6,6 +7,16 @@ import {
 import { useCallback, useState } from "preact/hooks";
 import { orpc } from "../../lib/orpc";
 import { showToast } from "../../lib/toast";
+
+const SESSION_EXPIRED_MESSAGE =
+  "Session expired. Sign in again, then choose your avatar.";
+
+function avatarActionErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ORPCError && error.code === "UNAUTHORIZED") {
+    return SESSION_EXPIRED_MESSAGE;
+  }
+  return fallback;
+}
 
 type Mode = "choose" | "describe" | "surprise";
 
@@ -372,9 +383,13 @@ function useAvatarPicker(redirectTo: string, initialImage: string | null) {
         if (nextMode === "random") {
           setPrompt(result.promptUsed);
         }
-      } catch {
-        setError("Could not generate avatar. Try again.");
-        showToast("Could not generate avatar. Try again.", "error");
+      } catch (err) {
+        const message = avatarActionErrorMessage(
+          err,
+          "Could not generate avatar. Try again."
+        );
+        setError(message);
+        showToast(message, "error");
       } finally {
         setIsGenerating(false);
       }
@@ -407,9 +422,13 @@ function useAvatarPicker(redirectTo: string, initialImage: string | null) {
         showToast("Avatar saved", "success");
         window.location.assign(redirectTo);
       })
-      .catch(() => {
-        setError("Could not save avatar. Try again.");
-        showToast("Could not save avatar. Try again.", "error");
+      .catch((err: unknown) => {
+        const message = avatarActionErrorMessage(
+          err,
+          "Could not save avatar. Try again."
+        );
+        setError(message);
+        showToast(message, "error");
         setIsSaving(false);
       });
   }, [redirectTo, selectedPath]);
@@ -427,9 +446,13 @@ function useAvatarPicker(redirectTo: string, initialImage: string | null) {
         showToast("Avatar saved", "success");
         window.location.assign(redirectTo);
       })
-      .catch(() => {
-        setError("Could not save avatar. Try again.");
-        showToast("Could not save avatar. Try again.", "error");
+      .catch((err: unknown) => {
+        const message = avatarActionErrorMessage(
+          err,
+          "Could not save avatar. Try again."
+        );
+        setError(message);
+        showToast(message, "error");
         setIsSaving(false);
       });
   }, [previewKey, redirectTo]);

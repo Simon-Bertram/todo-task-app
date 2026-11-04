@@ -86,6 +86,8 @@ Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/inf
 
 Auth sets session cookies with `Domain=.todo.sarl` so the apex web Worker can forward them to the API during SSR. After changing cookie-domain logic in `@todo-task-app/auth`, redeploy the **server** Worker, clear site cookies for `todo.sarl` / `api.todo.sarl` (or sign out), then sign in again—old host-only cookies on `api.todo.sarl` will not migrate. Confirm DevTools shows the session cookie with `Domain=.todo.sarl`, then `/today` should render the app shell instead of bouncing to `/login`.
 
+**Deep dive:** why two hosts, host-only vs Domain cookies, avatar onboarding 401, and the server-side dedupe/expiry fix — see [CROSS_SUBDOMAIN_AUTH_COOKIES.md](./CROSS_SUBDOMAIN_AUTH_COOKIES.md).
+
 ### Resend domain (`mail.todo.sarl`)
 
 
@@ -278,5 +280,6 @@ Then open http://localhost:4321 (web) and http://localhost:3000 (API).
 | `alchemy profile show` shows connected but `dev` still Unauthorized | Stored token is bad; reconfigure or set both env vars |
 | D1 HTTP migrate from `packages/db` asks for account/database/token | Skip for day-to-day; Alchemy applies migrations from the path in `alchemy.run.ts` during `dev`/`deploy` |
 | Sign-in succeeds but `/today` redirects to `/login` | Session cookie not shared with apex: redeploy server, clear `todo.sarl` / `api.todo.sarl` cookies, sign in again; cookie must use `Domain=.todo.sarl` |
+| Onboarding loads but avatar save/generate returns 401; `get-session` from the browser is `null` | Stale **HostOnly** `__Secure-better-auth.session_token` on `api.todo.sarl` shadowing `Domain=.todo.sarl`. Delete the HostOnly cookie (or sign in after deploy so auth responses expire it). See [CROSS_SUBDOMAIN_AUTH_COOKIES.md](./CROSS_SUBDOMAIN_AUTH_COOKIES.md). |
 
 After first production deploy, set `CORS_ORIGIN=https://todo.sarl` (and confirmed Resend `EMAIL_FROM`) for the deploy stage and deploy again (see [README](../README.md)).
