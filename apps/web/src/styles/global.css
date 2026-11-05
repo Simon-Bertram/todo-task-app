@@ -96,3 +96,41 @@
   border: 1px solid var(--color-border-contrast);
   backdrop-filter: blur(16px);
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hero-enter {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  [data-hero-tagline] {
+    animation: hero-enter 0.45s ease-out 0.15s both;
+  }
+
+  [data-feature-list] li {
+    animation: hero-enter 0.5s ease-out both;
+  }
+
+  [data-feature-list] li:nth-child(1) {
+    animation-delay: 0.45s;
+  }
+
+  [data-feature-list] li:nth-child(2) {
+    animation-delay: 0.57s;
+  }
+
+  [data-feature-list] li:nth-child(3) {
+    animation-delay: 0.69s;
+  }
+
+  [data-feature-list] li:nth-child(4) {
+    animation-delay: 0.81s;
+  }
+}

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "astro": "astro",
+    "bake-hero": "node ./scripts/bake-hero.mjs",
     "check-types": "tsc -b ../../packages/api && astro check",
     "dev:bare": "astro dev",
     "env:generate": "varlock codegen",
