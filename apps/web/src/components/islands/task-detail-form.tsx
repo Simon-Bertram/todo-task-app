@@ -1,4 +1,4 @@
-import { useCallback } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import {
   capacityTone,
   formatMinutes,
@@ -21,6 +21,17 @@ import DayPicker from "./day-picker";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
 import TaskProgress from "./task-progress";
 
+/**
+ * Presentational sheet body for task editing.
+ *
+ * State and mutations live outside this file:
+ * - form values/setters → `useTaskDetailForm`
+ * - save / delete / today / complete → `useTaskDetailMutations` via `TaskDetailSheet`
+ *
+ * Interactive sections reused elsewhere are sibling islands (`DayPicker`,
+ * `ProjectNotesDisclosure`, `TaskProgress`). Urgency/importance use the local
+ * `RatingRow` helper at the bottom of this module.
+ */
 export interface TaskDetailFormProps {
   baseTask: Task;
   budgetMinutes: number;
@@ -36,6 +47,7 @@ export interface TaskDetailFormProps {
   onProjectNotesSaved: (notes: string | null) => void;
   onSave: () => void;
   plannedMinutes: number;
+  /** Set by the sheet so deep-links can scroll/focus the progress block. */
   progressSectionRef: { current: HTMLElement | null };
   projects: Project[];
   taskProgressControl: TaskProgressControl;
@@ -68,6 +80,10 @@ export function TaskDetailForm({
   const quadrant = getQuadrant(values.isUrgent, values.isImportant);
   const meta = QUADRANT_META[quadrant];
   const selectedProject = projects.find((item) => item.id === values.projectId);
+  const [isRecurrenceOpen, setIsRecurrenceOpen] = useState(false);
+
+  // If the task is not already on Today, treat its ETC as additional load so
+  // we can warn before the user schedules it over budget.
   const projectedPlanned = values.isToday
     ? plannedMinutes
     : plannedMinutes + values.estimatedMinutes;
@@ -76,12 +92,33 @@ export function TaskDetailForm({
   const showOverWarning = !values.isToday && overBy > 0;
   const tone = capacityTone(projectedPlanned, budgetMinutes);
 
+  useEffect(() => {
+    setIsRecurrenceOpen(false);
+  }, [baseTask.id]);
+
+  const onRecurrenceToggle = useCallback(() => {
+    setIsRecurrenceOpen((open) => !open);
+  }, []);
+
+  const recurrenceLabel =
+    TASK_DETAIL_RECURRENCE.find((rule) => rule.value === values.recurrence)
+      ?.label ?? "None";
+  const recurrenceToggleLabel =
+    values.recurrence === null
+      ? "Recurrence"
+      : `Recurrence · ${recurrenceLabel}`;
+
+  // Two-tap delete: first tap arms confirm; second tap (confirmDelete) deletes.
   let deleteLabel = "Delete task";
   if (isDeleting) {
     deleteLabel = "Deleting…";
   } else if (confirmDelete) {
     deleteLabel = "Confirm delete";
   }
+
+  const completeButtonClass = values.isCompleted
+    ? "flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
+    : "flex min-h-11 w-full items-center justify-center rounded-sm bg-capacity-ok font-semibold text-on-primary text-sm disabled:opacity-60";
 
   return (
     <div
@@ -90,12 +127,14 @@ export function TaskDetailForm({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6"
       role="dialog"
     >
+      {/* Backdrop dismiss */}
       <button
         aria-label="Close task detail"
         className="absolute inset-0 cursor-default"
         onClick={onClose}
         type="button"
       />
+      {/* Bottom sheet on mobile; centered modal from sm up */}
       <div className="relative z-10 flex max-h-[92svh] w-full max-w-lg flex-col overflow-y-auto rounded-t-md border border-border-contrast bg-surface sm:rounded-md">
         <header className="sticky top-0 z-10 flex items-center justify-between border-border-contrast border-b bg-surface px-4 py-3">
           <h2
@@ -115,6 +154,7 @@ export function TaskDetailForm({
         </header>
 
         <div className="space-y-6 px-4 py-5">
+          {/* Identity: title, project, notes */}
           <label className="block space-y-1.5">
             <span className="font-medium text-sm text-text-secondary">
               Title
@@ -182,6 +222,7 @@ export function TaskDetailForm({
             <DayPicker onChange={form.setDueDate} value={values.dueDate} />
           </section>
 
+          {/* Eisenhower: quadrant is derived from urgency/importance (≥ 2 = high). */}
           <section className="space-y-3 rounded-sm border border-border-contrast bg-surface-subtle p-3">
             <div className="flex items-center justify-between gap-2">
               <div
@@ -214,6 +255,7 @@ export function TaskDetailForm({
             </p>
           </section>
 
+          {/* Capacity: ETC presets + warn when scheduling would overrun the day budget */}
           <section className="space-y-2">
             <h4 className="font-medium text-sm text-text-secondary">
               Estimated time
@@ -246,6 +288,7 @@ export function TaskDetailForm({
             ) : null}
           </section>
 
+          {/* Progress UI only for long tasks (see isLongTask). */}
           {isLongTask(values.estimatedMinutes) ? (
             <section className="space-y-2" ref={progressSectionRef}>
               <TaskProgress
@@ -259,31 +302,41 @@ export function TaskDetailForm({
             </section>
           ) : null}
 
-          <section className="space-y-2">
-            <h4 className="font-medium text-sm text-text-secondary">
-              Recurrence
-            </h4>
-            <div className="flex flex-wrap gap-1 rounded-full border border-border-subtle bg-surface-subtle p-1">
-              {TASK_DETAIL_RECURRENCE.map((rule) => {
-                const selected = values.recurrence === rule.value;
-                return (
-                  <button
-                    className={`min-h-10 rounded-full px-3 font-medium text-sm ${
-                      selected
-                        ? "bg-surface-elevated text-text-primary"
-                        : "text-text-secondary"
-                    }`}
-                    data-recurrence={rule.value ?? "null"}
-                    key={rule.label}
-                    onClick={form.onRecurrenceClick}
-                    type="button"
-                  >
-                    {rule.label}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+          <div className="space-y-2">
+            <button
+              aria-expanded={isRecurrenceOpen}
+              className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-sm border border-border-contrast px-3 text-left text-sm text-text-secondary hover:bg-surface-elevated"
+              onClick={onRecurrenceToggle}
+              type="button"
+            >
+              <span>{recurrenceToggleLabel}</span>
+              <span aria-hidden="true" className="text-text-muted">
+                {isRecurrenceOpen ? "▾" : "▸"}
+              </span>
+            </button>
+            {isRecurrenceOpen ? (
+              <div className="flex flex-wrap gap-1 rounded-full border border-border-subtle bg-surface-subtle p-1">
+                {TASK_DETAIL_RECURRENCE.map((rule) => {
+                  const selected = values.recurrence === rule.value;
+                  return (
+                    <button
+                      className={`min-h-10 rounded-full px-3 font-medium text-sm ${
+                        selected
+                          ? "bg-surface-elevated text-text-primary"
+                          : "text-text-secondary"
+                      }`}
+                      data-recurrence={rule.value ?? "null"}
+                      key={rule.label}
+                      onClick={form.onRecurrenceClick}
+                      type="button"
+                    >
+                      {rule.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
 
           {error ? (
             <p className="text-capacity-over text-sm" role="alert">
@@ -291,18 +344,10 @@ export function TaskDetailForm({
             </p>
           ) : null}
 
+          {/* Primary actions — handlers come from TaskDetailSheet mutations. */}
           <div className="space-y-2 pb-2">
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm disabled:opacity-60"
-              data-testid="task-detail-completed"
-              disabled={busy}
-              onClick={toggleCompleted}
-              type="button"
-            >
-              {values.isCompleted ? "Reopen task" : "Mark as Completed"}
-            </button>
-            <button
-              className="flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
               data-testid="task-detail-save"
               disabled={busy}
               onClick={onSave}
@@ -324,6 +369,15 @@ export function TaskDetailForm({
               {values.isToday
                 ? "Remove from Today's board"
                 : "Schedule to Today's board"}
+            </button>
+            <button
+              className={completeButtonClass}
+              data-testid="task-detail-completed"
+              disabled={busy}
+              onClick={toggleCompleted}
+              type="button"
+            >
+              {values.isCompleted ? "Reopen task" : "Mark as Completed"}
             </button>
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm text-capacity-over text-sm hover:bg-capacity-over/10 disabled:opacity-60"
@@ -353,6 +407,7 @@ export function TaskDetailForm({
   );
 }
 
+/** 0–3 rating control shared by Urgency and Importance in the matrix section. */
 function RatingRow({
   label,
   value,

@@ -66,7 +66,7 @@ export async function celebrateTaskComplete(
     spread = 80;
   }
 
-  confetti({
+  await confetti({
     colors: THEME_COLORS,
     disableForReducedMotion: true,
     origin: { x: 0.5, y: 0.35 },
