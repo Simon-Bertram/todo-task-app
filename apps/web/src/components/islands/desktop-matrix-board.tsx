@@ -11,14 +11,9 @@ import {
   useState,
 } from "preact/hooks";
 import {
-  getDueReminderColor,
-  getDueReminderLabel,
-  getDueReminderStatus,
-} from "../../lib/due-date";
-import { orpc } from "../../lib/orpc";
-import {
   capacityTone,
-  defaultRatingsForQuadrant,
+  capacityToneBarClass,
+  capacityToneTextClass,
   formatMinutes,
   QUADRANT_META,
   type QuadrantId,
@@ -35,8 +30,13 @@ import {
   type Task,
   type TaskProgressControl,
 } from "../../lib/task-helpers";
-import { showToast } from "../../lib/toast";
+import {
+  useMoveTaskToQuadrant,
+  useOptimisticTaskUpdate,
+  useTodayFlag,
+} from "../../lib/use-task-mutations";
 import { useTaskProgressSync } from "../../lib/use-task-progress-sync";
+import { TaskMetaChips } from "./task-meta-chips";
 import TaskProgress from "./task-progress";
 
 interface Props {
@@ -68,7 +68,17 @@ export default function DesktopMatrixBoard({
   useTaskProgressSync(setTasks);
   const [filter, setFilter] = useState(initialFilter);
   const [dockHoverMinutes, setDockHoverMinutes] = useState<number | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const isSaving = busyId !== null;
+
+  const updateTask = useOptimisticTaskUpdate(
+    tasks,
+    setTasks,
+    isSaving,
+    setBusyId
+  );
+  const { addToToday, removeFromToday } = useTodayFlag(updateTask);
+  const moveToQuadrant = useMoveTaskToQuadrant(updateTask);
 
   const plannedMinutes = getTodayPlannedMinutes(tasks);
   const previewPlanned =
@@ -100,82 +110,6 @@ export default function DesktopMatrixBoard({
     }
     return buckets;
   }, [filter, tasks]);
-
-  const moveToQuadrant = useCallback(
-    async (taskId: string, quadrant: QuadrantId) => {
-      const ratings = defaultRatingsForQuadrant(quadrant);
-      const previous = tasks;
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                isImportant: ratings.isImportant,
-                isUrgent: ratings.isUrgent,
-              }
-            : task
-        )
-      );
-      setIsSaving(true);
-      try {
-        await orpc.tasks.update({
-          id: taskId,
-          isImportant: ratings.isImportant,
-          isUrgent: ratings.isUrgent,
-        });
-      } catch {
-        setTasks(previous);
-        showToast("Could not move task. Try again.", "error");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [tasks]
-  );
-
-  const addToToday = useCallback(
-    async (taskId: string) => {
-      const previous = tasks;
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === taskId ? { ...task, isToday: true } : task
-        )
-      );
-      setIsSaving(true);
-      try {
-        await orpc.tasks.update({ id: taskId, isToday: true });
-        showToast("Added to Today", "success");
-      } catch {
-        setTasks(previous);
-        showToast("Could not add to Today. Try again.", "error");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [tasks]
-  );
-
-  const removeFromToday = useCallback(
-    async (taskId: string) => {
-      const previous = tasks;
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === taskId ? { ...task, isToday: false } : task
-        )
-      );
-      setIsSaving(true);
-      try {
-        await orpc.tasks.update({ id: taskId, isToday: false });
-        showToast("Removed from Today", "success");
-      } catch {
-        setTasks(previous);
-        showToast("Could not remove from Today. Try again.", "error");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [tasks]
-  );
 
   useEffect(
     () =>
@@ -393,9 +327,6 @@ function DraggableTaskCard({
   const meta = QUADRANT_META[quadrant];
   const project = getProject(projects, task.projectId);
   const today = getLocalDateString();
-  const dueStatus = getDueReminderStatus(task.dueDate, today);
-  const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
-  const dueColor = getDueReminderColor(dueStatus);
   const showProgress = isLongTask(task.estimatedMinutes);
 
   useEffect(() => {
@@ -453,40 +384,7 @@ function DraggableTaskCard({
           </div>
         ) : null}
       </div>
-      <div className="mt-2 flex flex-wrap items-start gap-2">
-        {task.isToday ? (
-          <span className="inline-flex min-h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-primary text-xs">
-            Today
-          </span>
-        ) : null}
-        {dueLabel ? (
-          <span
-            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
-              borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
-              color: dueColor,
-            }}
-          >
-            {dueLabel}
-          </span>
-        ) : null}
-        <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
-          {formatMinutes(task.estimatedMinutes)} ETC
-        </span>
-        {project ? (
-          <span
-            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
-              borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
-              color: project.color,
-            }}
-          >
-            #{project.name}
-          </span>
-        ) : null}
-      </div>
+      <TaskMetaChips project={project} task={task} today={today} />
       {showProgress && control === "slider" ? (
         <div className="mt-2" onPointerDown={stopPointerPropagation}>
           <TaskProgress
@@ -545,15 +443,8 @@ function TodayDockDrop({
   const todayTasks = getTodayTasks(tasks);
   const tone = capacityTone(previewPlanned, budgetMinutes);
   const percent = Math.round((previewPlanned / budgetMinutes) * 100);
-  let toneTextClass = "text-capacity-ok";
-  let toneBarClass = "bg-capacity-ok";
-  if (tone === "over") {
-    toneTextClass = "text-capacity-over";
-    toneBarClass = "bg-capacity-over";
-  } else if (tone === "warn") {
-    toneTextClass = "text-capacity-warn";
-    toneBarClass = "bg-capacity-warn";
-  }
+  const toneTextClass = capacityToneTextClass(tone);
+  const toneBarClass = capacityToneBarClass(tone);
 
   useEffect(() => {
     const element = ref.current as HTMLElement | null;

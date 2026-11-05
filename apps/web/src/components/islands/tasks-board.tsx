@@ -1,32 +1,18 @@
 import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "preact/hooks";
-import {
-  countDueReminders,
-  getDueReminderColor,
-  getDueReminderLabel,
-  getDueReminderStatus,
-} from "../../lib/due-date";
-import { orpc } from "../../lib/orpc";
-import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
+import { useCallback, useMemo } from "preact/hooks";
+import { countDueReminders } from "../../lib/due-date";
 import {
   filterTasksList,
   getLocalDateString,
   hasActiveTasksBoardFilters,
-  isLongTask,
   type Project,
-  prefsToSearchParams,
   sortTasksList,
   type Task,
   type TaskProgressControl,
 } from "../../lib/task-helpers";
-import TaskProgress from "./task-progress";
+import { useTasksBoardPrefs } from "../../lib/use-tasks-board-prefs";
+import { TaskListRow } from "./task-list-row";
 
 interface Props {
   initialPrefs: TasksBoardPrefs;
@@ -38,8 +24,6 @@ interface Props {
 
 const SELECT_CLASS =
   "min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-sm text-text-primary focus:border-primary focus:outline-none";
-
-const DEBOUNCE_MS = 400;
 
 const DUE_LABELS: Record<TasksBoardPrefs["due"], string> = {
   all: "All due dates",
@@ -64,18 +48,6 @@ function buildDueBannerParts(tasks: Task[]): string[] {
   return parts;
 }
 
-function syncPrefsToUrl(prefs: TasksBoardPrefs, query: string): void {
-  const params = prefsToSearchParams(prefs, query);
-  const next = params.toString();
-  const url = new URL(window.location.href);
-  const current = url.searchParams.toString();
-  if (next === current) {
-    return;
-  }
-  const path = next ? `${url.pathname}?${next}` : url.pathname;
-  window.history.replaceState({}, "", path);
-}
-
 function parsePriorityMin(value: string): TasksBoardPrefs["importanceMin"] {
   if (value === "any") {
     return null;
@@ -94,9 +66,10 @@ export default function TasksBoard({
   initialQuery,
   taskProgressControl = "pie",
 }: Props) {
-  const [prefs, setPrefs] = useState<TasksBoardPrefs>(initialPrefs);
-  const [query, setQuery] = useState(initialQuery);
-  const persistGeneration = useRef(0);
+  const { prefs, query, setPrefs, setQuery, updatePrefs } = useTasksBoardPrefs(
+    initialPrefs,
+    initialQuery
+  );
 
   const visibleTasks = useMemo(() => {
     const filtered = filterTasksList(tasks, projects, {
@@ -122,34 +95,13 @@ export default function TasksBoard({
     return project ? `#${project.name}` : null;
   }, [prefs.project, projects]);
 
-  useEffect(() => {
-    syncPrefsToUrl(prefs, query);
-  }, [prefs, query]);
-
-  useEffect(() => {
-    const generation = persistGeneration.current + 1;
-    persistGeneration.current = generation;
-    if (generation === 1) {
-      return;
-    }
-
-    const handle = globalThis.setTimeout(() => {
-      orpc.preferences.updateTasksBoard(prefs).catch(() => undefined);
-    }, DEBOUNCE_MS);
-
-    return () => {
-      globalThis.clearTimeout(handle);
-    };
-  }, [prefs]);
-
-  const updatePrefs = useCallback((patch: Partial<TasksBoardPrefs>) => {
-    setPrefs((current) => ({ ...current, ...patch }));
-  }, []);
-
-  const onSearchInput = useCallback((event: Event) => {
-    const { value } = event.currentTarget as HTMLInputElement;
-    setQuery(value);
-  }, []);
+  const onSearchInput = useCallback(
+    (event: Event) => {
+      const { value } = event.currentTarget as HTMLInputElement;
+      setQuery(value);
+    },
+    [setQuery]
+  );
 
   const onProjectChange = useCallback(
     (event: Event) => {
@@ -211,7 +163,7 @@ export default function TasksBoard({
 
   const clearQuery = useCallback(() => {
     setQuery("");
-  }, []);
+  }, [setQuery]);
 
   const clearFilters = useCallback(() => {
     setPrefs((current) => ({
@@ -219,7 +171,7 @@ export default function TasksBoard({
       sort: current.sort,
     }));
     setQuery("");
-  }, []);
+  }, [setPrefs, setQuery]);
 
   const openQuickAdd = useCallback(() => {
     document.dispatchEvent(new CustomEvent("plansage:quick-add"));
@@ -306,7 +258,7 @@ export default function TasksBoard({
       ) : (
         <ul className="space-y-2">
           {visibleTasks.map((task) => (
-            <TaskRow
+            <TaskListRow
               control={taskProgressControl}
               key={task.id}
               projects={projects}
@@ -532,83 +484,5 @@ function FilterChip({
       <span className="truncate">{label}</span>
       <span aria-hidden="true">×</span>
     </button>
-  );
-}
-
-function TaskRow({
-  task,
-  projects,
-  control,
-}: {
-  control: TaskProgressControl;
-  projects: Project[];
-  task: Task;
-}) {
-  const project = projects.find((item) => item.id === task.projectId);
-  const quadrant = getQuadrant(task.isUrgent, task.isImportant);
-  const meta = QUADRANT_META[quadrant];
-  const today = getLocalDateString();
-  const dueStatus = getDueReminderStatus(task.dueDate, today);
-  const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
-  const dueColor = getDueReminderColor(dueStatus);
-  const showProgress = isLongTask(task.estimatedMinutes);
-
-  return (
-    <li className="flex items-stretch gap-2">
-      <button
-        className="task-open flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-md border border-border-contrast bg-surface px-4 py-3 text-left hover:bg-surface-elevated"
-        data-task-id={task.id}
-        type="button"
-      >
-        <span className="min-w-0 flex-1 truncate font-medium text-sm text-text-primary">
-          {task.title}
-        </span>
-        {dueLabel ? (
-          <span
-            className="shrink-0 font-mono text-xs"
-            style={{ color: dueColor }}
-          >
-            {dueLabel}
-          </span>
-        ) : null}
-        {!dueLabel && task.dueDate ? (
-          <span className="shrink-0 font-mono text-text-muted text-xs">
-            {task.dueDate}
-          </span>
-        ) : null}
-        {project ? (
-          <span
-            className="shrink-0 font-mono text-xs"
-            style={{ color: project.color }}
-          >
-            #{project.name}
-          </span>
-        ) : (
-          <span className="shrink-0 font-mono text-text-muted text-xs">
-            Inbox
-          </span>
-        )}
-        <span
-          className="shrink-0 font-mono text-xs"
-          style={{ color: meta.colorVar }}
-        >
-          {quadrant}
-        </span>
-        <span className="shrink-0 font-mono text-text-muted text-xs">
-          {formatMinutes(task.estimatedMinutes)}
-        </span>
-      </button>
-      {showProgress ? (
-        <div className="flex shrink-0 items-center rounded-md border border-border-contrast bg-surface px-2">
-          <TaskProgress
-            control={control}
-            interactive={false}
-            progressPercent={task.progressPercent}
-            size="compact"
-            taskId={task.id}
-          />
-        </div>
-      ) : null}
-    </li>
   );
 }

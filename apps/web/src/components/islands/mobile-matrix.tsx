@@ -1,12 +1,5 @@
 import { useCallback, useMemo, useState } from "preact/hooks";
 import {
-  getDueReminderColor,
-  getDueReminderLabel,
-  getDueReminderStatus,
-} from "../../lib/due-date";
-import { orpc } from "../../lib/orpc";
-import {
-  defaultRatingsForQuadrant,
   formatMinutes,
   getQuadrant,
   QUADRANT_META,
@@ -19,8 +12,13 @@ import {
   type Task,
   type TaskProgressControl,
 } from "../../lib/task-helpers";
-import { showToast } from "../../lib/toast";
+import {
+  useMoveTaskToQuadrant,
+  useOptimisticTaskUpdate,
+  useTodayFlag,
+} from "../../lib/use-task-mutations";
 import { useTaskProgressSync } from "../../lib/use-task-progress-sync";
+import { TaskMetaChips } from "./task-meta-chips";
 import TaskProgress from "./task-progress";
 
 interface Props {
@@ -55,7 +53,17 @@ export default function MobileMatrix({
   );
   useTaskProgressSync(setLocalTasks);
   const [moveTaskId, setMoveTaskId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const isSaving = busyId !== null;
+
+  const updateTask = useOptimisticTaskUpdate(
+    localTasks,
+    setLocalTasks,
+    isSaving,
+    setBusyId
+  );
+  const { addToToday, removeFromToday } = useTodayFlag(updateTask);
+  const moveTaskToQuadrant = useMoveTaskToQuadrant(updateTask);
 
   const tasksByQuadrant = useMemo(() => {
     const buckets: Record<QuadrantId, Task[]> = {
@@ -112,39 +120,17 @@ export default function MobileMatrix({
 
   const moveToQuadrant = useCallback(
     async (quadrant: QuadrantId) => {
-      if (!moveTaskId || isSaving) {
+      if (!moveTaskId) {
         return;
       }
-      const ratings = defaultRatingsForQuadrant(quadrant);
-      const previous = localTasks;
-      setLocalTasks((current) =>
-        current.map((task) =>
-          task.id === moveTaskId
-            ? {
-                ...task,
-                isImportant: ratings.isImportant,
-                isUrgent: ratings.isUrgent,
-              }
-            : task
-        )
-      );
+      const id = moveTaskId;
       setMoveTaskId(null);
-      setIsSaving(true);
-      try {
-        await orpc.tasks.update({
-          id: moveTaskId,
-          isImportant: ratings.isImportant,
-          isUrgent: ratings.isUrgent,
-        });
+      const ok = await moveTaskToQuadrant(id, quadrant);
+      if (ok) {
         setSelected(quadrant);
-      } catch {
-        setLocalTasks(previous);
-        showToast("Could not move task. Try again.", "error");
-      } finally {
-        setIsSaving(false);
       }
     },
-    [isSaving, localTasks, moveTaskId]
+    [moveTaskId, moveTaskToQuadrant]
   );
 
   const onMoveTargetClick = useCallback(
@@ -156,56 +142,6 @@ export default function MobileMatrix({
       }
     },
     [moveToQuadrant]
-  );
-
-  const addToToday = useCallback(
-    async (taskId: string) => {
-      if (isSaving) {
-        return;
-      }
-      const previous = localTasks;
-      setLocalTasks((current) =>
-        current.map((task) =>
-          task.id === taskId ? { ...task, isToday: true } : task
-        )
-      );
-      setIsSaving(true);
-      try {
-        await orpc.tasks.update({ id: taskId, isToday: true });
-        showToast("Added to Today", "success");
-      } catch {
-        setLocalTasks(previous);
-        showToast("Could not add to Today. Try again.", "error");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [isSaving, localTasks]
-  );
-
-  const removeFromToday = useCallback(
-    async (taskId: string) => {
-      if (isSaving) {
-        return;
-      }
-      const previous = localTasks;
-      setLocalTasks((current) =>
-        current.map((task) =>
-          task.id === taskId ? { ...task, isToday: false } : task
-        )
-      );
-      setIsSaving(true);
-      try {
-        await orpc.tasks.update({ id: taskId, isToday: false });
-        showToast("Removed from Today", "success");
-      } catch {
-        setLocalTasks(previous);
-        showToast("Could not remove from Today. Try again.", "error");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [isSaving, localTasks]
   );
 
   function projectFor(id: string | null): Project | undefined {
@@ -385,9 +321,6 @@ function MobileMatrixTaskCard({
   task: Task;
   today: string;
 }) {
-  const dueStatus = getDueReminderStatus(task.dueDate, today);
-  const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
-  const dueColor = getDueReminderColor(dueStatus);
   const showProgress = isLongTask(task.estimatedMinutes);
 
   const handleAdd = useCallback(() => {
@@ -425,40 +358,7 @@ function MobileMatrixTaskCard({
             </div>
           ) : null}
         </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {task.isToday ? (
-            <span className="inline-flex min-h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-primary text-xs">
-              Today
-            </span>
-          ) : null}
-          {dueLabel ? (
-            <span
-              className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
-                borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
-                color: dueColor,
-              }}
-            >
-              {dueLabel}
-            </span>
-          ) : null}
-          <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
-            {formatMinutes(task.estimatedMinutes)} ETC
-          </span>
-          {project ? (
-            <span
-              className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
-                borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
-                color: project.color,
-              }}
-            >
-              #{project.name}
-            </span>
-          ) : null}
-        </div>
+        <TaskMetaChips project={project} task={task} today={today} />
         {showProgress && control === "slider" ? (
           <div className="mt-2">
             <TaskProgress
@@ -473,7 +373,7 @@ function MobileMatrixTaskCard({
         <div className="tabular-metrics mt-2 flex flex-wrap gap-3 font-mono text-text-muted text-xs">
           <span>Urgency: {task.isUrgent}/3</span>
           <span>Importance: {task.isImportant}/3</span>
-          {!dueLabel && task.dueDate ? <span>Due {task.dueDate}</span> : null}
+          {task.dueDate ? <span>Due {task.dueDate}</span> : null}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button

@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
-import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
-import {
-  isLongTask,
-  type Project,
-  type Task,
-  type TaskProgressControl,
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
 } from "../../lib/task-helpers";
+import { showToast } from "../../lib/toast";
+import { BoardPanel, type PanelMode } from "./project-board-panel";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
-import TaskProgress from "./task-progress";
+import { TaskListRow } from "./task-list-row";
 
 interface Props {
   initialFilter: string;
@@ -18,23 +17,6 @@ interface Props {
 }
 
 type FilterKey = "all" | "inbox" | string;
-
-type PanelMode =
-  | { kind: "closed" }
-  | { kind: "project-create" }
-  | { kind: "project-edit"; project: Project }
-  | { kind: "task-create"; projectId: string | null };
-
-const COLOR_PRESETS = [
-  "#3b82f6",
-  "#ef4444",
-  "#22c55e",
-  "#f59e0b",
-  "#a855f7",
-  "#06b6d4",
-  "#ec4899",
-  "#64748b",
-] as const;
 
 function readFilterFromUrl(): FilterKey {
   if (typeof window === "undefined") {
@@ -69,17 +51,27 @@ function filterOpenTasks(tasks: Task[], filter: FilterKey): Task[] {
 }
 
 export default function ProjectBoard({
-  projects,
-  tasks,
+  projects: initialProjects,
+  tasks: initialTasks,
   initialFilter,
   taskProgressControl = "pie",
 }: Props) {
   const [filter, setFilter] = useState<FilterKey>(initialFilter);
   const [panel, setPanel] = useState<PanelMode>({ kind: "closed" });
+  const [projects, setProjects] = useState(initialProjects);
+  const [tasks, setTasks] = useState(initialTasks);
 
   useEffect(() => {
     setFilter(readFilterFromUrl());
   }, []);
+
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const openTasks = useMemo(
     () => tasks.filter((task) => !task.isCompleted),
@@ -168,7 +160,51 @@ export default function ProjectBoard({
     openCreateTask(selectedProject?.id ?? null);
   }, [openCreateTask, selectedProject]);
 
-  const onProjectNotesSaved = useCallback(() => {
+  const onProjectNotesSaved = useCallback(
+    (projectId: string, notes: string | null) => {
+      setProjects((current) =>
+        current.map((project) =>
+          project.id === projectId ? { ...project, notes } : project
+        )
+      );
+      showToast("Project notes saved", "success");
+    },
+    []
+  );
+
+  const onProjectSaved = useCallback((project: Project) => {
+    setProjects((current) => {
+      const exists = current.some((item) => item.id === project.id);
+      if (exists) {
+        return current.map((item) =>
+          item.id === project.id ? { ...item, ...project } : item
+        );
+      }
+      return [...current, project];
+    });
+    showToast("Project saved", "success");
+  }, []);
+
+  const onProjectDeleted = useCallback(
+    (projectId: string) => {
+      setProjects((current) =>
+        current.filter((project) => project.id !== projectId)
+      );
+      setTasks((current) =>
+        current.map((task) =>
+          task.projectId === projectId ? { ...task, projectId: null } : task
+        )
+      );
+      if (filter === projectId) {
+        setFilterAndUrl("all");
+      }
+      showToast("Project deleted", "success");
+    },
+    [filter, setFilterAndUrl]
+  );
+
+  const onTaskCreated = useCallback(() => {
+    showToast("Task added", "success");
     location.reload();
   }, []);
 
@@ -224,7 +260,14 @@ export default function ProjectBoard({
       />
 
       {panel.kind === "closed" ? null : (
-        <BoardPanel onClose={closePanel} panel={panel} projects={projects} />
+        <BoardPanel
+          onClose={closePanel}
+          onProjectDeleted={onProjectDeleted}
+          onProjectSaved={onProjectSaved}
+          onTaskCreated={onTaskCreated}
+          panel={panel}
+          projects={projects}
+        />
       )}
     </div>
   );
@@ -316,7 +359,7 @@ function ProjectList({
   onAddTask: (event: Event) => void;
   onEdit: (event: Event) => void;
   onFilter: (event: Event) => void;
-  onNotesSaved: () => void;
+  onNotesSaved: (projectId: string, notes: string | null) => void;
   openTasks: Task[];
   projects: Project[];
 }) {
@@ -331,65 +374,94 @@ function ProjectList({
 
   return (
     <ul className="space-y-3">
-      {projects.map((project) => {
-        const count = openTasks.filter(
-          (task) => task.projectId === project.id
-        ).length;
-        return (
-          <li
-            className="rounded-md border border-border-contrast bg-surface p-4"
-            key={project.id}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
-                data-project-id={project.id}
-                onClick={onFilter}
-                type="button"
-              >
-                <span
-                  aria-hidden="true"
-                  className="size-3 shrink-0 rounded-full"
-                  style={{ background: project.color }}
-                />
-                <span className="truncate font-semibold text-text-primary">
-                  #{project.name}
-                </span>
-                <span className="tabular-metrics ml-auto shrink-0 font-mono text-text-muted text-xs">
-                  {count} tasks
-                </span>
-              </button>
-              <button
-                aria-label={`Add task to ${project.name}`}
-                className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 text-sm text-text-primary hover:bg-surface-elevated"
-                data-project-id={project.id}
-                onClick={onAddTask}
-                type="button"
-              >
-                Add task
-              </button>
-              <button
-                aria-label={`Edit ${project.name}`}
-                className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 text-sm text-text-secondary hover:bg-surface-elevated"
-                data-project-id={project.id}
-                onClick={onEdit}
-                type="button"
-              >
-                Edit
-              </button>
-            </div>
-            <div className="mt-3">
-              <ProjectNotesDisclosure
-                key={project.id}
-                notes={project.notes}
-                onSaved={onNotesSaved}
-                projectId={project.id}
-              />
-            </div>
-          </li>
-        );
-      })}
+      {projects.map((project) => (
+        <ProjectListItem
+          key={project.id}
+          onAddTask={onAddTask}
+          onEdit={onEdit}
+          onFilter={onFilter}
+          onNotesSaved={onNotesSaved}
+          openTaskCount={
+            openTasks.filter((task) => task.projectId === project.id).length
+          }
+          project={project}
+        />
+      ))}
     </ul>
+  );
+}
+
+function ProjectListItem({
+  project,
+  openTaskCount,
+  onFilter,
+  onAddTask,
+  onEdit,
+  onNotesSaved,
+}: {
+  onAddTask: (event: Event) => void;
+  onEdit: (event: Event) => void;
+  onFilter: (event: Event) => void;
+  onNotesSaved: (projectId: string, notes: string | null) => void;
+  openTaskCount: number;
+  project: Project;
+}) {
+  const handleNotesSaved = useCallback(
+    (notes: string | null) => {
+      onNotesSaved(project.id, notes);
+    },
+    [onNotesSaved, project.id]
+  );
+
+  return (
+    <li className="rounded-md border border-border-contrast bg-surface p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
+          data-project-id={project.id}
+          onClick={onFilter}
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            className="size-3 shrink-0 rounded-full"
+            style={{ background: project.color }}
+          />
+          <span className="truncate font-semibold text-text-primary">
+            #{project.name}
+          </span>
+          <span className="tabular-metrics ml-auto shrink-0 font-mono text-text-muted text-xs">
+            {openTaskCount} tasks
+          </span>
+        </button>
+        <button
+          aria-label={`Add task to ${project.name}`}
+          className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 text-sm text-text-primary hover:bg-surface-elevated"
+          data-project-id={project.id}
+          onClick={onAddTask}
+          type="button"
+        >
+          Add task
+        </button>
+        <button
+          aria-label={`Edit ${project.name}`}
+          className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 text-sm text-text-secondary hover:bg-surface-elevated"
+          data-project-id={project.id}
+          onClick={onEdit}
+          type="button"
+        >
+          Edit
+        </button>
+      </div>
+      <div className="mt-3">
+        <ProjectNotesDisclosure
+          key={project.id}
+          notes={project.notes}
+          onSaved={handleNotesSaved}
+          projectId={project.id}
+        />
+      </div>
+    </li>
   );
 }
 
@@ -428,468 +500,16 @@ function TaskListSection({
       ) : (
         <ul className="space-y-2">
           {filteredTasks.map((task) => (
-            <TaskRow
+            <TaskListRow
               control={control}
               key={task.id}
               projects={projects}
+              showDue={false}
               task={task}
             />
           ))}
         </ul>
       )}
     </section>
-  );
-}
-
-function TaskRow({
-  task,
-  projects,
-  control,
-}: {
-  control: TaskProgressControl;
-  projects: Project[];
-  task: Task;
-}) {
-  const project = projects.find((item) => item.id === task.projectId);
-  const quadrant = getQuadrant(task.isUrgent, task.isImportant);
-  const meta = QUADRANT_META[quadrant];
-  const showProgress = isLongTask(task.estimatedMinutes);
-
-  return (
-    <li className="flex items-stretch gap-2">
-      <button
-        className="task-open flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-md border border-border-contrast bg-surface px-4 py-3 text-left hover:bg-surface-elevated"
-        data-task-id={task.id}
-        type="button"
-      >
-        <span className="min-w-0 flex-1 truncate font-medium text-sm text-text-primary">
-          {task.title}
-        </span>
-        {project ? (
-          <span
-            className="shrink-0 font-mono text-xs"
-            style={{ color: project.color }}
-          >
-            #{project.name}
-          </span>
-        ) : (
-          <span className="shrink-0 font-mono text-text-muted text-xs">
-            Inbox
-          </span>
-        )}
-        <span
-          className="shrink-0 font-mono text-xs"
-          style={{ color: meta.colorVar }}
-        >
-          {quadrant}
-        </span>
-        <span className="shrink-0 font-mono text-text-muted text-xs">
-          {formatMinutes(task.estimatedMinutes)}
-        </span>
-      </button>
-      {showProgress ? (
-        <div className="flex shrink-0 items-center rounded-md border border-border-contrast bg-surface px-2">
-          <TaskProgress
-            control={control}
-            interactive={false}
-            progressPercent={task.progressPercent}
-            size="compact"
-            taskId={task.id}
-          />
-        </div>
-      ) : null}
-    </li>
-  );
-}
-
-function BoardPanel({
-  panel,
-  projects,
-  onClose,
-}: {
-  onClose: () => void;
-  panel: Exclude<PanelMode, { kind: "closed" }>;
-  projects: Project[];
-}) {
-  const [isBusy, setIsBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [projectName, setProjectName] = useState(
-    panel.kind === "project-edit" ? panel.project.name : ""
-  );
-  const [projectColor, setProjectColor] = useState(
-    panel.kind === "project-edit" ? panel.project.color : COLOR_PRESETS[0]
-  );
-  const [projectNotes, setProjectNotes] = useState(
-    panel.kind === "project-edit" ? (panel.project.notes ?? "") : ""
-  );
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskProjectId, setTaskProjectId] = useState<string | null>(
-    panel.kind === "task-create" ? panel.projectId : null
-  );
-
-  const lockedProject =
-    panel.kind === "task-create" && panel.projectId
-      ? (projects.find((project) => project.id === panel.projectId) ?? null)
-      : null;
-
-  let panelTitle = "Add task";
-  if (panel.kind === "project-create") {
-    panelTitle = "New project";
-  } else if (panel.kind === "project-edit") {
-    panelTitle = "Edit project";
-  }
-
-  const onProjectNameInput = useCallback((event: Event) => {
-    const { value } = event.currentTarget as HTMLInputElement;
-    setProjectName(value);
-  }, []);
-
-  const onTaskTitleInput = useCallback((event: Event) => {
-    const { value } = event.currentTarget as HTMLInputElement;
-    setTaskTitle(value);
-  }, []);
-
-  const onTaskProjectChange = useCallback((event: Event) => {
-    const { value } = event.currentTarget as HTMLSelectElement;
-    setTaskProjectId(value === "" ? null : value);
-  }, []);
-
-  const onColorClick = useCallback((event: Event) => {
-    const button = event.currentTarget as HTMLButtonElement;
-    const { color } = button.dataset;
-    if (color) {
-      setProjectColor(color);
-    }
-  }, []);
-
-  const onProjectNotesChange = useCallback((value: string) => {
-    setProjectNotes(value);
-  }, []);
-
-  const onSaveProject = useCallback(async () => {
-    const name = projectName.trim();
-    if (!name || isBusy) {
-      return;
-    }
-    const notes = projectNotes.trim() ? projectNotes.trim() : null;
-    setIsBusy(true);
-    setError(null);
-    try {
-      if (panel.kind === "project-create") {
-        await orpc.projects.create({ color: projectColor, name, notes });
-      } else if (panel.kind === "project-edit") {
-        await orpc.projects.update({
-          color: projectColor,
-          id: panel.project.id,
-          name,
-          notes,
-        });
-      }
-      onClose();
-      location.reload();
-    } catch {
-      setError("Could not save project. Try again.");
-    } finally {
-      setIsBusy(false);
-    }
-  }, [isBusy, onClose, panel, projectColor, projectName, projectNotes]);
-
-  const onDeleteProject = useCallback(async () => {
-    if (panel.kind !== "project-edit" || isBusy) {
-      return;
-    }
-    if (confirmDeleteId !== panel.project.id) {
-      setConfirmDeleteId(panel.project.id);
-      return;
-    }
-    setIsBusy(true);
-    setError(null);
-    try {
-      await orpc.projects.delete({ id: panel.project.id });
-      onClose();
-      location.reload();
-    } catch {
-      setError("Could not delete project. Try again.");
-    } finally {
-      setIsBusy(false);
-    }
-  }, [confirmDeleteId, isBusy, onClose, panel]);
-
-  const onCreateTask = useCallback(async () => {
-    const title = taskTitle.trim();
-    if (!title || isBusy) {
-      return;
-    }
-    setIsBusy(true);
-    setError(null);
-    try {
-      await orpc.tasks.create({
-        projectId: taskProjectId,
-        title,
-      });
-      onClose();
-      location.reload();
-    } catch {
-      setError("Could not create task. Try again.");
-    } finally {
-      setIsBusy(false);
-    }
-  }, [isBusy, onClose, taskProjectId, taskTitle]);
-
-  return (
-    <div
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6"
-      role="dialog"
-    >
-      <button
-        aria-label="Close panel"
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-        type="button"
-      />
-      <div className="relative z-10 flex max-h-[92svh] w-full max-w-lg flex-col overflow-y-auto rounded-t-md border border-border-contrast bg-surface sm:rounded-md">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-border-contrast border-b bg-surface px-4 py-3">
-          <h2 className="font-semibold text-sm text-text-secondary">
-            {panelTitle}
-          </h2>
-          <button
-            aria-label="Close"
-            className="flex size-11 items-center justify-center rounded-sm text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
-            onClick={onClose}
-            type="button"
-          >
-            x
-          </button>
-        </header>
-
-        <div className="space-y-4 px-4 py-5">
-          {panel.kind === "project-create" || panel.kind === "project-edit" ? (
-            <ProjectFormFields
-              confirmDelete={
-                panel.kind === "project-edit" &&
-                confirmDeleteId === panel.project.id
-              }
-              error={error}
-              isBusy={isBusy}
-              onColorClick={onColorClick}
-              onDelete={
-                panel.kind === "project-edit" ? onDeleteProject : undefined
-              }
-              onNameInput={onProjectNameInput}
-              onNotesChange={onProjectNotesChange}
-              onSave={onSaveProject}
-              projectColor={projectColor}
-              projectName={projectName}
-              projectNotes={projectNotes}
-              showDelete={panel.kind === "project-edit"}
-            />
-          ) : null}
-
-          {panel.kind === "task-create" ? (
-            <TaskCreateFields
-              error={error}
-              isBusy={isBusy}
-              lockedProject={lockedProject}
-              onCreate={onCreateTask}
-              onProjectChange={onTaskProjectChange}
-              onTitleInput={onTaskTitleInput}
-              projects={projects}
-              taskProjectId={taskProjectId}
-              taskTitle={taskTitle}
-            />
-          ) : null}
-
-          <button
-            className="flex min-h-11 w-full items-center justify-center rounded-sm text-sm text-text-secondary hover:bg-surface-elevated"
-            disabled={isBusy}
-            onClick={onClose}
-            type="button"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectFormFields({
-  projectName,
-  projectColor,
-  projectNotes,
-  error,
-  isBusy,
-  showDelete,
-  confirmDelete,
-  onNameInput,
-  onNotesChange,
-  onColorClick,
-  onSave,
-  onDelete,
-}: {
-  confirmDelete: boolean;
-  error: string | null;
-  isBusy: boolean;
-  onColorClick: (event: Event) => void;
-  onDelete?: () => void;
-  onNameInput: (event: Event) => void;
-  onNotesChange: (value: string) => void;
-  onSave: () => void;
-  projectColor: string;
-  projectName: string;
-  projectNotes: string;
-  showDelete: boolean;
-}) {
-  return (
-    <>
-      <label className="block space-y-1.5">
-        <span className="font-medium text-sm text-text-secondary">Name</span>
-        <input
-          className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
-          onInput={onNameInput}
-          placeholder="Project name…"
-          type="text"
-          value={projectName}
-        />
-      </label>
-      <fieldset className="space-y-2">
-        <legend className="font-medium text-sm text-text-secondary">
-          Color
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {COLOR_PRESETS.map((color) => {
-            const selected = projectColor === color;
-            return (
-              <button
-                aria-label={`Color ${color}`}
-                aria-pressed={selected}
-                className={`size-11 rounded-full border-2 ${
-                  selected ? "border-text-primary" : "border-transparent"
-                }`}
-                data-color={color}
-                key={color}
-                onClick={onColorClick}
-                style={{ background: color }}
-                type="button"
-              />
-            );
-          })}
-        </div>
-      </fieldset>
-      <ProjectNotesDisclosure
-        mode="draft"
-        onChange={onNotesChange}
-        value={projectNotes}
-      />
-      {error ? (
-        <p className="text-capacity-over text-sm" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <button
-        className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm disabled:opacity-60"
-        disabled={isBusy || projectName.trim().length === 0}
-        onClick={onSave}
-        type="button"
-      >
-        {isBusy ? "Saving…" : "Save project"}
-      </button>
-      {showDelete && onDelete ? (
-        <>
-          <button
-            className="flex min-h-11 w-full items-center justify-center rounded-sm text-capacity-over text-sm hover:bg-capacity-over/10 disabled:opacity-60"
-            disabled={isBusy}
-            onClick={onDelete}
-            type="button"
-          >
-            {confirmDelete ? "Confirm delete" : "Delete project"}
-          </button>
-          {confirmDelete ? (
-            <p className="text-center text-sm text-text-secondary">
-              Tasks in this project become unassigned (Inbox). Tap Confirm
-              delete again.
-            </p>
-          ) : null}
-        </>
-      ) : null}
-    </>
-  );
-}
-
-function TaskCreateFields({
-  lockedProject,
-  projects,
-  taskProjectId,
-  taskTitle,
-  error,
-  isBusy,
-  onProjectChange,
-  onTitleInput,
-  onCreate,
-}: {
-  error: string | null;
-  isBusy: boolean;
-  lockedProject: Project | null;
-  onCreate: () => void;
-  onProjectChange: (event: Event) => void;
-  onTitleInput: (event: Event) => void;
-  projects: Project[];
-  taskProjectId: string | null;
-  taskTitle: string;
-}) {
-  return (
-    <>
-      {lockedProject ? (
-        <p
-          className="font-mono text-xs uppercase tracking-wide"
-          style={{ color: lockedProject.color }}
-        >
-          #{lockedProject.name}
-        </p>
-      ) : (
-        <label className="block space-y-1.5">
-          <span className="font-medium text-sm text-text-secondary">
-            Project
-          </span>
-          <select
-            className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
-            onChange={onProjectChange}
-            value={taskProjectId ?? ""}
-          >
-            <option value="">Inbox (no project)</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                #{project.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <label className="block space-y-1.5">
-        <span className="font-medium text-sm text-text-secondary">Title</span>
-        <input
-          className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
-          onInput={onTitleInput}
-          placeholder="Task title…"
-          type="text"
-          value={taskTitle}
-        />
-      </label>
-      {error ? (
-        <p className="text-capacity-over text-sm" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <button
-        className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm disabled:opacity-60"
-        disabled={isBusy || taskTitle.trim().length === 0}
-        onClick={onCreate}
-        type="button"
-      >
-        {isBusy ? "Adding…" : "Add task"}
-      </button>
-    </>
   );
 }

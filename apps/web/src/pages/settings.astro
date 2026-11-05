@@ -11,7 +11,7 @@ import {
 } from "../lib/orpc.server";
 import { loadSessionUser } from "../lib/session.server";
 
-const requestId = Astro.locals.requestId;
+const { requestId } = Astro.locals;
 const data = await loadAppBoardData(Astro.request, {
   includeCompleted: true,
   requestId,
@@ -77,7 +77,7 @@ try {
       client:load
     />
     <SetupChecklist
-      capacitySet={false}
+      capacitySet={dailyCapacityMinutes !== 300}
       dismissed={Boolean(onboardingCompletedAt)}
       projects={projects}
       tasks={tasks}

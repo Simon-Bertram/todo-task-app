@@ -1,6 +1,7 @@
 ---
 import { initialsFromName } from "@todo-task-app/api/lib/avatars";
 import type { SessionUser } from "../../lib/session.server";
+import LogoutButton from "../islands/logout-button";
 
 interface Props {
   user: SessionUser;
@@ -31,44 +32,5 @@ const initials = initialsFromName(user.name);
     <p class="truncate font-medium text-sm text-text-primary">{user.name}</p>
     <p class="truncate font-mono text-text-muted text-xs">{user.email}</p>
   </div>
-  <button
-    class="min-h-11 shrink-0 rounded-sm px-2 font-medium text-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
-    id="user-card-logout"
-    type="button"
-  >
-    Log out
-  </button>
+  <LogoutButton client:load />
 </div>
-
-<script>
-  import { authClient } from "../../lib/auth-client";
-
-  const logoutButton = document.getElementById(
-    "user-card-logout"
-  ) as HTMLButtonElement | null;
-
-  logoutButton?.addEventListener("click", async () => {
-    logoutButton.disabled = true;
-    logoutButton.setAttribute("aria-busy", "true");
-
-    const reset = () => {
-      logoutButton.disabled = false;
-      logoutButton.removeAttribute("aria-busy");
-    };
-
-    try {
-      const { error } = await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            window.location.assign("/");
-          },
-        },
-      });
-      if (error) {
-        reset();
-      }
-    } catch {
-      reset();
-    }
-  });
-</script>

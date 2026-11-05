@@ -1,6 +1,22 @@
-export type QuadrantId = "Q1" | "Q2" | "Q3" | "Q4";
+import {
+  type CapacityBucket as ApiCapacityBucket,
+  getCapacityBucket as resolveCapacityBucket,
+} from "@todo-task-app/api/lib/capacity-bucket";
+import {
+  type QuadrantId as ApiQuadrantId,
+  getQuadrant as resolveQuadrant,
+} from "@todo-task-app/api/lib/quadrant";
 
-export type CapacityBucket = "major" | "medium" | "quick" | "other";
+export type CapacityBucket = ApiCapacityBucket;
+export type QuadrantId = ApiQuadrantId;
+
+export function getQuadrant(isUrgent: number, isImportant: number): QuadrantId {
+  return resolveQuadrant(isUrgent, isImportant);
+}
+
+export function getCapacityBucket(estimatedMinutes: number): CapacityBucket {
+  return resolveCapacityBucket(estimatedMinutes);
+}
 
 export interface QuadrantMeta {
   accentClass: string;
@@ -46,24 +62,9 @@ export const QUADRANT_META: Record<QuadrantId, QuadrantMeta> = {
   },
 };
 
-export function getQuadrant(isUrgent: number, isImportant: number): QuadrantId {
-  const urgent = isUrgent >= 2;
-  const important = isImportant >= 2;
-  if (urgent && important) {
-    return "Q1";
-  }
-  if (!urgent && important) {
-    return "Q2";
-  }
-  if (urgent && !important) {
-    return "Q3";
-  }
-  return "Q4";
-}
-
 export function defaultRatingsForQuadrant(quadrant: QuadrantId): {
-  isUrgent: number;
   isImportant: number;
+  isUrgent: number;
 } {
   switch (quadrant) {
     case "Q1":
@@ -79,26 +80,6 @@ export function defaultRatingsForQuadrant(quadrant: QuadrantId): {
   }
 }
 
-export function getCapacityBucket(estimatedMinutes: number): CapacityBucket {
-  if (estimatedMinutes >= 60 && estimatedMinutes <= 120) {
-    return "major";
-  }
-  if (estimatedMinutes >= 30 && estimatedMinutes < 60) {
-    return "medium";
-  }
-  if (estimatedMinutes > 0 && estimatedMinutes < 15) {
-    return "quick";
-  }
-  // 15–29m and >120m fall outside strict 1-3-5 bands; treat 15 as quick-adjacent
-  if (estimatedMinutes <= 15) {
-    return "quick";
-  }
-  if (estimatedMinutes < 60) {
-    return "medium";
-  }
-  return "major";
-}
-
 export function formatMinutes(minutes: number): string {
   if (minutes >= 60 && minutes % 60 === 0) {
     return `${minutes / 60}h`;
@@ -111,10 +92,12 @@ export function formatMinutes(minutes: number): string {
   return `${minutes}m`;
 }
 
+export type CapacityTone = "ok" | "warn" | "over";
+
 export function capacityTone(
   plannedMinutes: number,
   budgetMinutes: number
-): "ok" | "warn" | "over" {
+): CapacityTone {
   const ratio = plannedMinutes / budgetMinutes;
   if (ratio > 1) {
     return "over";
@@ -123,4 +106,26 @@ export function capacityTone(
     return "warn";
   }
   return "ok";
+}
+
+/** Text color class for capacity tone (shared by Today + Matrix dock). */
+export function capacityToneTextClass(tone: CapacityTone): string {
+  if (tone === "over") {
+    return "text-capacity-over";
+  }
+  if (tone === "warn") {
+    return "text-capacity-warn";
+  }
+  return "text-capacity-ok";
+}
+
+/** Bar fill class for capacity tone. */
+export function capacityToneBarClass(tone: CapacityTone): string {
+  if (tone === "over") {
+    return "bg-capacity-over";
+  }
+  if (tone === "warn") {
+    return "bg-capacity-warn";
+  }
+  return "bg-capacity-ok";
 }

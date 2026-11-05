@@ -1,4 +1,5 @@
 ---
+import QuickAddDialog from "../components/islands/quick-add-dialog";
 import TaskDetailSheet from "../components/islands/task-detail-sheet";
 import BottomNav from "../components/shell/bottom-nav.astro";
 import MobileTopBar from "../components/shell/mobile-top-bar.astro";
@@ -37,6 +38,11 @@ const user = await loadSessionUser(Astro.request);
 if (!user) {
   return Astro.redirect("/login");
 }
+
+const quickAddProjects = projects.map((project) => ({
+  id: project.id,
+  name: project.name,
+}));
 ---
 
 <Layout robots="noindex, nofollow" title={title}>
@@ -66,60 +72,7 @@ if (!user) {
   />
 </Layout>
 
-<dialog
-  class="glass-panel m-auto w-[min(100%,24rem)] rounded-md p-5 text-text-primary backdrop:bg-black/60"
-  id="quick-add-dialog"
->
-  <form class="space-y-4" id="quick-add-form">
-    <h2 class="font-semibold text-lg">Quick add</h2>
-    <p class="text-sm text-text-secondary">
-      Capture a task title. You can refine priorities in the detail sheet.
-    </p>
-    <input
-      class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
-      data-testid="quick-add-title"
-      name="title"
-      placeholder="Task title…"
-      required
-      type="text"
-    >
-    {projects.length > 0 ? (
-      <label class="block space-y-1.5">
-        <span class="font-medium text-sm text-text-secondary">Project</span>
-        <select
-          class="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
-          name="projectId"
-        >
-          <option value="">Inbox (no project)</option>
-          {projects.map((project: Project) => (
-            <option value={project.id}>#{project.name}</option>
-          ))}
-        </select>
-      </label>
-    ) : null}
-    <p
-      class="hidden text-capacity-over text-sm"
-      id="quick-add-error"
-      role="alert"
-    ></p>
-    <div class="flex justify-end gap-2">
-      <button
-        class="min-h-11 rounded-sm border border-border-contrast px-4 text-sm text-text-primary"
-        id="quick-add-cancel"
-        type="button"
-      >
-        Cancel
-      </button>
-      <button
-        class="min-h-11 rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm"
-        data-testid="quick-add-submit"
-        type="submit"
-      >
-        Add
-      </button>
-    </div>
-  </form>
-</dialog>
+<QuickAddDialog projects={quickAddProjects} client:load />
 
 <div
   aria-live="polite"
@@ -128,9 +81,9 @@ if (!user) {
 ></div>
 
 <script>
-  import { orpc, reportWindowError } from "../lib/orpc";
+  import { reportWindowError } from "../lib/orpc";
   import { revalidateOnFocus } from "../lib/revalidate";
-  import { showToast, type ToastDetail } from "../lib/toast";
+  import type { ToastDetail } from "../lib/toast";
 
   revalidateOnFocus();
 
@@ -168,100 +121,4 @@ if (!user) {
       el.remove();
     }, 3200);
   }) as EventListener);
-
-  const dialog = document.getElementById(
-    "quick-add-dialog"
-  ) as HTMLDialogElement | null;
-  const form = document.getElementById(
-    "quick-add-form"
-  ) as HTMLFormElement | null;
-  const errorEl = document.getElementById("quick-add-error");
-  const cancel = document.getElementById("quick-add-cancel");
-  const openQuickAdd = () => {
-    errorEl?.classList.add("hidden");
-    if (errorEl) {
-      errorEl.textContent = "";
-    }
-    dialog?.showModal();
-    form?.querySelector("input")?.focus();
-  };
-
-  const triggers = [
-    document.getElementById("quick-add-fab"),
-    document.getElementById("quick-add-header"),
-    document.getElementById("quick-add-sidenav"),
-  ];
-
-  for (const trigger of triggers) {
-    trigger?.addEventListener("click", openQuickAdd);
-  }
-
-  document.addEventListener("plansage:quick-add", openQuickAdd);
-
-  cancel?.addEventListener("click", () => {
-    dialog?.close();
-  });
-
-  form?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const data = new FormData(form);
-    const title = String(data.get("title") ?? "").trim();
-    if (!title) {
-      return;
-    }
-    const rawProjectId = String(data.get("projectId") ?? "").trim();
-    const projectId = rawProjectId.length > 0 ? rawProjectId : null;
-
-    try {
-      await orpc.tasks.create(projectId ? { projectId, title } : { title });
-      dialog?.close();
-      showToast("Task added", "success");
-      location.reload();
-    } catch {
-      if (errorEl) {
-        errorEl.textContent = "Could not create task. Try again.";
-        errorEl.classList.remove("hidden");
-      }
-      showToast("Could not create task. Try again.", "error");
-    }
-  });
-
-  document.addEventListener("click", async (event) => {
-    const target = event.target as HTMLElement | null;
-    const addButton = target?.closest?.(
-      "[data-add-today]"
-    ) as HTMLElement | null;
-    const removeButton = target?.closest?.(
-      "[data-remove-today]"
-    ) as HTMLElement | null;
-    const addId = addButton?.dataset.addToday;
-    const removeId = removeButton?.dataset.removeToday;
-
-    if (addId) {
-      event.preventDefault();
-      addButton?.setAttribute("disabled", "true");
-      try {
-        await orpc.tasks.update({ id: addId, isToday: true });
-        showToast("Added to Today", "success");
-        location.reload();
-      } catch {
-        addButton?.removeAttribute("disabled");
-        showToast("Could not add to Today. Try again.", "error");
-      }
-      return;
-    }
-
-    if (removeId) {
-      event.preventDefault();
-      removeButton?.setAttribute("disabled", "true");
-      try {
-        await orpc.tasks.update({ id: removeId, isToday: false });
-        showToast("Removed from Today", "success");
-        location.reload();
-      } catch {
-        removeButton?.removeAttribute("disabled");
-        showToast("Could not remove from Today. Try again.", "error");
-      }
-    }
-  });
 </script>

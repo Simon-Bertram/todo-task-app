@@ -5,21 +5,7 @@ import {
 } from "../../lib/celebrate";
 import { orpc } from "../../lib/orpc";
 import type { TaskProgressControl } from "../../lib/task-helpers";
-
-interface MilestoneRow {
-  key: string;
-  label: string;
-  unlockedAt: Date | string | null;
-}
-
-interface WeeklyStats {
-  daysOverCapacity: number;
-  daysProtected: number;
-  q2Completed: number;
-  q3Completed: number;
-  weekEnd: string;
-  weekStart: string;
-}
+import { useGamificationSettingsData } from "../../lib/use-gamification-settings-data";
 
 interface Props {
   initialCelebrations: CelebrationsPref;
@@ -40,92 +26,82 @@ export default function GamificationSettings({
     useState<CelebrationsPref>(initialCelebrations);
   const [taskProgressControl, setTaskProgressControl] =
     useState<TaskProgressControl>(initialTaskProgressControl);
-  const [rhythmOptIn, setRhythmOptIn] = useState(initialRhythmOptIn);
-  const [current, setCurrent] = useState(rhythmCurrent);
-  const [best, setBest] = useState(rhythmBest);
-  const [milestones, setMilestones] = useState<MilestoneRow[]>([]);
-  const [weekly, setWeekly] = useState<WeeklyStats | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const {
+    best,
+    current,
+    error,
+    milestones,
+    rhythmOptIn,
+    setCurrent,
+    setError,
+    setRhythmOptIn,
+    weekly,
+  } = useGamificationSettingsData({
+    initialBest: rhythmBest,
+    initialCurrent: rhythmCurrent,
+    initialOptIn: initialRhythmOptIn,
+  });
 
   useEffect(() => {
     setCelebrationsPref(initialCelebrations);
   }, [initialCelebrations]);
 
-  useEffect(() => {
-    const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
-    let cancelled = false;
-    Promise.all([
-      orpc.gamification.listMilestones(),
-      orpc.gamification.weeklyIntentionality({ timeZone }),
-      orpc.gamification.getRhythm(),
-    ])
-      .then(([milestoneRows, weeklyStats, rhythm]) => {
-        if (cancelled) {
-          return;
-        }
-        setMilestones(milestoneRows);
-        setWeekly(weeklyStats);
-        setCurrent(rhythm.current);
-        setBest(rhythm.best);
-        setRhythmOptIn(rhythm.optIn);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Could not load rhythm and milestones.");
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const onCelebrationsChange = useCallback(async (event: Event) => {
-    const { value } = event.currentTarget as HTMLSelectElement;
-    const next = value as CelebrationsPref;
-    setCelebrations(next);
-    setCelebrationsPref(next);
-    setStatus(null);
-    try {
-      await orpc.preferences.updateCelebrations({ celebrations: next });
-      setStatus("Celebrations saved.");
-    } catch {
-      setError("Could not save celebrations.");
-    }
-  }, []);
-
-  const onTaskProgressControlChange = useCallback(async (event: Event) => {
-    const { value } = event.currentTarget as HTMLSelectElement;
-    const next = value as TaskProgressControl;
-    setTaskProgressControl(next);
-    setStatus(null);
-    try {
-      await orpc.preferences.updateTaskProgressControl({
-        taskProgressControl: next,
-      });
-      setStatus("Progress control saved.");
-    } catch {
-      setError("Could not save progress control.");
-    }
-  }, []);
-
-  const onRhythmToggle = useCallback(async (event: Event) => {
-    const { checked } = event.currentTarget as HTMLInputElement;
-    setRhythmOptIn(checked);
-    setStatus(null);
-    try {
-      await orpc.gamification.setRhythmOptIn({ optIn: checked });
-      setStatus(
-        checked ? "Rhythm opted in." : "Rhythm paused preference saved."
-      );
-      if (!checked) {
-        setCurrent(0);
+  const onCelebrationsChange = useCallback(
+    async (event: Event) => {
+      const { value } = event.currentTarget as HTMLSelectElement;
+      const next = value as CelebrationsPref;
+      setCelebrations(next);
+      setCelebrationsPref(next);
+      setStatus(null);
+      try {
+        await orpc.preferences.updateCelebrations({ celebrations: next });
+        setStatus("Celebrations saved.");
+      } catch {
+        setError("Could not save celebrations.");
       }
-    } catch {
-      setError("Could not update rhythm preference.");
-      setRhythmOptIn(!checked);
-    }
-  }, []);
+    },
+    [setError]
+  );
+
+  const onTaskProgressControlChange = useCallback(
+    async (event: Event) => {
+      const { value } = event.currentTarget as HTMLSelectElement;
+      const next = value as TaskProgressControl;
+      setTaskProgressControl(next);
+      setStatus(null);
+      try {
+        await orpc.preferences.updateTaskProgressControl({
+          taskProgressControl: next,
+        });
+        setStatus("Progress control saved.");
+      } catch {
+        setError("Could not save progress control.");
+      }
+    },
+    [setError]
+  );
+
+  const onRhythmToggle = useCallback(
+    async (event: Event) => {
+      const { checked } = event.currentTarget as HTMLInputElement;
+      setRhythmOptIn(checked);
+      setStatus(null);
+      try {
+        await orpc.gamification.setRhythmOptIn({ optIn: checked });
+        setStatus(
+          checked ? "Rhythm opted in." : "Rhythm paused preference saved."
+        );
+        if (!checked) {
+          setCurrent(0);
+        }
+      } catch {
+        setError("Could not update rhythm preference.");
+        setRhythmOptIn(!checked);
+      }
+    },
+    [setCurrent, setError, setRhythmOptIn]
+  );
 
   return (
     <div className="space-y-6">

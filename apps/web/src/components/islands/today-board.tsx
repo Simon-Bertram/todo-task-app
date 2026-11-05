@@ -14,15 +14,13 @@ import {
   celebrateTaskComplete,
   completionIntensity,
 } from "../../lib/celebrate";
-import {
-  getDueReminderColor,
-  getDueReminderLabel,
-  getDueReminderStatus,
-} from "../../lib/due-date";
+import { countDueReminders } from "../../lib/due-date";
 import { orpc } from "../../lib/orpc";
 import {
   type CapacityBucket,
   capacityTone,
+  capacityToneBarClass,
+  capacityToneTextClass,
   formatMinutes,
   getCapacityBucket,
   QUADRANT_META,
@@ -42,9 +40,14 @@ import {
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
 import {
+  useOptimisticTaskUpdate,
+  useTodayFlag,
+} from "../../lib/use-task-mutations";
+import {
   useIsDesktopLg,
   useTaskProgressSync,
 } from "../../lib/use-task-progress-sync";
+import { TaskMetaChips } from "./task-meta-chips";
 import TaskProgress from "./task-progress";
 
 interface Props {
@@ -83,53 +86,17 @@ function reorderTaskId(data: Record<string | symbol, unknown>): string | null {
   return typeof data.taskId === "string" ? data.taskId : null;
 }
 
-function toneTextClass(tone: ReturnType<typeof capacityTone>): string {
-  if (tone === "over") {
-    return "text-capacity-over";
-  }
-  if (tone === "warn") {
-    return "text-capacity-warn";
-  }
-  return "text-capacity-ok";
-}
-
-function toneBarClass(tone: ReturnType<typeof capacityTone>): string {
-  if (tone === "over") {
-    return "bg-capacity-over";
-  }
-  if (tone === "warn") {
-    return "bg-capacity-warn";
-  }
-  return "bg-capacity-ok";
-}
-
 function buildDueBannerParts(tasks: Task[]): string[] {
-  const today = getLocalDateString();
-  let overdue = 0;
-  let dueToday = 0;
-  let soon = 0;
-  for (const task of tasks) {
-    if (task.isCompleted) {
-      continue;
-    }
-    const status = getDueReminderStatus(task.dueDate, today);
-    if (status === "overdue") {
-      overdue += 1;
-    } else if (status === "today") {
-      dueToday += 1;
-    } else if (status === "soon") {
-      soon += 1;
-    }
-  }
+  const counts = countDueReminders(tasks, getLocalDateString());
   const parts: string[] = [];
-  if (overdue > 0) {
-    parts.push(`${overdue} overdue`);
+  if (counts.overdue > 0) {
+    parts.push(`${counts.overdue} overdue`);
   }
-  if (dueToday > 0) {
-    parts.push(`${dueToday} due today`);
+  if (counts.today > 0) {
+    parts.push(`${counts.today} due today`);
   }
-  if (soon > 0) {
-    parts.push(`${soon} due within 2 days`);
+  if (counts.soon > 0) {
+    parts.push(`${counts.soon} due within 2 days`);
   }
   return parts;
 }
@@ -144,6 +111,14 @@ export default function TodayBoard({
   const [busyId, setBusyId] = useState<string | null>(null);
   useTaskProgressSync(setTasks);
   const isDesktop = useIsDesktopLg();
+  const isBusy = busyId !== null;
+  const updateTask = useOptimisticTaskUpdate(
+    tasks,
+    setTasks,
+    isBusy,
+    setBusyId
+  );
+  const { removeFromToday } = useTodayFlag(updateTask);
   const todayTasks = useMemo(() => getTodayTasks(tasks), [tasks]);
   const plannedMinutes = getTodayPlannedMinutes(tasks);
   const tone = capacityTone(plannedMinutes, budgetMinutes);
@@ -175,7 +150,7 @@ export default function TodayBoard({
 
   const reorder = useCallback(
     async (activeId: string, overId: string) => {
-      if (activeId === overId) {
+      if (activeId === overId || isBusy) {
         return;
       }
       const ordered = getTodayTasks(tasks);
@@ -195,6 +170,7 @@ export default function TodayBoard({
         ...task,
         sortOrder: index,
       }));
+      setBusyId(activeId);
       setTasks((current) => {
         const map = new Map(withSort.map((task) => [task.id, task]));
         return current.map((task) => map.get(task.id) ?? task);
@@ -208,15 +184,17 @@ export default function TodayBoard({
       } catch {
         setTasks(previous);
         showToast("Could not reorder Today. Try again.", "error");
+      } finally {
+        setBusyId(null);
       }
     },
-    [tasks]
+    [isBusy, tasks]
   );
 
   const completeTask = useCallback(
     async (taskId: string) => {
       const target = tasks.find((task) => task.id === taskId);
-      if (!target || busyId) {
+      if (!target || isBusy) {
         return;
       }
       const previous = tasks;
@@ -257,32 +235,7 @@ export default function TodayBoard({
         setBusyId(null);
       }
     },
-    [budgetMinutes, busyId, plannedMinutes, tasks]
-  );
-
-  const removeFromToday = useCallback(
-    async (taskId: string) => {
-      if (busyId) {
-        return;
-      }
-      const previous = tasks;
-      setBusyId(taskId);
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === taskId ? { ...task, isToday: false } : task
-        )
-      );
-      try {
-        await orpc.tasks.update({ id: taskId, isToday: false });
-        showToast("Removed from Today", "success");
-      } catch {
-        setTasks(previous);
-        showToast("Could not remove from Today. Try again.", "error");
-      } finally {
-        setBusyId(null);
-      }
-    },
-    [busyId, tasks]
+    [budgetMinutes, isBusy, plannedMinutes, tasks]
   );
 
   useEffect(
@@ -307,8 +260,8 @@ export default function TodayBoard({
   );
 
   const dueBannerParts = buildDueBannerParts(tasks);
-  const textClass = toneTextClass(tone);
-  const barClass = toneBarClass(tone);
+  const textClass = capacityToneTextClass(tone);
+  const barClass = capacityToneBarClass(tone);
   const capacityPercent = Math.round((plannedMinutes / budgetMinutes) * 100);
 
   return (
@@ -488,9 +441,6 @@ function TodayTaskRow({
   const meta = QUADRANT_META[quadrant];
   const project = getProject(projects, task.projectId);
   const today = getLocalDateString();
-  const dueStatus = getDueReminderStatus(task.dueDate, today);
-  const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
-  const dueColor = getDueReminderColor(dueStatus);
   const showProgress = isLongTask(task.estimatedMinutes);
 
   useEffect(() => {
@@ -557,45 +507,13 @@ function TodayTaskRow({
         ) : null}
       </div>
 
-      <div className="mt-2 flex flex-wrap items-start gap-2">
-        <span
-          className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${meta.colorVar} 12%, transparent)`,
-            borderColor: `color-mix(in srgb, ${meta.colorVar} 30%, transparent)`,
-            color: meta.colorVar,
-          }}
-        >
-          {quadrant} {meta.label}
-        </span>
-        {dueLabel ? (
-          <span
-            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
-              borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
-              color: dueColor,
-            }}
-          >
-            {dueLabel}
-          </span>
-        ) : null}
-        <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
-          {formatMinutes(task.estimatedMinutes)} ETC
-        </span>
-        {project ? (
-          <span
-            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
-              borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
-              color: project.color,
-            }}
-          >
-            #{project.name}
-          </span>
-        ) : null}
-      </div>
+      <TaskMetaChips
+        project={project}
+        showQuadrant
+        showTodayChip={false}
+        task={task}
+        today={today}
+      />
 
       {showProgress && control === "slider" ? (
         <div className="mt-3" onPointerDown={stopPointerPropagation}>

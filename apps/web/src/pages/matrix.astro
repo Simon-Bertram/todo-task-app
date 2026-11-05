@@ -32,7 +32,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
   tasks={tasks}
   title="Matrix · PlanSage"
 >
-  <div class="px-4 py-4 lg:px-0 lg:py-0">
+  <div class="px-4 py-4 lg:hidden lg:px-0 lg:py-0">
     <MobileMatrix
       backlogCount={backlogCount}
       budgetMinutes={dailyCapacityMinutes}
@@ -41,7 +41,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
       taskProgressControl={taskProgressControl}
       tasksByQuadrant={tasksByQuadrant}
       todayCount={todayCount}
-      client:load
+      client:media="(max-width: 1023px)"
     />
   </div>
   <DesktopMatrixBoard
@@ -50,6 +50,6 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
     projects={projects}
     taskProgressControl={taskProgressControl}
     tasks={tasks}
-    client:load
+    client:media="(min-width: 1024px)"
   />
 </AppShell>
