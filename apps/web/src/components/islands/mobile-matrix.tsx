@@ -37,7 +37,7 @@ const SHORT_LABEL: Record<QuadrantId, string> = {
   Q1: "Do",
   Q2: "Schedule",
   Q3: "Streamline",
-  Q4: "Drop",
+  Q4: "Defer",
 };
 
 export default function MobileMatrix({

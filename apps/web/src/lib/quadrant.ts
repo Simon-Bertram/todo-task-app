@@ -56,8 +56,8 @@ export const QUADRANT_META: Record<QuadrantId, QuadrantMeta> = {
     accentClass: "accent-q4",
     colorVar: "var(--color-q4)",
     id: "Q4",
-    intent: "Low-impact backlog",
-    label: "Drop",
+    intent: "Low-priority work for later",
+    label: "Defer",
     tintClass: "tint-q4",
   },
 };

@@ -99,7 +99,7 @@ Quadrant mapping uses threshold **≥ 2**:
 | Q1 | Urgency ≥ 2, Importance ≥ 2 | Do First |
 | Q2 | Urgency &lt; 2, Importance ≥ 2 | Schedule |
 | Q3 | Urgency ≥ 2, Importance &lt; 2 | Delegate / Streamline |
-| Q4 | Urgency &lt; 2, Importance &lt; 2 | Don't Do / Drop |
+| Q4 | Urgency &lt; 2, Importance &lt; 2 | Defer |
 
 ### 4.2.1 Matrix ↔ Today information architecture (V1)
 
@@ -108,7 +108,7 @@ Quadrant mapping uses threshold **≥ 2**:
 #### Desktop — classic 2×2
 
 - Four equal panels: Q1 top-left, Q2 top-right, Q3 bottom-left, Q4 bottom-right.
-- Labeled axes (Importance ↑, Urgency →) and short intent labels (Do First / Schedule / Streamline / Drop)—not emoji-only titles.
+- Labeled axes (Importance ↑, Urgency →) and short intent labels (Do First / Schedule / Streamline / Defer)—not emoji-only titles.
 - Empty quadrants show a short empty state (do not shrink into tiny dead cells).
 - Subtle tinted quadrant backgrounds with accessible contrast for text and chips.
 - Primary Preact DnD island: drag between quadrants sets **default** ratings for that quadrant (see §4.4); fine-tune 0–3 in the details drawer.
@@ -117,7 +117,7 @@ Quadrant mapping uses threshold **≥ 2**:
 
 #### Mobile — segmented full-width lists (no 2×2)
 
-- Sticky segmented control with **text + count badges**: `Q1 Do First (n)` … `Q4 Drop (n)`—no emoji-dependent labels.
+- Sticky segmented control with **text + count badges**: `Q1 Do First (n)` … `Q4 Defer (n)`—no emoji-dependent labels.
 - One full-width list per segment; swipe or tap to switch.
 - Quadrant moves: bottom-sheet urgency/importance controls and/or “Move to quadrant” action (optional long-press → Move menu)—not micro DnD between tiny cells.
 - Today: primary path is a **Today toggle / “Add to Today”** control on the card or in the sheet (≥ 44×44px). Do not rely on a sticky Today drop zone that fights bottom navigation. Optional compact “Today · Xm left” chip may open the Today view or a half-sheet tray.
