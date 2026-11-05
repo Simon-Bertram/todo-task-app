@@ -228,21 +228,40 @@ if (!user) {
 
   document.addEventListener("click", async (event) => {
     const target = event.target as HTMLElement | null;
-    const button = target?.closest?.("[data-add-today]") as HTMLElement | null;
-    const id = button?.dataset.addToday;
-    if (!id) {
+    const addButton = target?.closest?.(
+      "[data-add-today]"
+    ) as HTMLElement | null;
+    const removeButton = target?.closest?.(
+      "[data-remove-today]"
+    ) as HTMLElement | null;
+    const addId = addButton?.dataset.addToday;
+    const removeId = removeButton?.dataset.removeToday;
+
+    if (addId) {
+      event.preventDefault();
+      addButton?.setAttribute("disabled", "true");
+      try {
+        await orpc.tasks.update({ id: addId, isToday: true });
+        showToast("Added to Today", "success");
+        location.reload();
+      } catch {
+        addButton?.removeAttribute("disabled");
+        showToast("Could not add to Today. Try again.", "error");
+      }
       return;
     }
 
-    event.preventDefault();
-    button?.setAttribute("disabled", "true");
-    try {
-      await orpc.tasks.update({ id, isToday: true });
-      showToast("Added to Today", "success");
-      location.reload();
-    } catch {
-      button?.removeAttribute("disabled");
-      showToast("Could not add to Today. Try again.", "error");
+    if (removeId) {
+      event.preventDefault();
+      removeButton?.setAttribute("disabled", "true");
+      try {
+        await orpc.tasks.update({ id: removeId, isToday: false });
+        showToast("Removed from Today", "success");
+        location.reload();
+      } catch {
+        removeButton?.removeAttribute("disabled");
+        showToast("Could not remove from Today. Try again.", "error");
+      }
     }
   });
 </script>

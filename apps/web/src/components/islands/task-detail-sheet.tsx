@@ -6,14 +6,13 @@ import {
   useState,
 } from "preact/hooks";
 import {
-  type CelebrationIntensity,
   celebrateTaskComplete,
+  completionIntensity,
 } from "../../lib/celebrate";
 import { orpc } from "../../lib/orpc";
 import {
   capacityTone,
   formatMinutes,
-  getCapacityBucket,
   getQuadrant,
   QUADRANT_META,
 } from "../../lib/quadrant";
@@ -47,26 +46,6 @@ const RECURRENCE = [
 ] as const;
 
 type RecurrenceValue = (typeof RECURRENCE)[number]["value"];
-
-function completionIntensity(options: {
-  budgetMinutes: number;
-  estimatedMinutes: number;
-  isToday: boolean;
-  plannedMinutes: number;
-  remainingTodayCount: number;
-}): CelebrationIntensity {
-  if (
-    options.isToday &&
-    options.remainingTodayCount === 0 &&
-    options.plannedMinutes <= options.budgetMinutes
-  ) {
-    return "dayProtected";
-  }
-  if (getCapacityBucket(options.estimatedMinutes) === "major") {
-    return "major";
-  }
-  return "default";
-}
 
 export default function TaskDetailSheet({
   tasks: initialTasks,
@@ -197,11 +176,12 @@ export default function TaskDetailSheet({
     setConfirmDelete(false);
   }, []);
 
-  const markToday = useCallback(async () => {
+  const toggleToday = useCallback(async () => {
     if (!baseTask || isSaving || isDeleting) {
       return;
     }
-    setIsToday(true);
+    const nextIsToday = !isToday;
+    setIsToday(nextIsToday);
     setIsSaving(true);
     setError(null);
     try {
@@ -209,14 +189,18 @@ export default function TaskDetailSheet({
         estimatedMinutes,
         id: baseTask.id,
         isImportant,
-        isToday: true,
+        isToday: nextIsToday,
         isUrgent,
         recurrenceRule: recurrence,
       });
       setTaskId(null);
-      showToast("Added to Today", "success");
+      showToast(
+        nextIsToday ? "Added to Today" : "Removed from Today",
+        "success"
+      );
       location.reload();
     } catch {
+      setIsToday(!nextIsToday);
       setError("Could not update Today status. Try again.");
       showToast("Could not update Today status. Try again.", "error");
     } finally {
@@ -228,8 +212,66 @@ export default function TaskDetailSheet({
     isDeleting,
     isImportant,
     isSaving,
+    isToday,
     isUrgent,
     recurrence,
+  ]);
+
+  const toggleCompleted = useCallback(async () => {
+    if (!baseTask || isSaving || isDeleting) {
+      return;
+    }
+    const nextCompleted = !isCompleted;
+    setIsCompleted(nextCompleted);
+    setIsSaving(true);
+    setError(null);
+    try {
+      const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
+      const result = await orpc.tasks.update({
+        id: baseTask.id,
+        isCompleted: nextCompleted,
+        timeZone,
+      });
+      if (nextCompleted) {
+        const remainingTodayCount = localTasks.filter(
+          (task) => task.isToday && !task.isCompleted && task.id !== baseTask.id
+        ).length;
+        await celebrateTaskComplete(
+          completionIntensity({
+            budgetMinutes,
+            estimatedMinutes,
+            isToday,
+            plannedMinutes,
+            remainingTodayCount,
+          })
+        );
+        if (result.unlockedMilestones && result.unlockedMilestones.length > 0) {
+          showToast("Milestone unlocked", "success");
+        } else {
+          showToast("Task completed", "success");
+        }
+      } else {
+        showToast("Task reopened", "success");
+      }
+      setTaskId(null);
+      location.reload();
+    } catch {
+      setIsCompleted(!nextCompleted);
+      setError("Could not update completion. Try again.");
+      showToast("Could not update completion. Try again.", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    baseTask,
+    budgetMinutes,
+    estimatedMinutes,
+    isCompleted,
+    isDeleting,
+    isSaving,
+    isToday,
+    localTasks,
+    plannedMinutes,
   ]);
 
   const onEtcClick = useCallback((event: Event) => {
@@ -262,11 +304,6 @@ export default function TaskDetailSheet({
     setProjectId(value === "" ? null : value);
   }, []);
 
-  const onCompletedChange = useCallback((event: Event) => {
-    const { checked } = event.currentTarget as HTMLInputElement;
-    setIsCompleted(checked);
-  }, []);
-
   const onSave = useCallback(async () => {
     if (!baseTask || isSaving) {
       return;
@@ -278,40 +315,19 @@ export default function TaskDetailSheet({
     }
     setIsSaving(true);
     setError(null);
-    const becameCompleted = isCompleted && !baseTask.isCompleted;
     try {
-      const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
-      const result = await orpc.tasks.update({
+      await orpc.tasks.update({
         dueDate,
         estimatedMinutes,
         id: baseTask.id,
-        isCompleted,
         isImportant,
         isToday,
         isUrgent,
         notes: notes.trim() ? notes.trim() : null,
         projectId,
         recurrenceRule: recurrence,
-        timeZone,
         title: nextTitle,
       });
-      if (becameCompleted) {
-        const remainingTodayCount = localTasks.filter(
-          (task) => task.isToday && !task.isCompleted && task.id !== baseTask.id
-        ).length;
-        await celebrateTaskComplete(
-          completionIntensity({
-            budgetMinutes,
-            estimatedMinutes,
-            isToday,
-            plannedMinutes,
-            remainingTodayCount,
-          })
-        );
-        if (result.unlockedMilestones && result.unlockedMilestones.length > 0) {
-          showToast("Milestone unlocked", "success");
-        }
-      }
       setTaskId(null);
       showToast("Task saved", "success");
       location.reload();
@@ -323,17 +339,13 @@ export default function TaskDetailSheet({
     }
   }, [
     baseTask,
-    budgetMinutes,
     dueDate,
     estimatedMinutes,
-    isCompleted,
     isImportant,
     isSaving,
     isToday,
     isUrgent,
-    localTasks,
     notes,
-    plannedMinutes,
     projectId,
     recurrence,
     title,
@@ -499,17 +511,6 @@ export default function TaskDetailSheet({
             <DayPicker onChange={setDueDate} value={dueDate} />
           </section>
 
-          <label className="flex min-h-11 items-center gap-3 rounded-sm border border-border-contrast bg-surface-subtle px-3">
-            <input
-              checked={isCompleted}
-              className="size-4 accent-[--color-primary)]"
-              data-testid="task-detail-completed"
-              onChange={onCompletedChange}
-              type="checkbox"
-            />
-            <span className="text-sm text-text-primary">Mark completed</span>
-          </label>
-
           <section className="space-y-3 rounded-sm border border-border-contrast bg-surface-subtle p-3">
             <div className="flex items-center justify-between gap-2">
               <div
@@ -622,6 +623,15 @@ export default function TaskDetailSheet({
           <div className="space-y-2 pb-2">
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm bg-primary font-semibold text-on-primary text-sm disabled:opacity-60"
+              data-testid="task-detail-completed"
+              disabled={busy}
+              onClick={toggleCompleted}
+              type="button"
+            >
+              {isCompleted ? "Reopen task" : "Mark as Completed"}
+            </button>
+            <button
+              className="flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
               data-testid="task-detail-save"
               disabled={busy}
               onClick={onSave}
@@ -631,12 +641,16 @@ export default function TaskDetailSheet({
             </button>
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
-              data-testid="task-detail-add-today"
+              data-testid={
+                isToday ? "task-detail-remove-today" : "task-detail-add-today"
+              }
               disabled={busy}
-              onClick={markToday}
+              onClick={toggleToday}
               type="button"
             >
-              {isToday ? "On Today's board" : "Schedule to Today's board"}
+              {isToday
+                ? "Remove from Today's board"
+                : "Schedule to Today's board"}
             </button>
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm text-capacity-over text-sm hover:bg-capacity-over/10 disabled:opacity-60"

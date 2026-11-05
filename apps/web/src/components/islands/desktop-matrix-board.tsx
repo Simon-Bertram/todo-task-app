@@ -144,9 +144,32 @@ export default function DesktopMatrixBoard({
       setIsSaving(true);
       try {
         await orpc.tasks.update({ id: taskId, isToday: true });
+        showToast("Added to Today", "success");
       } catch {
         setTasks(previous);
         showToast("Could not add to Today. Try again.", "error");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [tasks]
+  );
+
+  const removeFromToday = useCallback(
+    async (taskId: string) => {
+      const previous = tasks;
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, isToday: false } : task
+        )
+      );
+      setIsSaving(true);
+      try {
+        await orpc.tasks.update({ id: taskId, isToday: false });
+        showToast("Removed from Today", "success");
+      } catch {
+        setTasks(previous);
+        showToast("Could not remove from Today. Try again.", "error");
       } finally {
         setIsSaving(false);
       }
@@ -246,6 +269,8 @@ export default function DesktopMatrixBoard({
             <QuadrantDrop
               control={taskProgressControl}
               key={quadrant}
+              onAddToToday={addToToday}
+              onRemoveFromToday={removeFromToday}
               projects={projects}
               quadrant={quadrant}
               tasks={byQuadrant[quadrant]}
@@ -270,8 +295,12 @@ function QuadrantDrop({
   tasks,
   projects,
   control,
+  onAddToToday,
+  onRemoveFromToday,
 }: {
   control: TaskProgressControl;
+  onAddToToday: (taskId: string) => void;
+  onRemoveFromToday: (taskId: string) => void;
   projects: Project[];
   quadrant: QuadrantId;
   tasks: Task[];
@@ -333,6 +362,8 @@ function QuadrantDrop({
             <DraggableTaskCard
               control={control}
               key={task.id}
+              onAddToToday={onAddToToday}
+              onRemoveFromToday={onRemoveFromToday}
               projects={projects}
               task={task}
             />
@@ -347,8 +378,12 @@ function DraggableTaskCard({
   task,
   projects,
   control,
+  onAddToToday,
+  onRemoveFromToday,
 }: {
   control: TaskProgressControl;
+  onAddToToday: (taskId: string) => void;
+  onRemoveFromToday: (taskId: string) => void;
   projects: Project[];
   task: Task;
 }) {
@@ -380,23 +415,53 @@ function DraggableTaskCard({
     });
   }, [task.estimatedMinutes, task.id]);
 
+  const handleAdd = useCallback(() => {
+    onAddToToday(task.id);
+  }, [onAddToToday, task.id]);
+
+  const handleRemove = useCallback(() => {
+    onRemoveFromToday(task.id);
+  }, [onRemoveFromToday, task.id]);
+
   return (
     <article
-      className={`rounded-sm border border-border-contrast bg-surface p-3 pl-4 ${meta.accentClass} ${
+      className={`rounded-sm border border-border-contrast bg-surface p-4 pl-4 ${meta.accentClass} ${
         dragging ? "opacity-60" : ""
       }`}
       data-task-id={task.id}
       ref={ref}
     >
-      <div className="flex flex-wrap items-start gap-2">
+      <div className="flex items-start gap-2">
+        <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary leading-snug">
+          <button
+            className="task-open inline-flex min-h-11 w-full items-center text-left hover:text-primary"
+            data-task-id={task.id}
+            type="button"
+          >
+            {task.title}
+          </button>
+        </h3>
+        {showProgress && control === "pie" ? (
+          <div className="shrink-0 pt-1" onPointerDown={stopPointerPropagation}>
+            <TaskProgress
+              control={control}
+              interactive={false}
+              progressPercent={task.progressPercent}
+              size="compact"
+              taskId={task.id}
+            />
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-2 flex flex-wrap items-start gap-2">
         {task.isToday ? (
-          <span className="inline-flex h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-[10px] text-primary">
+          <span className="inline-flex min-h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-primary text-xs">
             Today
           </span>
         ) : null}
         {dueLabel ? (
           <span
-            className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
             style={{
               backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
               borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
@@ -406,12 +471,12 @@ function DraggableTaskCard({
             {dueLabel}
           </span>
         ) : null}
-        <span className="inline-flex h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-[10px] text-text-secondary">
+        <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
           {formatMinutes(task.estimatedMinutes)} ETC
         </span>
         {project ? (
           <span
-            className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
             style={{
               backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
               borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
@@ -420,28 +485,6 @@ function DraggableTaskCard({
           >
             #{project.name}
           </span>
-        ) : null}
-      </div>
-      <div className="mt-2 flex items-start gap-2">
-        <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary leading-snug">
-          <button
-            className="task-open text-left hover:text-primary"
-            data-task-id={task.id}
-            type="button"
-          >
-            {task.title}
-          </button>
-        </h3>
-        {showProgress && control === "pie" ? (
-          <div className="shrink-0" onPointerDown={stopPointerPropagation}>
-            <TaskProgress
-              control={control}
-              interactive={false}
-              progressPercent={task.progressPercent}
-              size="compact"
-              taskId={task.id}
-            />
-          </div>
         ) : null}
       </div>
       {showProgress && control === "slider" ? (
@@ -456,18 +499,30 @@ function DraggableTaskCard({
         </div>
       ) : null}
       <div className="tabular-metrics mt-3 flex flex-wrap items-center gap-3 font-mono text-text-muted text-xs">
-        <span>U:{task.isUrgent}/3</span>
-        <span>I:{task.isImportant}/3</span>
+        <span>Urgency: {task.isUrgent}/3</span>
+        <span>Importance: {task.isImportant}/3</span>
       </div>
-      {task.isToday ? null : (
-        <button
-          className="mt-3 inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
-          data-add-today={task.id}
-          type="button"
-        >
-          + Add to Today ({formatMinutes(task.estimatedMinutes)})
-        </button>
-      )}
+      <div className="mt-3" onPointerDown={stopPointerPropagation}>
+        {task.isToday ? (
+          <button
+            className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary"
+            data-testid="matrix-remove-today"
+            onClick={handleRemove}
+            type="button"
+          >
+            Remove from Today
+          </button>
+        ) : (
+          <button
+            className="inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
+            data-testid="matrix-add-today"
+            onClick={handleAdd}
+            type="button"
+          >
+            Add to Today ({formatMinutes(task.estimatedMinutes)})
+          </button>
+        )}
+      </div>
     </article>
   );
 }

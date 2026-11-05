@@ -11,6 +11,10 @@ import {
   useState,
 } from "preact/hooks";
 import {
+  celebrateTaskComplete,
+  completionIntensity,
+} from "../../lib/celebrate";
+import {
   getDueReminderColor,
   getDueReminderLabel,
   getDueReminderStatus,
@@ -137,6 +141,7 @@ export default function TodayBoard({
   taskProgressControl = "pie",
 }: Props) {
   const [tasks, setTasks] = useState(initialTasks);
+  const [busyId, setBusyId] = useState<string | null>(null);
   useTaskProgressSync(setTasks);
   const isDesktop = useIsDesktopLg();
   const todayTasks = useMemo(() => getTodayTasks(tasks), [tasks]);
@@ -206,6 +211,78 @@ export default function TodayBoard({
       }
     },
     [tasks]
+  );
+
+  const completeTask = useCallback(
+    async (taskId: string) => {
+      const target = tasks.find((task) => task.id === taskId);
+      if (!target || busyId) {
+        return;
+      }
+      const previous = tasks;
+      const remainingTodayCount = tasks.filter(
+        (task) => task.isToday && !task.isCompleted && task.id !== taskId
+      ).length;
+      setBusyId(taskId);
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, isCompleted: true } : task
+        )
+      );
+      try {
+        const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
+        const result = await orpc.tasks.update({
+          id: taskId,
+          isCompleted: true,
+          timeZone,
+        });
+        await celebrateTaskComplete(
+          completionIntensity({
+            budgetMinutes,
+            estimatedMinutes: target.estimatedMinutes,
+            isToday: target.isToday,
+            plannedMinutes,
+            remainingTodayCount,
+          })
+        );
+        if (result.unlockedMilestones && result.unlockedMilestones.length > 0) {
+          showToast("Milestone unlocked", "success");
+        } else {
+          showToast("Task completed", "success");
+        }
+      } catch {
+        setTasks(previous);
+        showToast("Could not complete task. Try again.", "error");
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [budgetMinutes, busyId, plannedMinutes, tasks]
+  );
+
+  const removeFromToday = useCallback(
+    async (taskId: string) => {
+      if (busyId) {
+        return;
+      }
+      const previous = tasks;
+      setBusyId(taskId);
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, isToday: false } : task
+        )
+      );
+      try {
+        await orpc.tasks.update({ id: taskId, isToday: false });
+        showToast("Removed from Today", "success");
+      } catch {
+        setTasks(previous);
+        showToast("Could not remove from Today. Try again.", "error");
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [busyId, tasks]
   );
 
   useEffect(
@@ -324,8 +401,8 @@ export default function TodayBoard({
           ) : null}
           {tone === "over" ? (
             <p className="rounded-sm border border-capacity-over/40 bg-capacity-over/10 px-3 py-2 text-capacity-over text-sm">
-              Over capacity — defer Q2/Q3 work or raise your daily budget in
-              Settings.
+              Over capacity — remove a task from Today or raise your daily
+              budget in Settings.
             </p>
           ) : null}
         </div>
@@ -368,9 +445,12 @@ export default function TodayBoard({
               ) : (
                 items.map((task) => (
                   <TodayTaskRow
+                    busy={busyId === task.id}
                     control={taskProgressControl}
                     interactive={isDesktop}
                     key={task.id}
+                    onComplete={completeTask}
+                    onRemove={removeFromToday}
                     projects={projects}
                     task={task}
                   />
@@ -389,9 +469,15 @@ function TodayTaskRow({
   projects,
   control,
   interactive,
+  busy,
+  onComplete,
+  onRemove,
 }: {
+  busy: boolean;
   control: TaskProgressControl;
   interactive: boolean;
+  onComplete: (taskId: string) => void;
+  onRemove: (taskId: string) => void;
   projects: Project[];
   task: Task;
 }) {
@@ -433,56 +519,25 @@ function TodayTaskRow({
     };
   }, [task.id]);
 
+  const handleComplete = useCallback(() => {
+    onComplete(task.id);
+  }, [onComplete, task.id]);
+
+  const handleRemove = useCallback(() => {
+    onRemove(task.id);
+  }, [onRemove, task.id]);
+
   return (
     <li
-      className={`rounded-sm border bg-surface p-3 pl-4 ${meta.accentClass} ${
+      className={`rounded-sm border bg-surface p-4 pl-4 ${meta.accentClass} ${
         isOver ? "border-primary" : "border-border-contrast"
       } ${dragging ? "opacity-60" : ""}`}
       ref={ref}
     >
-      <div className="flex flex-wrap items-start gap-2">
-        <span
-          className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${meta.colorVar} 12%, transparent)`,
-            borderColor: `color-mix(in srgb, ${meta.colorVar} 30%, transparent)`,
-            color: meta.colorVar,
-          }}
-        >
-          {quadrant} {meta.label.toUpperCase()}
-        </span>
-        {dueLabel ? (
-          <span
-            className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
-              borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
-              color: dueColor,
-            }}
-          >
-            {dueLabel}
-          </span>
-        ) : null}
-        <span className="inline-flex h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-[10px] text-text-secondary">
-          {formatMinutes(task.estimatedMinutes)} ETC
-        </span>
-        {project ? (
-          <span
-            className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
-              borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
-              color: project.color,
-            }}
-          >
-            #{project.name}
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-2 flex items-start gap-3">
-        <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary">
+      <div className="flex items-start gap-3">
+        <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary leading-snug">
           <button
-            className="task-open text-left hover:text-primary"
+            className="task-open inline-flex min-h-11 w-full items-center text-left hover:text-primary"
             data-task-id={task.id}
             type="button"
           >
@@ -490,7 +545,7 @@ function TodayTaskRow({
           </button>
         </h3>
         {showProgress && control === "pie" ? (
-          <div className="shrink-0" onPointerDown={stopPointerPropagation}>
+          <div className="shrink-0 pt-1" onPointerDown={stopPointerPropagation}>
             <TaskProgress
               control={control}
               interactive={interactive}
@@ -501,8 +556,49 @@ function TodayTaskRow({
           </div>
         ) : null}
       </div>
+
+      <div className="mt-2 flex flex-wrap items-start gap-2">
+        <span
+          className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${meta.colorVar} 12%, transparent)`,
+            borderColor: `color-mix(in srgb, ${meta.colorVar} 30%, transparent)`,
+            color: meta.colorVar,
+          }}
+        >
+          {quadrant} {meta.label}
+        </span>
+        {dueLabel ? (
+          <span
+            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
+              borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
+              color: dueColor,
+            }}
+          >
+            {dueLabel}
+          </span>
+        ) : null}
+        <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
+          {formatMinutes(task.estimatedMinutes)} ETC
+        </span>
+        {project ? (
+          <span
+            className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
+              borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
+              color: project.color,
+            }}
+          >
+            #{project.name}
+          </span>
+        ) : null}
+      </div>
+
       {showProgress && control === "slider" ? (
-        <div className="mt-2" onPointerDown={stopPointerPropagation}>
+        <div className="mt-3" onPointerDown={stopPointerPropagation}>
           <TaskProgress
             control={control}
             interactive={interactive}
@@ -512,6 +608,30 @@ function TodayTaskRow({
           />
         </div>
       ) : null}
+
+      <div
+        className="mt-3 flex flex-wrap gap-2"
+        onPointerDown={stopPointerPropagation}
+      >
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm disabled:opacity-60"
+          data-testid="today-complete"
+          disabled={busy}
+          onClick={handleComplete}
+          type="button"
+        >
+          Mark as Completed
+        </button>
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary disabled:opacity-60"
+          data-testid="today-remove"
+          disabled={busy}
+          onClick={handleRemove}
+          type="button"
+        >
+          Remove from Today
+        </button>
+      </div>
       <p className="mt-2 font-mono text-text-muted text-xs">
         Drag to reorder within Today
       </p>

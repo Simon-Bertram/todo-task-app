@@ -28,6 +28,40 @@ function rpcUrlMatches(url, parts) {
 }
 
 /**
+ * Prefer the visible board (mobile vs desktop both mount on /matrix).
+ * @param {import('playwright').Page} page
+ * @param {string} taskId
+ */
+function visibleTask(page, taskId) {
+  return page.locator(`[data-task-id="${taskId}"]:visible`).first();
+}
+
+/**
+ * Quick-add: open dialog, fill title, measure create RPC, then wait for the
+ * post-create `location.reload()` so the next navigation cannot race it
+ * (net::ERR_ABORTED).
+ * @param {import('playwright').Page} page
+ * @param {string} title
+ */
+async function createViaQuickAdd(page, title) {
+  await page.getByTestId("quick-add-fab").click();
+  await page.getByTestId("quick-add-title").fill(title);
+  const reloadPromise = page.waitForNavigation({
+    timeout: 60_000,
+    waitUntil: "networkidle",
+  });
+  const rpc = await measureRpcAround(
+    page,
+    ["tasks/create", "tasks.create"],
+    async () => {
+      await page.getByTestId("quick-add-submit").click();
+    }
+  );
+  await reloadPromise;
+  return rpc;
+}
+
+/**
  * Time click/input delay and RPC round-trip for a mutating action.
  * @param {import('playwright').Page} page
  * @param {string[]} pathIncludes
@@ -42,7 +76,13 @@ async function measureRpcAround(page, pathIncludes, action) {
   );
 
   const clickStarted = performance.now();
-  await action();
+  try {
+    await action();
+  } catch (actionError) {
+    // Settle without waiting out the remaining response timeout.
+    void responsePromise.catch(() => undefined);
+    throw actionError;
+  }
   const inpOrClickDelayMs = Math.round(performance.now() - clickStarted);
 
   const response = await responsePromise;
@@ -97,7 +137,8 @@ async function runScenario(page, name, fixture, action) {
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   storageState: config.storageStatePath,
-  viewport: { height: 800, width: 1280 },
+  // Mobile viewport: quick-add FAB lives in bottom nav (`lg:hidden`).
+  viewport: { height: 844, width: 390 },
 });
 const page = await context.newPage();
 
@@ -114,17 +155,7 @@ try {
 
   await runScenario(page, "create_quick_add", "short", async () => {
     const title = `${PERF_PREFIX} create short ${Date.now()}`;
-    const rpc = await measureRpcAround(
-      page,
-      ["tasks/create", "tasks.create"],
-      async () => {
-        await page.getByTestId("quick-add-fab").click();
-        await page.getByTestId("quick-add-title").fill(title);
-        await page.getByTestId("quick-add-submit").click();
-      }
-    );
-    await page.waitForLoadState("networkidle");
-    return rpc;
+    return createViaQuickAdd(page, title);
   });
 
   const shortTarget = shortTasks[0];
@@ -132,6 +163,7 @@ try {
     throw new Error("Failed to seed short tasks.");
   }
 
+  // Reload from create already left us on /today; refresh once for a clean sheet.
   await page.goto(`${config.baseUrl}/today`, {
     timeout: 60_000,
     waitUntil: "networkidle",
@@ -142,10 +174,7 @@ try {
       page,
       ["tasks/update", "tasks.update"],
       async () => {
-        await page
-          .locator(`[data-task-id="${shortTarget.id}"]`)
-          .first()
-          .click();
+        await visibleTask(page, shortTarget.id).click();
         await page
           .getByTestId("task-detail-title")
           .waitFor({ state: "visible" });
@@ -169,12 +198,8 @@ try {
       page,
       ["tasks/update", "tasks.update"],
       async () => {
-        await page
-          .locator(`[data-task-id="${shortTarget.id}"]`)
-          .first()
-          .click();
-        await page.getByTestId("task-detail-completed").check();
-        await page.getByTestId("task-detail-save").click();
+        await visibleTask(page, shortTarget.id).click();
+        await page.getByTestId("task-detail-completed").click();
       }
     );
     await page.waitForLoadState("networkidle");
@@ -184,7 +209,8 @@ try {
   await cleanupPerfTasks(orpc);
 
   console.log("Seeding long fixtures…");
-  const longTasks = await seedPerfTasks(orpc, "long", 8);
+  // One major (90m) target is enough for progress; avoids a crowded mobile board.
+  const longTasks = await seedPerfTasks(orpc, "long", 1);
   const longTarget = longTasks[0];
   if (!longTarget) {
     throw new Error("Failed to seed long tasks.");
@@ -197,28 +223,19 @@ try {
 
   await runScenario(page, "create_quick_add", "long", async () => {
     const title = `${PERF_PREFIX} create long ${Date.now()}`;
-    const rpc = await measureRpcAround(
-      page,
-      ["tasks/create", "tasks.create"],
-      async () => {
-        await page.getByTestId("quick-add-fab").click();
-        await page.getByTestId("quick-add-title").fill(title);
-        await page.getByTestId("quick-add-submit").click();
-      }
-    );
-    await page.waitForLoadState("networkidle");
-    return rpc;
+    return createViaQuickAdd(page, title);
   });
 
-  await page.goto(`${config.baseUrl}/today`, {
+  // createViaQuickAdd already waited for location.reload() onto /today.
+  await visibleTask(page, longTarget.id).waitFor({
+    state: "visible",
     timeout: 60_000,
-    waitUntil: "networkidle",
   });
 
   await runScenario(page, "progress_pie_commit", "long", async () => {
-    const card = page.locator(`[data-task-id="${longTarget.id}"]`).first();
+    const card = visibleTask(page, longTarget.id);
     const inlineProgress = page
-      .locator(`li:has([data-task-id="${longTarget.id}"])`)
+      .locator(`li:has([data-task-id="${longTarget.id}"]:visible)`)
       .getByRole("button", { name: /Set progress to 50 percent/i });
 
     if ((await inlineProgress.count()) > 0) {
@@ -243,9 +260,12 @@ try {
     );
   });
 
+  // Q1 (≥2/≥2) so mobile matrix default tab shows the card.
   const offToday = await orpc.tasks.create({
     estimatedMinutes: 90,
+    isImportant: 2,
     isToday: false,
+    isUrgent: 2,
     title: `${PERF_PREFIX} long off-today ${Date.now()}`,
   });
 
@@ -259,7 +279,7 @@ try {
       page,
       ["tasks/update", "tasks.update"],
       async () => {
-        await page.locator(`[data-task-id="${offToday.id}"]`).first().click();
+        await visibleTask(page, offToday.id).click();
         await page.getByTestId("task-detail-add-today").click();
       }
     );
@@ -282,10 +302,7 @@ try {
         page,
         ["tasks/update", "tasks.update"],
         async () => {
-          await page
-            .locator(`[data-task-id="${longForUpdate.id}"]`)
-            .first()
-            .click();
+          await visibleTask(page, longForUpdate.id).click();
           await page
             .getByTestId("task-detail-title")
             .fill(`${longForUpdate.title} edited`);

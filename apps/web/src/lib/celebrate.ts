@@ -1,6 +1,28 @@
+import { getCapacityBucket } from "./quadrant";
+
 export type CelebrationIntensity = "default" | "major" | "dayProtected";
 
 const CELEBRATIONS_KEY = "plansage-celebrations";
+
+export function completionIntensity(options: {
+  budgetMinutes: number;
+  estimatedMinutes: number;
+  isToday: boolean;
+  plannedMinutes: number;
+  remainingTodayCount: number;
+}): CelebrationIntensity {
+  if (
+    options.isToday &&
+    options.remainingTodayCount === 0 &&
+    options.plannedMinutes <= options.budgetMinutes
+  ) {
+    return "dayProtected";
+  }
+  if (getCapacityBucket(options.estimatedMinutes) === "major") {
+    return "major";
+  }
+  return "default";
+}
 
 export type CelebrationsPref = "subtle" | "off";
 

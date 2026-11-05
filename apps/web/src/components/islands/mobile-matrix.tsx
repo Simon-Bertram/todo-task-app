@@ -45,9 +45,7 @@ const SHORT_LABEL: Record<QuadrantId, string> = {
 export default function MobileMatrix({
   tasksByQuadrant: initialByQuadrant,
   projects,
-  plannedMinutes,
   budgetMinutes,
-  todayCount,
   backlogCount,
   taskProgressControl = "pie",
 }: Props) {
@@ -77,8 +75,19 @@ export default function MobileMatrix({
 
   const tasks = tasksByQuadrant[selected];
   const meta = QUADRANT_META[selected];
-  const remaining = Math.max(budgetMinutes - plannedMinutes, 0);
-  const percent = Math.round((plannedMinutes / budgetMinutes) * 100);
+  const liveTodayCount = useMemo(
+    () => localTasks.filter((task) => task.isToday && !task.isCompleted).length,
+    [localTasks]
+  );
+  const livePlannedMinutes = useMemo(
+    () =>
+      localTasks
+        .filter((task) => task.isToday && !task.isCompleted)
+        .reduce((sum, task) => sum + task.estimatedMinutes, 0),
+    [localTasks]
+  );
+  const remaining = Math.max(budgetMinutes - livePlannedMinutes, 0);
+  const percent = Math.round((livePlannedMinutes / budgetMinutes) * 100);
   const today = getLocalDateString();
 
   const onTabClick = useCallback((event: Event) => {
@@ -149,6 +158,56 @@ export default function MobileMatrix({
     [moveToQuadrant]
   );
 
+  const addToToday = useCallback(
+    async (taskId: string) => {
+      if (isSaving) {
+        return;
+      }
+      const previous = localTasks;
+      setLocalTasks((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, isToday: true } : task
+        )
+      );
+      setIsSaving(true);
+      try {
+        await orpc.tasks.update({ id: taskId, isToday: true });
+        showToast("Added to Today", "success");
+      } catch {
+        setLocalTasks(previous);
+        showToast("Could not add to Today. Try again.", "error");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [isSaving, localTasks]
+  );
+
+  const removeFromToday = useCallback(
+    async (taskId: string) => {
+      if (isSaving) {
+        return;
+      }
+      const previous = localTasks;
+      setLocalTasks((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, isToday: false } : task
+        )
+      );
+      setIsSaving(true);
+      try {
+        await orpc.tasks.update({ id: taskId, isToday: false });
+        showToast("Removed from Today", "success");
+      } catch {
+        setLocalTasks(previous);
+        showToast("Could not remove from Today. Try again.", "error");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [isSaving, localTasks]
+  );
+
   function projectFor(id: string | null): Project | undefined {
     if (!id) {
       return undefined;
@@ -163,7 +222,8 @@ export default function MobileMatrix({
           Eisenhower Prioritization
         </h1>
         <p className="tabular-metrics font-mono text-sm text-text-secondary">
-          {backlogCount} backlog · {todayCount} on Today · {percent}% capacity
+          {backlogCount} backlog · {liveTodayCount} on Today · {percent}%
+          capacity
         </p>
         <p className="text-sm text-text-muted">
           Tap cards to calibrate urgency or stage for Today.
@@ -226,9 +286,12 @@ export default function MobileMatrix({
           tasks.map((task) => (
             <MobileMatrixTaskCard
               accentClass={meta.accentClass}
+              busy={isSaving}
               control={taskProgressControl}
               key={task.id}
+              onAddToToday={addToToday}
               onMove={openMove}
+              onRemoveFromToday={removeFromToday}
               project={projectFor(task.projectId)}
               task={task}
               today={today}
@@ -294,7 +357,7 @@ export default function MobileMatrix({
           className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary"
           href="/today"
         >
-          Review ({todayCount})
+          Review ({liveTodayCount})
         </a>
       </div>
     </div>
@@ -307,11 +370,17 @@ function MobileMatrixTaskCard({
   today,
   accentClass,
   control,
+  busy,
   onMove,
+  onAddToToday,
+  onRemoveFromToday,
 }: {
   accentClass: string;
+  busy: boolean;
   control: TaskProgressControl;
+  onAddToToday: (taskId: string) => void;
   onMove: (event: Event) => void;
+  onRemoveFromToday: (taskId: string) => void;
   project: Project | null | undefined;
   task: Task;
   today: string;
@@ -321,20 +390,50 @@ function MobileMatrixTaskCard({
   const dueColor = getDueReminderColor(dueStatus);
   const showProgress = isLongTask(task.estimatedMinutes);
 
+  const handleAdd = useCallback(() => {
+    onAddToToday(task.id);
+  }, [onAddToToday, task.id]);
+
+  const handleRemove = useCallback(() => {
+    onRemoveFromToday(task.id);
+  }, [onRemoveFromToday, task.id]);
+
   return (
     <li>
       <article
-        className={`rounded-sm border border-border-contrast bg-surface p-3 pl-4 ${accentClass}`}
+        className={`rounded-sm border border-border-contrast bg-surface p-4 pl-4 ${accentClass}`}
       >
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-start gap-3">
+          <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary">
+            <button
+              className="task-open inline-flex min-h-11 w-full items-center text-left"
+              data-task-id={task.id}
+              type="button"
+            >
+              {task.title}
+            </button>
+          </h3>
+          {showProgress && control === "pie" ? (
+            <div className="shrink-0 pt-1">
+              <TaskProgress
+                control={control}
+                interactive={false}
+                progressPercent={task.progressPercent}
+                size="compact"
+                taskId={task.id}
+              />
+            </div>
+          ) : null}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
           {task.isToday ? (
-            <span className="inline-flex h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-[10px] text-primary">
-              Today ({formatMinutes(task.estimatedMinutes)})
+            <span className="inline-flex min-h-6 items-center rounded-full border border-primary/30 bg-primary/12 px-2 font-mono text-primary text-xs">
+              Today
             </span>
           ) : null}
           {dueLabel ? (
             <span
-              className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+              className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
               style={{
                 backgroundColor: `color-mix(in srgb, ${dueColor} 12%, transparent)`,
                 borderColor: `color-mix(in srgb, ${dueColor} 30%, transparent)`,
@@ -344,12 +443,12 @@ function MobileMatrixTaskCard({
               {dueLabel}
             </span>
           ) : null}
-          <span className="inline-flex h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-[10px] text-text-secondary">
+          <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
             {formatMinutes(task.estimatedMinutes)} ETC
           </span>
           {project ? (
             <span
-              className="inline-flex h-6 items-center rounded-full border px-2 font-mono text-[10px]"
+              className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
               style={{
                 backgroundColor: `color-mix(in srgb, ${project.color} 12%, transparent)`,
                 borderColor: `color-mix(in srgb, ${project.color} 30%, transparent)`,
@@ -358,26 +457,6 @@ function MobileMatrixTaskCard({
             >
               #{project.name}
             </span>
-          ) : null}
-        </div>
-        <div className="mt-2 flex items-start gap-3">
-          <h3 className="min-w-0 flex-1 font-semibold text-base text-text-primary">
-            <button
-              className="task-open text-left"
-              data-task-id={task.id}
-              type="button"
-            >
-              {task.title}
-            </button>
-          </h3>
-          {showProgress && control === "pie" ? (
-            <TaskProgress
-              control={control}
-              interactive={false}
-              progressPercent={task.progressPercent}
-              size="compact"
-              taskId={task.id}
-            />
           ) : null}
         </div>
         {showProgress && control === "slider" ? (
@@ -391,27 +470,40 @@ function MobileMatrixTaskCard({
             />
           </div>
         ) : null}
-        <div className="tabular-metrics mt-2 flex gap-3 font-mono text-text-muted text-xs">
+        <div className="tabular-metrics mt-2 flex flex-wrap gap-3 font-mono text-text-muted text-xs">
           <span>Urgency: {task.isUrgent}/3</span>
           <span>Importance: {task.isImportant}/3</span>
           {!dueLabel && task.dueDate ? <span>Due {task.dueDate}</span> : null}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
-            className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary"
+            className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary disabled:opacity-60"
             data-move-task={task.id}
+            disabled={busy}
             onClick={onMove}
             type="button"
           >
             Move to quadrant
           </button>
-          {task.isToday ? null : (
+          {task.isToday ? (
             <button
-              className="inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm"
-              data-add-today={task.id}
+              className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 font-medium text-sm text-text-primary disabled:opacity-60"
+              data-testid="matrix-remove-today"
+              disabled={busy}
+              onClick={handleRemove}
               type="button"
             >
-              + Add to Today ({formatMinutes(task.estimatedMinutes)})
+              Remove from Today
+            </button>
+          ) : (
+            <button
+              className="inline-flex min-h-11 items-center rounded-sm bg-primary px-3 font-semibold text-on-primary text-sm disabled:opacity-60"
+              data-testid="matrix-add-today"
+              disabled={busy}
+              onClick={handleAdd}
+              type="button"
+            >
+              Add to Today ({formatMinutes(task.estimatedMinutes)})
             </button>
           )}
         </div>
