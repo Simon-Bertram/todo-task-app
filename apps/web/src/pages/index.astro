@@ -41,24 +41,24 @@ const jpegSrcset = [
   `${hero1920Jpg.src} 1920w`,
 ].join(", ");
 
-const pageTitle = "PlanSage — Intentional daily execution";
+const pageTitle = "PlanSage — Finish what fits today";
 const pageDescription =
-  "Stop drowning in endless checklists. Prioritize with the Eisenhower Matrix and a time-budgeted Today view so you finish only what fits today.";
+  "Stop drowning in endless checklists. Sort work by urgency and importance, then build a time-budgeted Today plan so you finish only what fits—without overcommitting.";
 
 const faqs = [
   {
     answer:
-      "PlanSage is a personal task manager for overloaded professionals and indie hackers. It combines an Eisenhower Matrix with a time-budgeted Today board so you plan what matters and finish only what fits your day.",
+      "PlanSage is a personal task manager for overloaded professionals and indie hackers. It helps you prioritize visually by urgency and importance, then execute inside a daily time budget so you finish only what fits your day.",
     question: "What is PlanSage?",
   },
   {
     answer:
-      "Each task has urgency and importance scores from 0 to 3. Scores of 2 or higher place work into Do First, Schedule, Streamline, or Drop so priorities stay visual and actionable.",
-    question: "How does the Eisenhower Matrix work in PlanSage?",
+      "Each task has urgency and importance scores from 0 to 3. Scores of 2 or higher place work into Do First, Schedule, Streamline, or Drop so priorities stay visual and actionable. Often called an Eisenhower Matrix—here it’s a practical board for deciding what deserves you now versus later.",
+    question: "How do priorities work?",
   },
   {
     answer:
-      "Today uses a configurable focus budget from 2 to 8 hours (default 5 hours / 300 minutes). A live workload bar turns amber near your limit and red when you overcommit.",
+      "So you don’t overbook your day: Today uses a configurable focus budget from 2 to 8 hours (default 5 hours / 300 minutes). A live workload bar turns amber near your limit and red when you overcommit.",
     question: "What is the Today capacity budget?",
   },
   {
@@ -68,7 +68,7 @@ const faqs = [
   },
   {
     answer:
-      "PlanSage is for overloaded professionals and indie hackers who need visual prioritization and realistic daily capacity—not another infinite checklist.",
+      "PlanSage is for overloaded professionals and indie hackers who need visual prioritization and realistic daily capacity—not another infinite checklist. Sign up to plan today with your focus hours in mind.",
     question: "Who is PlanSage for?",
   },
 ] as const;
@@ -87,10 +87,10 @@ const jsonLd = {
       applicationCategory: "ProductivityApplication",
       description: pageDescription,
       featureList: [
-        "Eisenhower Matrix with urgency and importance scores",
-        "Time-budgeted Today board with 2–8 hour capacity",
-        "Live workload bar with green, amber, and red states",
-        "1-3-5 recommended daily mix filter",
+        "Sort by urgency and importance into Do First, Schedule, Streamline, or Drop",
+        "Time-budgeted Today board (2–8 hour capacity)",
+        "Live workload bar (green / amber / red)",
+        "1-3-5 recommended daily mix",
       ],
       name: "PlanSage",
       offers: {
@@ -153,8 +153,8 @@ const jsonLd = {
           class="mt-4 max-w-md text-base text-text-primary sm:text-lg"
           data-hero-tagline
         >
-          Stop drowning in endless checklists. Plan what matters, then finish
-          only what fits today.
+          Stop drowning in endless checklists. Decide what matters, then finish
+          only what fits your day.
         </p>
         <ul
           class="mt-8 max-w-md space-y-3 text-sm text-text-primary sm:text-base"
@@ -162,35 +162,37 @@ const jsonLd = {
         >
           <li>
             <span class="font-medium text-text-primary"
-              >See priorities clearly</span
+              >Know what deserves you</span
             >
-            — Urgency and importance put work into Do First, Schedule,
-            Streamline, or Drop.
-          </li>
-          <li>
-            <span class="font-medium text-text-primary">Protect your day</span>
-            — A time-budgeted Today board shows whether your plan fits your
-            focus hours before you overcommit.
+            — Score urgency and importance so work lands in Do First, Schedule,
+            Streamline, or Drop—not another flat list.
           </li>
           <li>
             <span class="font-medium text-text-primary"
-              >Stay within capacity</span
+              >Protect your focus hours</span
             >
-            — A live workload bar turns amber, then red, as you approach your
-            daily limit (2–8 hours).
+            — A time-budgeted Today board shows whether today’s plan fits before
+            you say yes to more.
           </li>
           <li>
             <span class="font-medium text-text-primary"
-              >Use a realistic mix</span
+              >See overcommitment early</span
+            >
+            — A live workload bar shifts amber, then red, as you near your daily
+            limit (2–8 hours).
+          </li>
+          <li>
+            <span class="font-medium text-text-primary"
+              >Balance big and small</span
             >
             — The 1-3-5 filter keeps one major task, a few mediums, and quick
-            wins in balance.
+            wins in a realistic mix.
           </li>
         </ul>
       </div>
 
       <div class="w-full max-w-md lg:ml-auto">
-        <SignInForm heading="Sign in" headingLevel={2} variant="solid" />
+        <SignInForm heading="Get started" headingLevel={2} variant="solid" />
       </div>
     </div>
   </main>
@@ -204,8 +206,8 @@ const jsonLd = {
         Frequently asked questions
       </h2>
       <p class="mt-2 text-sm text-text-secondary sm:text-base">
-        Straight answers about how PlanSage helps you prioritize and protect
-        your day.
+        How PlanSage helps you prioritize what matters and protect a realistic
+        day.
       </p>
       <dl class="mt-10 space-y-8">
         {faqs.map((faq) => (
