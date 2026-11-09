@@ -54,33 +54,53 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
     dialogRef.current?.close();
   }, []);
 
-  const handleSubmit = useCallback(async (event: Event) => {
-    event.preventDefault();
-    const form = event.currentTarget as HTMLFormElement;
-    const data = new FormData(form);
-    const title = String(data.get("title") ?? "").trim();
-    if (!title) {
+  const createTask = useCallback(
+    async (form: HTMLFormElement, isToday: boolean) => {
+      const data = new FormData(form);
+      const title = String(data.get("title") ?? "").trim();
+      if (!title) {
+        return;
+      }
+
+      setBusy(true);
+      setError(null);
+
+      try {
+        const rawProjectId = String(data.get("projectId") ?? "").trim();
+        await orpc.tasks.create({
+          title,
+          ...(rawProjectId.length > 0 ? { projectId: rawProjectId } : {}),
+          ...(isToday ? { isToday: true } : {}),
+        });
+        dialogRef.current?.close();
+        showToast("Task added", "success");
+        location.reload();
+      } catch {
+        setError("Could not create task. Try again.");
+        showToast("Could not create task. Try again.", "error");
+      } finally {
+        setBusy(false);
+      }
+    },
+    []
+  );
+
+  const handleSubmit = useCallback(
+    async (event: Event) => {
+      event.preventDefault();
+      const form = event.currentTarget as HTMLFormElement;
+      await createTask(form, false);
+    },
+    [createTask]
+  );
+
+  const handleAddToday = useCallback(async () => {
+    const form = formRef.current;
+    if (!form.reportValidity()) {
       return;
     }
-
-    setBusy(true);
-    setError(null);
-
-    try {
-      const rawProjectId = String(data.get("projectId") ?? "").trim();
-      await orpc.tasks.create(
-        rawProjectId.length > 0 ? { projectId: rawProjectId, title } : { title }
-      );
-      dialogRef.current?.close();
-      showToast("Task added", "success");
-      location.reload();
-    } catch {
-      setError("Could not create task. Try again.");
-      showToast("Could not create task. Try again.", "error");
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+    await createTask(form, true);
+  }, [createTask]);
 
   return (
     <dialog
@@ -144,6 +164,15 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
             type="button"
           >
             Cancel
+          </button>
+          <button
+            className="min-h-11 rounded-sm border border-border-contrast px-4 text-sm text-text-primary disabled:opacity-50"
+            data-testid="quick-add-submit-today"
+            disabled={busy}
+            onClick={handleAddToday}
+            type="button"
+          >
+            Add (Today)
           </button>
           <button
             className="min-h-11 rounded-sm bg-primary px-4 font-semibold text-on-primary text-sm disabled:opacity-50"
