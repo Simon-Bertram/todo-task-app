@@ -1,8 +1,10 @@
+/**
+ * Quick Add markup island. Open wiring + create mutation live in
+ * `useQuickAddDialog`; this file owns the dialog/form UI and project select.
+ */
 import type { JSX } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { orpc } from "../../lib/orpc";
-import { showToast } from "../../lib/toast";
+import { useQuickAddDialog } from "../../lib/use-quick-add-dialog";
 
 export interface QuickAddProject {
   id: string;
@@ -13,94 +15,17 @@ interface Props {
   projects?: QuickAddProject[];
 }
 
-const TRIGGER_IDS = [
-  "quick-add-fab",
-  "quick-add-header",
-  "quick-add-sidenav",
-] as const;
-
 export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-  const titleRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    const openQuickAdd = () => {
-      setError(null);
-      formRef.current?.reset();
-      dialogRef.current?.showModal();
-      queueMicrotask(() => {
-        titleRef.current?.focus();
-      });
-    };
-
-    const triggers = TRIGGER_IDS.map((id) => document.getElementById(id));
-    for (const trigger of triggers) {
-      trigger?.addEventListener("click", openQuickAdd);
-    }
-    document.addEventListener("plansage:quick-add", openQuickAdd);
-
-    return () => {
-      for (const trigger of triggers) {
-        trigger?.removeEventListener("click", openQuickAdd);
-      }
-      document.removeEventListener("plansage:quick-add", openQuickAdd);
-    };
-  }, []);
-
-  const handleCancel = useCallback(() => {
-    dialogRef.current?.close();
-  }, []);
-
-  const createTask = useCallback(
-    async (form: HTMLFormElement, isToday: boolean) => {
-      const data = new FormData(form);
-      const title = String(data.get("title") ?? "").trim();
-      if (!title) {
-        return;
-      }
-
-      setBusy(true);
-      setError(null);
-
-      try {
-        const rawProjectId = String(data.get("projectId") ?? "").trim();
-        await orpc.tasks.create({
-          title,
-          ...(rawProjectId.length > 0 ? { projectId: rawProjectId } : {}),
-          ...(isToday ? { isToday: true } : {}),
-        });
-        dialogRef.current?.close();
-        showToast("Task added", "success");
-        location.reload();
-      } catch {
-        setError("Could not create task. Try again.");
-        showToast("Could not create task. Try again.", "error");
-      } finally {
-        setBusy(false);
-      }
-    },
-    []
-  );
-
-  const handleSubmit = useCallback(
-    async (event: Event) => {
-      event.preventDefault();
-      const form = event.currentTarget as HTMLFormElement;
-      await createTask(form, false);
-    },
-    [createTask]
-  );
-
-  const handleAddToday = useCallback(async () => {
-    const form = formRef.current;
-    if (!form.reportValidity()) {
-      return;
-    }
-    await createTask(form, true);
-  }, [createTask]);
+  const {
+    busy,
+    dialogRef,
+    error,
+    formRef,
+    handleAddToday,
+    handleCancel,
+    handleSubmit,
+    titleRef,
+  } = useQuickAddDialog();
 
   return (
     <dialog
@@ -165,6 +90,7 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
           >
             Cancel
           </button>
+          {/* type="button" so this does not also fire the form onSubmit handler. */}
           <button
             className="min-h-11 rounded-sm border border-border-contrast px-4 text-sm text-text-primary disabled:opacity-50"
             data-testid="quick-add-submit-today"
