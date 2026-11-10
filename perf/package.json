@@ -16,7 +16,7 @@
     "playwright": "^1.58.2"
   },
   "devDependencies": {
-    "@lhci/cli": "^0.15.1",
+    "@lhci/cli": "^0.16.0",
     "@types/node": "catalog:"
   }
 }

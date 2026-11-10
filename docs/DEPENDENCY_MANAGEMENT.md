@@ -15,7 +15,7 @@ Package manager: **pnpm@12** (see root `packageManager`). Alignment tool: **pnpm
 | `workspace:*` | Internal `@todo-task-app/*` | Always use workspace protocol for monorepo packages |
 | Root-owned | Root [`package.json`](../package.json) | Tooling only used at the root (`@biomejs/biome`, `ultracite`, `turbo`) |
 
-Never pin a second literal version of a cataloged package in a workspace `package.json`. That reintroduces skew.
+Never pin a second literal version of a cataloged package in a workspace `package.json`. That reintroduces **skew**: the same dependency (or members of a coupled family) resolving to different versions across workspace packages. The catalog exists so everyone shares one declared version via `"catalog:"`; a local literal bypasses that and can leave peers half-satisfied or duplicate trees in the lockfile.
 
 ---
 
@@ -55,6 +55,23 @@ Root-only tooling (`@biomejs/biome`, `ultracite`, `turbo`) stays in the root `pa
 | Local app libs | Caret in that package only | `astro`, `hono`, `preact` |
 
 When bumping a beta family, bump **every** catalog entry in that family in the same change.
+
+### Intentional major holds
+
+`pnpm outdated -r` may still report newer majors for these cataloged packages. Do **not** bump them in a routine outdated pass—treat each as its own migration PR:
+
+| Package | Hold on | Reason |
+|---------|---------|--------|
+| `typescript` | `^6.0.3` (6.x) | TypeScript 7 is a major language/tooling shift |
+| `vitest` | `^4.1.12` (4.x) | Vitest 5 is a major with stricter Node engines and ecosystem churn |
+
+### Overrides (rare)
+
+[`pnpm-workspace.yaml`](../pnpm-workspace.yaml) `overrides:` may force a single version when two transitive stacks disagree (pnpm 12 does not read `package.json` `pnpm.overrides`). Current override: `proxy-agent@8.0.2` — Alchemy’s `@puppeteer/browsers` peers `>=8.0.1`, while `@lhci/cli` still depends on `proxy-agent` `^6`. Prefer removing the override once LHCI moves to `proxy-agent` 8+.
+
+### Ultracite / Biome companion config
+
+When bumping root `ultracite` / `@biomejs/biome`, re-run `pnpm exec ultracite check` and expect new preset rules. This repo currently turns off nursery `useTailwindSortedClasses` and excludes `**/public/**` in [`biome.jsonc`](../biome.jsonc) so a routine tooling bump does not force a class-sort / static-asset lint migration in the same PR.
 
 ---
 

@@ -18,7 +18,7 @@ Official references:
 
 ### There is no `alchemy configure`
 
-Alchemy **2.0.0-beta.84** (this repo) does **not** have `alchemy configure`. Auth is managed only through:
+Alchemy **2.0.0-beta.85** (this repo) does **not** have `alchemy configure`. Auth is managed only through:
 
 ```bash
 cd packages/infra
