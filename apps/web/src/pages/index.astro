@@ -1,45 +1,8 @@
 ---
-import hero480Avif from "../assets/hero-skyline-480.avif";
-import hero480Jpg from "../assets/hero-skyline-480.jpg";
-import hero480Webp from "../assets/hero-skyline-480.webp";
-import hero768Avif from "../assets/hero-skyline-768.avif";
-import hero768Jpg from "../assets/hero-skyline-768.jpg";
-import hero768Webp from "../assets/hero-skyline-768.webp";
-import hero1080Avif from "../assets/hero-skyline-1080.avif";
-import hero1080Jpg from "../assets/hero-skyline-1080.jpg";
-import hero1080Webp from "../assets/hero-skyline-1080.webp";
-import hero1440Avif from "../assets/hero-skyline-1440.avif";
-import hero1440Jpg from "../assets/hero-skyline-1440.jpg";
-import hero1440Webp from "../assets/hero-skyline-1440.webp";
-import hero1920Avif from "../assets/hero-skyline-1920.avif";
-import hero1920Jpg from "../assets/hero-skyline-1920.jpg";
-import hero1920Webp from "../assets/hero-skyline-1920.webp";
+import HeroBackground from "../components/landing/hero-background.astro";
 import JsonLd from "../components/seo/json-ld.astro";
 import SignInForm from "../components/sign-in-form.astro";
 import Layout from "../layouts/layout.astro";
-
-const sizes = "100vw";
-const avifSrcset = [
-  `${hero480Avif.src} 480w`,
-  `${hero768Avif.src} 768w`,
-  `${hero1080Avif.src} 1080w`,
-  `${hero1440Avif.src} 1440w`,
-  `${hero1920Avif.src} 1920w`,
-].join(", ");
-const webpSrcset = [
-  `${hero480Webp.src} 480w`,
-  `${hero768Webp.src} 768w`,
-  `${hero1080Webp.src} 1080w`,
-  `${hero1440Webp.src} 1440w`,
-  `${hero1920Webp.src} 1920w`,
-].join(", ");
-const jpegSrcset = [
-  `${hero480Jpg.src} 480w`,
-  `${hero768Jpg.src} 768w`,
-  `${hero1080Jpg.src} 1080w`,
-  `${hero1440Jpg.src} 1440w`,
-  `${hero1920Jpg.src} 1920w`,
-].join(", ");
 
 const pageTitle = "PlanSage — Finish what fits today";
 const pageDescription =
@@ -116,29 +79,10 @@ const jsonLd = {
 };
 ---
 
-<!-- Hero photo: Lerone Pieters / Unsplash — prebaked AVIF/WebP ladder for Alchemy passthrough -->
 <Layout bare canonicalPath="/" description={pageDescription} title={pageTitle}>
   <JsonLd data={jsonLd} />
   <main class="relative min-h-svh overflow-hidden">
-    <picture class="absolute inset-0 size-full">
-      <source sizes={sizes} srcset={avifSrcset} type="image/avif">
-      <source sizes={sizes} srcset={webpSrcset} type="image/webp">
-      <source sizes={sizes} srcset={jpegSrcset} type="image/jpeg">
-      <img
-        alt=""
-        class="size-full object-cover"
-        decoding="async"
-        fetchpriority="high"
-        height={hero480Jpg.height}
-        loading="eager"
-        src={hero480Jpg.src}
-        width={hero480Jpg.width}
-      >
-    </picture>
-    <div
-      aria-hidden="true"
-      class="absolute inset-0 bg-linear-to-b from-[#0B0F17]/85 via-[#0B0F17]/35 to-[#0B0F17]/75"
-    ></div>
+    <HeroBackground />
 
     <div
       class="relative z-10 mx-auto flex min-h-svh w-full max-w-6xl flex-col justify-between gap-10 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:gap-16 lg:px-12 lg:py-16"
