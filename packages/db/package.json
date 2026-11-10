@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@todo-task-app/config": "workspace:*",
-    "drizzle-kit": "1.0.0-rc.5",
+    "drizzle-kit": "catalog:",
     "typescript": "catalog:",
     "varlock": "catalog:"
   }

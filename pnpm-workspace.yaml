@@ -10,16 +10,25 @@ allowBuilds:
 catalog:
   zod: ^4.6.7
   typescript: ^6.0.3
-  "@types/node": ^26.6.5
+  "@types/node": ^26.6.6
   varlock: 1.23.0
-  "@cloudflare/workers-types": ^5.20261027.1
+  "@cloudflare/workers-types": ^5.20261108.1
   "@orpc/server": 2.0.0-beta.46
   "@orpc/openapi": 2.0.0-beta.46
   "@orpc/zod": 2.0.0-beta.46
-  better-auth: 1.7.12
+  better-auth: 1.7.18
+  "@better-auth/core": 1.7.18
+  "@better-auth/drizzle-adapter": 1.7.18
   "@orpc/client": 2.0.0-beta.46
   "@orpc/cloudflare": 2.0.0-beta.46
   drizzle-orm: 1.0.0-rc.5
+  drizzle-kit: 1.0.0-rc.5
+  alchemy: 2.0.0-beta.84
+  "@alchemy.run/cloudflare": 2.0.0-beta.84
+  "@alchemy.run/frontend-frameworks": 2.0.0-beta.84
+  effect: 4.1.2
+  "@effect/platform-bun": 4.1.2
+  "@effect/platform-node": 4.1.2
   vitest: ^4.1.12
 permissions:
   drizzle-kit:

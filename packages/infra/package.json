@@ -12,12 +12,12 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@alchemy.run/cloudflare": "2.0.0-beta.84",
-    "@effect/platform-bun": "4.0.6",
-    "@effect/platform-node": "4.0.6",
+    "@alchemy.run/cloudflare": "catalog:",
+    "@effect/platform-bun": "catalog:",
+    "@effect/platform-node": "catalog:",
     "@todo-task-app/config": "workspace:*",
-    "alchemy": "2.0.0-beta.84",
-    "effect": "4.0.6",
+    "alchemy": "catalog:",
+    "effect": "catalog:",
     "typescript": "catalog:",
     "varlock": "catalog:"
   }
