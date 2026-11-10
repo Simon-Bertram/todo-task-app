@@ -1,7 +1,6 @@
 import type { JSX } from "preact";
 import { useCallback } from "preact/hooks";
 
-import { authClient } from "../../lib/auth-client";
 import { useAuthForm } from "../../lib/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
 
@@ -46,6 +45,7 @@ export default function SignUpForm(): JSX.Element {
       setBusy(true);
 
       try {
+        const { authClient } = await import("../../lib/auth-client");
         await authClient.signUp.email(
           {
             callbackURL: `${window.location.origin}/login`,

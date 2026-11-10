@@ -3,6 +3,9 @@ import preact from "@astrojs/preact";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
 
+// Coalesce preact, preact/hooks, and preact/jsx-runtime into one hop.
+const PREACT_MODULE_RE = /[/\\]node_modules[/\\]preact(?:[/\\]|$)/u;
+
 // https://astro.build/config
 export default defineConfig({
   fonts: [
@@ -32,6 +35,17 @@ export default defineConfig({
   },
   site: "https://todo.sarl",
   vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (PREACT_MODULE_RE.test(id)) {
+              return "preact-vendor";
+            }
+          },
+        },
+      },
+    },
     plugins: [tailwindcss()],
   },
 });
