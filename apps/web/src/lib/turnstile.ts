@@ -1,8 +1,10 @@
+import { CAPTCHA_RESPONSE_HEADER } from "@todo-task-app/auth/captcha";
+
+export { CAPTCHA_RESPONSE_HEADER } from "@todo-task-app/auth/captcha";
+
 const SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const PRECONNECT_HREF = "https://challenges.cloudflare.com";
-
-export const CAPTCHA_RESPONSE_HEADER = "x-captcha-response";
 
 export interface TurnstileRenderOptions {
   action?: string;

@@ -86,7 +86,8 @@ export default function SignUpForm(): JSX.Element {
             },
           }
         );
-      } catch {
+      } catch (caught) {
+        console.error("Sign-up request failed", caught);
         resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {

@@ -80,7 +80,8 @@ export default function ForgotPasswordForm(): JSX.Element {
           "If this email exists in our system, check your inbox for a reset link."
         );
         resetTurnstile();
-      } catch {
+      } catch (caught) {
+        console.error("Forgot-password request failed", caught);
         resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {

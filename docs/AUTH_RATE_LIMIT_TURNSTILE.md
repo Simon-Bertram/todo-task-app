@@ -114,9 +114,11 @@ Those are public dummy credentials, not a dashboard widget. Production must repl
 
 1. Load Turnstile from Cloudflare CDN (not the island JS bundle): [`apps/web/src/lib/turnstile.ts`](../apps/web/src/lib/turnstile.ts)
 2. Explicit render in Preact: [`apps/web/src/components/islands/turnstile-widget.tsx`](../apps/web/src/components/islands/turnstile-widget.tsx)
-3. On submit, send the token as header `x-captcha-response` (Better Auth captcha contract), via `captchaFetchHeaders`
+3. On submit, send the token as header `x-captcha-response` (`CAPTCHA_RESPONSE_HEADER` from `@todo-task-app/auth/captcha`; Better Auth captcha contract), via `captchaFetchHeaders`
 4. Forms: sign-in, sign-up, forgot-password, check-email resend — **not** reset-password
 5. On captcha/auth error, remount the widget (`key` bump) so a fresh token is required
+
+**CORS:** Hono on todo-server must include `CAPTCHA_RESPONSE_HEADER` in `cors({ allowHeaders })` ([`apps/server/src/index.ts`](../apps/server/src/index.ts)). Web and API are cross-origin; omitting that header fails the OPTIONS preflight and the auth form catch shows a generic error after Turnstile already succeeded.
 
 ### Server (todo-server / packages/auth)
 

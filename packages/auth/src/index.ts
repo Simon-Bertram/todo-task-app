@@ -16,6 +16,8 @@ import {
   verificationEmailContent,
 } from "./email";
 
+export { CAPTCHA_RESPONSE_HEADER } from "./captcha";
+
 /** Cloudflare always-pass dummy secret — never allow in production. */
 const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
 

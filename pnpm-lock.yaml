@@ -346,6 +346,9 @@ importers:
       '@todo-task-app/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@todo-task-app/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       astro:
         specifier: 7.4.13
         version: 7.4.13(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)

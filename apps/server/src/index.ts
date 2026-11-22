@@ -14,6 +14,7 @@ import {
 } from "@todo-task-app/api/lib/app-error";
 import { appRouter } from "@todo-task-app/api/routers/index";
 import { sharedCookieDomain } from "@todo-task-app/auth";
+import { CAPTCHA_RESPONSE_HEADER } from "@todo-task-app/auth/captcha";
 import {
   appendHostOnlySessionCookieExpiry,
   cookieHeaderHasDuplicateSessionTokens,
@@ -68,7 +69,12 @@ app.use("/*", async (c, next) => {
 app.use(
   "/*",
   cors({
-    allowHeaders: ["Content-Type", "Authorization", REQUEST_ID_HEADER],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      REQUEST_ID_HEADER,
+      CAPTCHA_RESPONSE_HEADER,
+    ],
     allowMethods: ["GET", "POST", "OPTIONS"],
     credentials: true,
     exposeHeaders: [REQUEST_ID_HEADER],

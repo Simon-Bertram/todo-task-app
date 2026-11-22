@@ -100,7 +100,8 @@ export default function CheckEmailPanel(): JSX.Element {
           "Verification email sent. Check your inbox and spam folder."
         );
         resetTurnstile();
-      } catch {
+      } catch (caught) {
+        console.error("Resend verification request failed", caught);
         resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {

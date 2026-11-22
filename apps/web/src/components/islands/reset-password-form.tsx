@@ -86,7 +86,8 @@ export default function ResetPasswordForm(): JSX.Element {
         }
 
         window.location.href = "/#login";
-      } catch {
+      } catch (caught) {
+        console.error("Reset-password request failed", caught);
         showError({ message: "An unexpected error occurred." });
       } finally {
         setBusy(false);

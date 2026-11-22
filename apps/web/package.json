@@ -20,6 +20,7 @@
     "@orpc/client": "catalog:",
     "@orpc/cloudflare": "catalog:",
     "@todo-task-app/api": "workspace:*",
+    "@todo-task-app/auth": "workspace:*",
     "astro": "7.4.13",
     "better-auth": "catalog:",
     "canvas-confetti": "^1.9.4",

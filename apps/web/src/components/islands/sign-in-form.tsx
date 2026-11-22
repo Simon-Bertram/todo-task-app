@@ -100,7 +100,8 @@ export default function SignInForm({
             },
           }
         );
-      } catch {
+      } catch (caught) {
+        console.error("Sign-in request failed", caught);
         resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {
