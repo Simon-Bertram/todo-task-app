@@ -17,7 +17,7 @@
     "@todo-task-app/auth": "workspace:*",
     "@todo-task-app/db": "workspace:*",
     "better-auth": "catalog:",
-    "hono": "^4.13.7",
+    "hono": "^4.13.19",
     "varlock": "catalog:",
     "zod": "catalog:"
   },

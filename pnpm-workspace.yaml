@@ -14,28 +14,30 @@ catalog:
   zod: ^4.6.7
   typescript: ^6.0.3
   "@types/node": ^26.6.6
-  varlock: 1.24.0
+  varlock: 1.25.0
   "@cloudflare/workers-types": ^5.20261121.1
   "@orpc/server": 2.0.0-beta.46
   "@orpc/openapi": 2.0.0-beta.46
   "@orpc/zod": 2.0.0-beta.46
   better-auth: 1.7.27
   "@better-auth/core": 1.7.27
-  "@better-auth/drizzle-adapter": 1.7.18
+  "@better-auth/drizzle-adapter": 1.7.27
   "@orpc/client": 2.0.0-beta.46
   "@orpc/cloudflare": 2.0.0-beta.46
   drizzle-orm: 1.0.0-rc.5
   drizzle-kit: 1.0.0-rc.5
-  alchemy: 2.0.0-beta.85
-  "@alchemy.run/cloudflare": 2.0.0-beta.85
-  "@alchemy.run/frontend-frameworks": 2.0.0-beta.85
-  effect: 4.1.2
-  "@effect/platform-bun": 4.1.2
-  "@effect/platform-node": 4.1.2
+  alchemy: 2.0.0-beta.87
+  "@alchemy.run/cloudflare": 2.0.0-beta.87
+  "@alchemy.run/frontend-frameworks": 2.0.0-beta.87
+  effect: 4.1.5
+  "@effect/platform-bun": 4.1.5
+  "@effect/platform-node": 4.1.5
   vitest: ^4.1.12
 permissions:
   drizzle-kit:
     skills: true
+  tsdown:
+    skills: false
   ultracite:
     skills: true
   varlock:

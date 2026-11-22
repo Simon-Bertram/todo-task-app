@@ -33,13 +33,13 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.6",
+    "@biomejs/biome": "2.6.8",
     "@cloudflare/workers-types": "catalog:",
     "@todo-task-app/config": "workspace:*",
     "@types/node": "catalog:",
-    "turbo": "^2.11.10",
+    "turbo": "^2.11.13",
     "typescript": "catalog:",
-    "ultracite": "8.1.1",
+    "ultracite": "8.3.1",
     "varlock": "catalog:"
   },
   "packageManager": "pnpm@12.15.0"

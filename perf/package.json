@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@orpc/client": "catalog:",
-    "playwright": "^1.58.2"
+    "playwright": "^1.65.1"
   },
   "devDependencies": {
-    "@lhci/cli": "^0.16.0",
+    "@lhci/cli": "^0.16.1",
     "@types/node": "catalog:"
   }
 }

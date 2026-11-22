@@ -17,7 +17,7 @@
     "@todo-task-app/db": "workspace:*",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
-    "resend": "^6.34.1",
+    "resend": "^6.39.0",
     "zod": "catalog:"
   },
   "devDependencies": {
