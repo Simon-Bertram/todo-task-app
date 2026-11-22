@@ -13,7 +13,7 @@ Agent edit order: [AGENTS.md](../AGENTS.md). Local deploy/secrets: [ALCHEMY_SETU
 | Part                     | Status           | What it is                                                                                                                                          |
 | ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Part 1 — Development** | **Done in code** | D1-backed Better Auth `rateLimit`, captcha plugin, Preact Turnstile islands, Varlock/Alchemy env slots, Cloudflare **test keys** as schema defaults |
-| **Part 2 — Production**  | **Not done**     | Create a real Turnstile widget (e.g. via Spin); set real `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SECRET_KEY`; deploy                                |
+| **Part 2 — Production**  | **Done**         | Real Managed widget for `todo.sarl` / `www.todo.sarl`; real `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SECRET_KEY` deployed via Alchemy                |
 
 Part 1 makes local `pnpm run dev` exercise the full challenge + verify path without a dashboard widget. Part 2 is ops: real widget + real secrets + deploy. `createAuth` rejects Cloudflare’s always-pass test secret when `NODE_ENV=production`.
 
@@ -90,6 +90,8 @@ Regenerates typed `env.ts` files (e.g. [`apps/web/src/env.ts`](../apps/web/src/e
 | Web public sitekey          | `PUBLIC_TURNSTILE_SITEKEY: ConfigString("PUBLIC_TURNSTILE_SITEKEY")` on the Astro Worker            |
 | Browser islands             | [`apps/web/src/env.public.ts`](../apps/web/src/env.public.ts) reads `import.meta.env.PUBLIC_*`      |
 | Server runtime              | `cloudflare:workers` `ENV` → `createAuth(ENV, …)`                                                   |
+
+[`packages/infra/.env.schema`](../packages/infra/.env.schema) imports `PUBLIC_TURNSTILE_SITEKEY` from [`apps/web/.env.schema`](../apps/web/.env.schema) (schema file, not the web directory) so deploy does **not** pick up [`apps/web/.env`](../apps/web/.env). For production, set the real sitekey in gitignored [`packages/infra/.env`](../packages/infra/.env) (or export it in the deploy shell). Server secrets still flow from [`apps/server/.env`](../apps/server/.env) via the directory `@import`.
 
 There is **no** `wrangler.toml` / `wrangler.jsonc` for app secrets. Prefer Varlock + Alchemy over `wrangler secret put` for this project.
 
@@ -188,9 +190,9 @@ Do **not** let a Spin agent re-add a custom Hono `validateTurnstile` or rewrite 
 
 1. Create a Managed widget via **Set up with Spin** (preferred), dashboard Add widget, or Wrangler. Hostname management should include `todo.sarl`. Prefer Cloudflare **test keys** for local; avoid putting the production secret on a widget that also allows localhost unless you accept that tradeoff.
 2. Override schema test defaults in production env:
-   - `TURNSTILE_SECRET_KEY=<real secret>`
-   - `PUBLIC_TURNSTILE_SITEKEY=<real sitekey>`
-3. Deploy **server** and **web** Workers. Production with the test secret will throw at `createAuth`.
+   - `TURNSTILE_SECRET_KEY=<real secret>` in [`apps/server/.env`](../apps/server/.env)
+   - `PUBLIC_TURNSTILE_SITEKEY=<real sitekey>` in [`packages/infra/.env`](../packages/infra/.env) (infra imports the web **schema** default, not `apps/web/.env`)
+3. Deploy **server** and **web** Workers (`cd packages/infra && pnpm exec alchemy deploy --stage production --yes`). Production with the test secret will throw at `createAuth`.
 4. Smoke-test sign-in, sign-up, forgot-password, and check-email resend; confirm a failed captcha remounts the widget.
 5. Leave rate-limit rules unless abuse metrics say otherwise.
 
