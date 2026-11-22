@@ -1,7 +1,9 @@
+import { ORPCError } from "@orpc/client";
 import { useCallback, useState } from "preact/hooks";
 import { celebrateTaskComplete, completionIntensity } from "./celebrate";
 import { orpc } from "./orpc";
 import type { Project, Task } from "./task-helpers";
+import { openSubtaskCount } from "./task-helpers";
 import { showToast } from "./toast";
 import type { TaskDetailFormApi } from "./use-task-detail-form";
 
@@ -108,6 +110,13 @@ export function useTaskDetailMutations({
       return;
     }
     const nextCompleted = !values.isCompleted;
+    if (nextCompleted && openSubtaskCount(baseTask) > 0) {
+      const message =
+        "Finish or remove all subtasks before completing this task";
+      setError(message);
+      showToast(message, "error");
+      return;
+    }
     form.setIsCompleted(nextCompleted);
     setIsSaving(true);
     setError(null);
@@ -148,10 +157,14 @@ export function useTaskDetailMutations({
       );
       close();
       location.reload();
-    } catch {
+    } catch (error) {
       form.setIsCompleted(!nextCompleted);
-      setError("Could not update completion. Try again.");
-      showToast("Could not update completion. Try again.", "error");
+      const message =
+        error instanceof ORPCError && error.code === "CONFLICT"
+          ? "Finish or remove all subtasks before completing this task"
+          : "Could not update completion. Try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setIsSaving(false);
     }

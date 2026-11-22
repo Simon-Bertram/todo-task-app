@@ -15,7 +15,7 @@ export function createPerfOrpcClient({ apiUrl, cookieHeader }) {
         headers,
       });
     },
-    origin: apiUrl.replace(/\/$/, ""),
+    origin: apiUrl.replace(/\/$/u, ""),
     url: "/rpc",
   });
 

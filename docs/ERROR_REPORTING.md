@@ -8,12 +8,12 @@ Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). 
 
 ## 1. Purpose
 
-| Goal | How |
-|------|-----|
-| **Pick up** API and SSR failures | Structured `console.error(JSON.stringify(...))` events + Workers traces |
-| **Correlate** web ↔ API | Shared `x-request-id` / `requestId` on context and logs |
-| **Show** a useful page | Astro [`500.astro`](../apps/web/src/pages/500.astro) with mapped copy + reference ID |
-| **Report** unexpected island/window errors | `errors.report` oRPC procedure (session-scoped) |
+| Goal                                       | How                                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| **Pick up** API and SSR failures           | Structured `console.error(JSON.stringify(...))` events + Workers traces              |
+| **Correlate** web ↔ API                    | Shared `x-request-id` / `requestId` on context and logs                              |
+| **Show** a useful page                     | Astro [`500.astro`](../apps/web/src/pages/500.astro) with mapped copy + reference ID |
+| **Report** unexpected island/window errors | `errors.report` oRPC procedure (session-scoped)                                      |
 
 **Sink:** Cloudflare Workers Observability (logs + traces). No Sentry, Axiom, or D1 error inbox in this design.
 
@@ -21,12 +21,12 @@ Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). 
 
 ## 2. Stack map
 
-| Package / app | Owns |
-|---------------|------|
-| [`packages/api`](../packages/api) | `requestId` on context, [`lib/app-error.ts`](../packages/api/src/lib/app-error.ts) helpers, [`errors.report`](../packages/api/src/routers/errors.ts) |
-| [`apps/server`](../apps/server) | Mint/echo `x-request-id`, structured oRPC `onError`, `app.onError`, CORS expose, CloudflareTracer |
-| [`apps/web`](../apps/web) | Middleware `locals.requestId`, SSR log + rethrow, `500.astro`, browser link interceptor + optional window reporters |
-| [`packages/infra`](../packages/infra) | `observability.traces.enabled` on web + server Workers |
+| Package / app                         | Owns                                                                                                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`packages/api`](../packages/api)     | `requestId` on context, [`lib/app-error.ts`](../packages/api/src/lib/app-error.ts) helpers, [`errors.report`](../packages/api/src/routers/errors.ts) |
+| [`apps/server`](../apps/server)       | Mint/echo `x-request-id`, structured oRPC `onError`, `app.onError`, CORS expose, CloudflareTracer                                                    |
+| [`apps/web`](../apps/web)             | Middleware `locals.requestId`, SSR log + rethrow, `500.astro`, browser link interceptor + optional window reporters                                  |
+| [`packages/infra`](../packages/infra) | `observability.traces.enabled` on web + server Workers                                                                                               |
 
 Browser client: [`apps/web/src/lib/orpc.ts`](../apps/web/src/lib/orpc.ts).  
 SSR client: [`apps/web/src/lib/orpc.server.ts`](../apps/web/src/lib/orpc.server.ts).
@@ -117,14 +117,14 @@ observability: {
 
 ## 6. Verification
 
-| Check | Expect |
-|-------|--------|
-| Force SSR oRPC validation failure | `500.astro` with friendly message + reference ID |
-| Workers logs for `todo-server` | `event":"orpc.error"` with `path`, `contentType`, `requestId` |
-| Workers logs for `todo-web` | `event":"ssr.orpc.error"` with same `requestId` |
-| Traces (dashboard / local explorer) | Failed RPC span under the page request when tracer + traces enabled |
-| Island unexpected throw / `errors.report` | `event":"client.error.report"` with `userId` |
-| Expected toast failures (e.g. quick-add) | Still toast; no spam reports for handled catches unless you opt in |
+| Check                                     | Expect                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| Force SSR oRPC validation failure         | `500.astro` with friendly message + reference ID                    |
+| Workers logs for `todo-server`            | `event":"orpc.error"` with `path`, `contentType`, `requestId`       |
+| Workers logs for `todo-web`               | `event":"ssr.orpc.error"` with same `requestId`                     |
+| Traces (dashboard / local explorer)       | Failed RPC span under the page request when tracer + traces enabled |
+| Island unexpected throw / `errors.report` | `event":"client.error.report"` with `userId`                        |
+| Expected toast failures (e.g. quick-add)  | Still toast; no spam reports for handled catches unless you opt in  |
 
 Local: `pnpm run dev`, reproduce a bad SSR call, then inspect terminal / Workers Observability for the shared id.
 
@@ -150,11 +150,11 @@ Local: `pnpm run dev`, reproduce a bad SSR call, then inspect terminal / Workers
 
 ## 8. Related docs
 
-| Doc | Relevance |
-|-----|-----------|
-| [PRD.md](./PRD.md) | Optimistic UI → toast on mutation failure |
-| [ADDING_CRUD.md](./ADDING_CRUD.md) | `ORPCError` conventions (`NOT_FOUND`, `BAD_REQUEST`, …) |
-| [`.agents/skills/orpc/SKILL.md`](../.agents/skills/orpc/SKILL.md) | Procedures, handlers, clients |
-| [`.agents/skills/hono/SKILL.md`](../.agents/skills/hono/SKILL.md) | `app.onError`, middleware |
-| [orpc.dev error handling](https://orpc.dev/docs/error-handling) | `ORPCError`, validation |
-| [orpc.dev Cloudflare traces](https://orpc.dev/docs/integrations/cloudflare-traces) | `CloudflareTracer` |
+| Doc                                                                                | Relevance                                               |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [PRD.md](./PRD.md)                                                                 | Optimistic UI → toast on mutation failure               |
+| [ADDING_CRUD.md](./ADDING_CRUD.md)                                                 | `ORPCError` conventions (`NOT_FOUND`, `BAD_REQUEST`, …) |
+| [`.agents/skills/orpc/SKILL.md`](../.agents/skills/orpc/SKILL.md)                  | Procedures, handlers, clients                           |
+| [`.agents/skills/hono/SKILL.md`](../.agents/skills/hono/SKILL.md)                  | `app.onError`, middleware                               |
+| [orpc.dev error handling](https://orpc.dev/docs/error-handling)                    | `ORPCError`, validation                                 |
+| [orpc.dev Cloudflare traces](https://orpc.dev/docs/integrations/cloudflare-traces) | `CloudflareTracer`                                      |

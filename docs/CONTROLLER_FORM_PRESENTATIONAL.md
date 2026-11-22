@@ -29,13 +29,13 @@ The pattern fixes that by giving each concern a named home and a narrow public s
 
 Three layers (plus an optional mutations hook). Each **owns** one job and **must not own** the others.
 
-| Layer | Module (task detail) | Owns | Must not own |
-|-------|----------------------|------|--------------|
-| **Controller hook** | [`use-task-detail-sheet-controller.ts`](../apps/web/src/lib/use-task-detail-sheet-controller.ts) | Sheet lifecycle: which task is open, open/close, document/`plansage:open-task` listeners, focus-progress scroll, local list caches, capacity / quadrant **derived** display inputs, confirm-delete chrome, busy aggregation for the shell | Field values (`title`, `notes`, …); raw JSX for inputs; direct `orpc.*` calls if you extracted mutations |
-| **Form hook** | [`use-task-detail-form.ts`](../apps/web/src/lib/use-task-detail-form.ts) | Editable field state, reset/hydrate from `baseTask`, field change handlers, client validation (“title required”), packing a save payload | Sheet open state; event listeners; toasts; `location.reload`; markup |
-| **Mutations hook** (optional fourth) | [`use-task-detail-mutations.ts`](../apps/web/src/lib/use-task-detail-mutations.ts) | `isSaving` / `isDeleting`, `orpc.tasks.update` / `delete`, error strings for alerts, toast + celebrate + reload side effects, optimistic list patches | Form field storage; dialog chrome layout |
-| **Presentational form** | [`task-detail-form.tsx`](../apps/web/src/components/islands/task-detail-form.tsx) | Labels, inputs, rating rows, presets, ARIA on controls; calls callbacks only | `useState` for domain data; `orpc`; knowing *why* the sheet opened |
-| **Thin island** | [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) | Compose hooks + dialog shell + `<TaskDetailForm … />` | Business logic beyond wiring |
+| Layer                                | Module (task detail)                                                                             | Owns                                                                                                                                                                                                                                      | Must not own                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Controller hook**                  | [`use-task-detail-sheet-controller.ts`](../apps/web/src/lib/use-task-detail-sheet-controller.ts) | Sheet lifecycle: which task is open, open/close, document/`plansage:open-task` listeners, focus-progress scroll, local list caches, capacity / quadrant **derived** display inputs, confirm-delete chrome, busy aggregation for the shell | Field values (`title`, `notes`, …); raw JSX for inputs; direct `orpc.*` calls if you extracted mutations |
+| **Form hook**                        | [`use-task-detail-form.ts`](../apps/web/src/lib/use-task-detail-form.ts)                         | Editable field state, reset/hydrate from `baseTask`, field change handlers, client validation (“title required”), packing a save payload                                                                                                  | Sheet open state; event listeners; toasts; `location.reload`; markup                                     |
+| **Mutations hook** (optional fourth) | [`use-task-detail-mutations.ts`](../apps/web/src/lib/use-task-detail-mutations.ts)               | `isSaving` / `isDeleting`, `orpc.tasks.update` / `delete`, error strings for alerts, toast + celebrate + reload side effects, optimistic list patches                                                                                     | Form field storage; dialog chrome layout                                                                 |
+| **Presentational form**              | [`task-detail-form.tsx`](../apps/web/src/components/islands/task-detail-form.tsx)                | Labels, inputs, rating rows, presets, ARIA on controls; calls callbacks only                                                                                                                                                              | `useState` for domain data; `orpc`; knowing _why_ the sheet opened                                       |
+| **Thin island**                      | [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx)              | Compose hooks + dialog shell + `<TaskDetailForm … />`                                                                                                                                                                                     | Business logic beyond wiring                                                                             |
 
 **Rule of thumb:** if a piece of state would still make sense with the dialog closed and no DOM, it probably belongs in a hook—not in the presentational form. If it is only how a control looks or how a click maps to a callback prop, it stays presentational (or a tiny local UI helper like `RatingRow`).
 
@@ -65,7 +65,7 @@ flowchart TB
   M -->|"patch local lists, toasts, reload"| C
 ```
 
-**Read the diagram left-to-right as ownership, not as “more important.”** The presentational form is the leaf: it never reaches upward into oRPC. The controller decides *whether* the sheet exists; the form hook decides *what* the fields say; mutations decide *how* persistence runs.
+**Read the diagram left-to-right as ownership, not as “more important.”** The presentational form is the leaf: it never reaches upward into oRPC. The controller decides _whether_ the sheet exists; the form hook decides _what_ the fields say; mutations decide _how_ persistence runs.
 
 Without a separate mutations hook, save/delete/toggle live on the controller (or rarely on the form hook for “submit only”). Prefer the fourth module once mutation bodies dominate the controller.
 
@@ -80,24 +80,24 @@ Illustrative TypeScript / Preact. Names and props should match real types in [`t
 ```ts
 // apps/web/src/lib/use-task-detail-sheet-controller.ts
 export function useTaskDetailSheetController(props: {
-  budgetMinutes: number
-  plannedMinutes: number
-  projects: Project[]
-  tasks: Task[]
+  budgetMinutes: number;
+  plannedMinutes: number;
+  projects: Project[];
+  tasks: Task[];
 }) {
-  const [taskId, setTaskId] = useState<string | null>(null)
-  const [localTasks, setLocalTasks] = useState(props.tasks)
-  const [localProjects, setLocalProjects] = useState(props.projects)
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [localTasks, setLocalTasks] = useState(props.tasks);
+  const [localProjects, setLocalProjects] = useState(props.projects);
   // open listeners, sync props → local*, focus-progress effect…
 
   const baseTask = useMemo(
     () => localTasks.find((task) => task.id === taskId) ?? null,
-    [taskId, localTasks],
-  )
+    [taskId, localTasks]
+  );
 
   const close = useCallback(() => {
-    setTaskId(null)
-  }, [])
+    setTaskId(null);
+  }, []);
 
   return {
     baseTask,
@@ -109,7 +109,7 @@ export function useTaskDetailSheetController(props: {
     setLocalProjects,
     setLocalTasks,
     // confirmDelete, focus helpers, capacity projections used by the shell…
-  }
+  };
 }
 ```
 
@@ -118,25 +118,25 @@ export function useTaskDetailSheetController(props: {
 ```ts
 // apps/web/src/lib/use-task-detail-form.ts
 export function useTaskDetailForm(baseTask: Task | null) {
-  const [title, setTitle] = useState('')
-  const [notes, setNotes] = useState('')
+  const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
   // dueDate, projectId, urgency, importance, etc., estimatedMinutes, recurrence…
 
   useEffect(() => {
     if (!baseTask) {
-      return
+      return;
     }
-    setTitle(baseTask.title)
-    setNotes(baseTask.notes ?? '')
+    setTitle(baseTask.title);
+    setNotes(baseTask.notes ?? "");
     // …hydrate the rest from baseTask
-  }, [baseTask])
+  }, [baseTask]);
 
   const validateForSave = useCallback((): string | null => {
     if (!title.trim()) {
-      return 'Title is required.'
+      return "Title is required.";
     }
-    return null
-  }, [title])
+    return null;
+  }, [title]);
 
   const toUpdateInput = useCallback(
     (id: string) => ({
@@ -145,8 +145,8 @@ export function useTaskDetailForm(baseTask: Task | null) {
       notes: notes.trim() ? notes.trim() : null,
       // …remaining fields the API accepts
     }),
-    [notes, title /* … */],
-  )
+    [notes, title /* … */]
+  );
 
   return {
     fields: { title, notes /* … */ },
@@ -155,7 +155,7 @@ export function useTaskDetailForm(baseTask: Task | null) {
     // …setters or onChange helpers
     toUpdateInput,
     validateForSave,
-  }
+  };
 }
 ```
 
@@ -164,42 +164,42 @@ export function useTaskDetailForm(baseTask: Task | null) {
 ```ts
 // apps/web/src/lib/use-task-detail-mutations.ts
 export function useTaskDetailMutations(options: {
-  baseTask: Task | null
-  form: ReturnType<typeof useTaskDetailForm>
-  onClose: () => void
+  baseTask: Task | null;
+  form: ReturnType<typeof useTaskDetailForm>;
+  onClose: () => void;
   // celebrate inputs, setLocalTasks, etc.
 }) {
-  const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const onSave = useCallback(async () => {
     if (!options.baseTask || isSaving) {
-      return
+      return;
     }
-    const validationError = options.form.validateForSave()
+    const validationError = options.form.validateForSave();
     if (validationError) {
-      setError(validationError)
-      return
+      setError(validationError);
+      return;
     }
-    setIsSaving(true)
-    setError(null)
+    setIsSaving(true);
+    setError(null);
     try {
-      await orpc.tasks.update(options.form.toUpdateInput(options.baseTask.id))
-      showToast('Task saved', 'success')
-      options.onClose()
-      location.reload()
+      await orpc.tasks.update(options.form.toUpdateInput(options.baseTask.id));
+      showToast("Task saved", "success");
+      options.onClose();
+      location.reload();
     } catch {
-      setError('Could not save task. Try again.')
-      showToast('Could not save task. Try again.', 'error')
+      setError("Could not save task. Try again.");
+      showToast("Could not save task. Try again.", "error");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }, [isSaving, options])
+  }, [isSaving, options]);
 
   // onDelete, toggleToday, toggleCompleted…
 
-  return { error, isDeleting, isSaving, onDelete, onSave /* … */ }
+  return { error, isDeleting, isSaving, onDelete, onSave /* … */ };
 }
 ```
 
@@ -208,17 +208,17 @@ export function useTaskDetailMutations(options: {
 ```tsx
 // apps/web/src/components/islands/task-detail-form.tsx
 export interface TaskDetailFormProps {
-  title: string
-  notes: string
-  projects: Project[]
-  projectId: string | null
-  error: string | null
-  busy: boolean
-  onTitleInput: (event: Event) => void
-  onNotesInput: (event: Event) => void
-  onProjectChange: (event: Event) => void
-  onSave: () => void
-  onClose: () => void
+  title: string;
+  notes: string;
+  projects: Project[];
+  projectId: string | null;
+  error: string | null;
+  busy: boolean;
+  onTitleInput: (event: Event) => void;
+  onNotesInput: (event: Event) => void;
+  onProjectChange: (event: Event) => void;
+  onSave: () => void;
+  onClose: () => void;
   // …remaining values + handlers (ratings, ETC, recurrence, delete, today, completed)
 }
 
@@ -236,7 +236,7 @@ export default function TaskDetailForm(props: TaskDetailFormProps) {
       </label>
       {/* project select, notes, DayPicker, matrix ratings, ETC, actions… */}
     </div>
-  )
+  );
 }
 ```
 
@@ -286,13 +286,13 @@ Keep the dialog **chrome** (overlay, sticky header, `role="dialog"`) in the shee
 
 ## 5. When to use vs skip
 
-| Use this split when… | Skip (or stop early) when… |
-|----------------------|----------------------------|
-| One island exceeds ~200–300 lines mixing UI + async + many fields | A toggle or single-field control with one mutation |
-| You need unit tests for validation / payload shaping without rendering the dialog | The “form” is three props and a button |
-| Multiple entry points open the same sheet (Today, Matrix, custom events) | Logic is already isolated in a child island with no shared god parent |
-| Design iteration thrashs markup while behavior must stay stable | Extracting hooks would only rename `useState` with no clearer boundaries |
-| You are about to add a second consumer of the same edit UX | Premature abstraction before the second use case exists |
+| Use this split when…                                                              | Skip (or stop early) when…                                               |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| One island exceeds ~200–300 lines mixing UI + async + many fields                 | A toggle or single-field control with one mutation                       |
+| You need unit tests for validation / payload shaping without rendering the dialog | The “form” is three props and a button                                   |
+| Multiple entry points open the same sheet (Today, Matrix, custom events)          | Logic is already isolated in a child island with no shared god parent    |
+| Design iteration thrashs markup while behavior must stay stable                   | Extracting hooks would only rename `useState` with no clearer boundaries |
+| You are about to add a second consumer of the same edit UX                        | Premature abstraction before the second use case exists                  |
 
 **Pragmatic middle ground:** extract the presentational form first (biggest readability win), then the form hook, then controller / mutations. Do not invent a fourth hook until mutation blocks crowd the controller.
 
@@ -306,21 +306,21 @@ Same separation of concerns, different surface shapes.
 
 ### Auth forms (sign-in / sign-up)
 
-| Layer | Typical ownership |
-|-------|-------------------|
-| Controller | Redirect after session, “already signed in,” OAuth button enablement, cross-subdomain cookie readiness ([CROSS_SUBDOMAIN_AUTH_COOKIES.md](./CROSS_SUBDOMAIN_AUTH_COOKIES.md)) |
-| Form hook | Email / password fields, client validation, `authClient.signIn.email` / `signUp` wrappers |
-| Presentational | Inputs, labels, error alert, submit CTA |
+| Layer          | Typical ownership                                                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Controller     | Redirect after session, “already signed in,” OAuth button enablement, cross-subdomain cookie readiness ([CROSS_SUBDOMAIN_AUTH_COOKIES.md](./CROSS_SUBDOMAIN_AUTH_COOKIES.md)) |
+| Form hook      | Email / password fields, client validation, `authClient.signIn.email` / `signUp` wrappers                                                                                     |
+| Presentational | Inputs, labels, error alert, submit CTA                                                                                                                                       |
 
 Auth often keeps mutations inside the form hook because there is no sheet lifecycle. That is fine: **controller is optional when there is no shell state.**
 
 ### Matrix boards
 
-| Layer | Typical ownership |
-|-------|-------------------|
+| Layer                   | Typical ownership                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Controller / board hook | Quadrant lists, DnD sensors, optimistic reorder, which task id opens the detail sheet, capacity bar inputs |
-| Form hook | Usually **absent** on the board itself—editing belongs in the task detail sheet |
-| Presentational | Column layout, task cards, drag handles (props in, callbacks out) |
+| Form hook               | Usually **absent** on the board itself—editing belongs in the task detail sheet                            |
+| Presentational          | Column layout, task cards, drag handles (props in, callbacks out)                                          |
 
 Boards are “controller + presentational list.” When a card opens task detail, prefer **events or a shared open API** (`plansage:open-task` / `.task-open`) so the board does not import the full form stack. See [`desktop-matrix-board.tsx`](../apps/web/src/components/islands/desktop-matrix-board.tsx) and [`mobile-matrix.tsx`](../apps/web/src/components/islands/mobile-matrix.tsx) as board-side cousins; the sheet remains the edit form owner.
 
@@ -330,12 +330,12 @@ Boards are “controller + presentational list.” When a card opens task detail
 
 After the split you can test without mounting the entire dialog:
 
-| Target | Easy assertions |
-|--------|-----------------|
-| **Form hook** | Hydrate from a fixture `Task`; edit fields; `validateForSave()`; `toUpdateInput(id)` matches Zod/API shape |
-| **Mutations hook** | Mock `orpc.tasks.update`; assert toast/close called; assert rollback on throw; confirm-delete requires two calls |
-| **Presentational form** | Render with props; fire input events; assert callbacks and `data-testid` hooks (Playwright / Testing Library) |
-| **Controller** | Dispatch `plansage:open-task`; assert `baseTask`; close clears id; prop sync updates `localTasks` |
+| Target                  | Easy assertions                                                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Form hook**           | Hydrate from a fixture `Task`; edit fields; `validateForSave()`; `toUpdateInput(id)` matches Zod/API shape       |
+| **Mutations hook**      | Mock `orpc.tasks.update`; assert toast/close called; assert rollback on throw; confirm-delete requires two calls |
+| **Presentational form** | Render with props; fire input events; assert callbacks and `data-testid` hooks (Playwright / Testing Library)    |
+| **Controller**          | Dispatch `plansage:open-task`; assert `baseTask`; close clears id; prop sync updates `localTasks`                |
 
 God sheets force “render 600 lines or don’t test.” Layered hooks let API contract tests live next to [ADDING_CRUD](./ADDING_CRUD.md) procedures without dragging Tailwind markup into unit runs.
 
@@ -345,7 +345,7 @@ God sheets force “render 600 lines or don’t test.” Layered hooks let API c
 
 Use this when refactoring [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) (or a similar island).
 
-1. **Inventory state** — List every `useState` / `useRef` / `useMemo`. Tag each as *shell*, *form field*, *mutation flag*, or *derived*.
+1. **Inventory state** — List every `useState` / `useRef` / `useMemo`. Tag each as _shell_, _form field_, _mutation flag_, or _derived_.
 2. **Inventory effects** — Tag listeners, hydrations (`baseTask → fields`), focus scrolls, prop syncs.
 3. **Inventory handlers** — Tag pure field setters vs async oRPC vs close/open.
 4. **Extract presentational form** — Move JSX body + dumb helpers (`RatingRow`) to `task-detail-form.tsx`. Pass values and callbacks as props. Sheet should still behave identically.

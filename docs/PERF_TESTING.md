@@ -6,11 +6,11 @@ CRUD-first performance suite for PlanSage against a live (or compare) URL. Prima
 
 From [PRD.md](./PRD.md) §7:
 
-| Budget | How this harness measures it |
-|--------|------------------------------|
-| Initial page load &lt; 1.2s on 4G | Lighthouse CI mobile + Slow 4G; assert **LCP ≤ 1200ms** on authenticated boards |
-| Island JS payload &lt; 35KB gzipped | `perf:islands` sums island/`_astro` script transfer sizes per page |
-| D1 query latency &lt; 30ms median | Client RTT to oRPC is a **proxy** (network + Worker + D1). Use Cloudflare Workers/D1 observability for true D1 p50. `perf:api` warns if client p50 &gt; 150ms |
+| Budget                              | How this harness measures it                                                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Initial page load &lt; 1.2s on 4G   | Lighthouse CI mobile + Slow 4G; assert **LCP ≤ 1200ms** on authenticated boards                                                                               |
+| Island JS payload &lt; 35KB gzipped | `perf:islands` sums island/`_astro` script transfer sizes per page                                                                                            |
+| D1 query latency &lt; 30ms median   | Client RTT to oRPC is a **proxy** (network + Worker + D1). Use Cloudflare Workers/D1 observability for true D1 p50. `perf:api` warns if client p50 &gt; 150ms |
 
 ## Regression focus (`3880c09`)
 
@@ -22,13 +22,13 @@ Run the CRUD bench on Short (ETC ≤ 60) vs Long (ETC &gt; 60) fixtures to isola
 
 Use a **dedicated** harness account — not a personal inbox.
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `PERF_EMAIL` | yes | Harness account email |
-| `PERF_PASSWORD` | yes | Harness account password |
-| `PERF_BASE_URL` | no | Default `https://todo.sarl` |
-| `PERF_API_URL` | no | Default `https://api.todo.sarl` |
-| `PERF_COMPARE_URL` | no | Optional second web origin for compare mode |
+| Variable           | Required | Purpose                                     |
+| ------------------ | -------- | ------------------------------------------- |
+| `PERF_EMAIL`       | yes      | Harness account email                       |
+| `PERF_PASSWORD`    | yes      | Harness account password                    |
+| `PERF_BASE_URL`    | no       | Default `https://todo.sarl`                 |
+| `PERF_API_URL`     | no       | Default `https://api.todo.sarl`             |
+| `PERF_COMPARE_URL` | no       | Optional second web origin for compare mode |
 
 Copy [`perf/.env.perf.example`](../perf/.env.perf.example) to `perf/.env.perf` (gitignored) and fill in values.
 

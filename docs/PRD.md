@@ -6,21 +6,21 @@ Agent entrypoint and edit-order routing: [AGENTS.md](../AGENTS.md).
 
 This repo uses **Better-T-Stack**, not the original “single Worker / embedded Hono / Lucia” sketch. Agents must implement product behavior on the stack below.
 
-| PRD concept | Implement as |
-|-------------|--------------|
-| Frontend shell | Astro SSR in `apps/web` (Alchemy Cloudflare Website) |
-| Interactive islands | **Preact** via `@astrojs/preact` when adding interactivity; vanilla `<script>` only for tiny toggles |
-| Backend API | Hono Worker in `apps/server` + **oRPC** in `packages/api` (not Astro `api/[...slug]`) |
-| Auth | **Better Auth** in `packages/auth` (email/password today; OAuth/magic links via Better Auth plugins—not Lucia) |
-| Database | Cloudflare **D1** via **Drizzle** in `packages/db` |
-| Hosting | Two Workers (web + server) provisioned by **Alchemy** in `packages/infra` |
-| Users table | Better Auth already owns `user` / `session` / `account` / `verification`. **Do not** create a parallel `users` table. Add prefs (e.g. `daily_capacity_minutes`) by extending the Better Auth `user` schema carefully |
-| Real-time | Optimistic UI + focus / `visibilitychange` revalidation only |
-| Scheduled jobs (Post-V1) | Cloudflare Workers Cron Triggers on the existing `apps/server` Worker via Alchemy—not a third Worker and not Astro |
+| PRD concept              | Implement as                                                                                                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend shell           | Astro SSR in `apps/web` (Alchemy Cloudflare Website)                                                                                                                                                                 |
+| Interactive islands      | **Preact** via `@astrojs/preact` when adding interactivity; vanilla `<script>` only for tiny toggles                                                                                                                 |
+| Backend API              | Hono Worker in `apps/server` + **oRPC** in `packages/api` (not Astro `api/[...slug]`)                                                                                                                                |
+| Auth                     | **Better Auth** in `packages/auth` (email/password today; OAuth/magic links via Better Auth plugins—not Lucia)                                                                                                       |
+| Database                 | Cloudflare **D1** via **Drizzle** in `packages/db`                                                                                                                                                                   |
+| Hosting                  | Two Workers (web + server) provisioned by **Alchemy** in `packages/infra`                                                                                                                                            |
+| Users table              | Better Auth already owns `user` / `session` / `account` / `verification`. **Do not** create a parallel `users` table. Add prefs (e.g. `daily_capacity_minutes`) by extending the Better Auth `user` schema carefully |
+| Real-time                | Optimistic UI + focus / `visibilitychange` revalidation only                                                                                                                                                         |
+| Scheduled jobs (Post-V1) | Cloudflare Workers Cron Triggers on the existing `apps/server` Worker via Alchemy—not a third Worker and not Astro                                                                                                   |
 
-**V1 scope:** Eisenhower Matrix planning UI, time-budgeted Today execution view, capacity engine (incl. 1-3-5 filter), projects/categories, task CRUD with recurrence-on-complete, desktop DnD + mobile sheet/toggle flows, Matrix ↔ Today information architecture below, **Complete** archive view with range filters, long-task progress indicator for ETC &gt; 60 (pie default / slider; Settings-selectable; GSAP micro-motion — §4.2.3), capacity-aligned day progress / setup checklist, and restrained completion confetti (`canvas-confetti`).
+**V1 scope:** Eisenhower Matrix planning UI, time-budgeted Today execution view, capacity engine (incl. 1-3-5 filter), projects/categories, task CRUD with recurrence-on-complete, one-level **subtasks** checklists with completion gating and detail-sheet reorder (§4.2.4), desktop DnD + mobile sheet/toggle flows, Matrix ↔ Today information architecture below, **Complete** archive view with range filters, long-task progress indicator for ETC &gt; 60 (pie default / slider; Settings-selectable; GSAP micro-motion — §4.2.3), capacity-aligned day progress / setup checklist, and restrained completion confetti (`canvas-confetti`).
 
-**V1 non-goals:** Durable Objects, WebSockets, multi-tenant workspaces (schema may reserve optional `workspace_id` only), Cmd+K quick capture, Focus Mode / Pomodoro, two-way calendar sync, weekly analytics dashboard, sequential blockers / sub-checklists UI, and Workers Cron governance automation (see Post-V1 §§4.6–4.7). Also out of scope: points economies, public leaderboards / social flairs, daily login bonuses, streak freezes / rescues, volume XP, and heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page embeds, default sound/haptics). Schema may still reserve columns/tables for Post-V1 without exposing UI.
+**V1 non-goals:** Durable Objects, WebSockets, multi-tenant workspaces (schema may reserve optional `workspace_id` only), Cmd+K quick capture, Focus Mode / Pomodoro, two-way calendar sync, weekly analytics dashboard, sequential blockers (`blocked_by_task_id`), and Workers Cron governance automation (see Post-V1 §§4.6–4.7). Also out of scope: points economies, public leaderboards / social flairs, daily login bonuses, streak freezes / rescues, volume XP, and heavy celebration stacks (tsParticles, react-confetti, Lottie confetti packs, Confetti Page embeds, default sound/haptics). Schema may still reserve columns/tables for Post-V1 without exposing UI.
 
 Respect **V1 vs Post-V1** labels in this document when implementing.
 
@@ -94,12 +94,12 @@ Each task contains:
 
 Quadrant mapping uses threshold **≥ 2**:
 
-| Quadrant | Rule | Intent |
-|----------|------|--------|
-| Q1 | Urgency ≥ 2, Importance ≥ 2 | Do First |
-| Q2 | Urgency &lt; 2, Importance ≥ 2 | Schedule |
-| Q3 | Urgency ≥ 2, Importance &lt; 2 | Delegate / Streamline |
-| Q4 | Urgency &lt; 2, Importance &lt; 2 | Defer |
+| Quadrant | Rule                              | Intent                |
+| -------- | --------------------------------- | --------------------- |
+| Q1       | Urgency ≥ 2, Importance ≥ 2       | Do First              |
+| Q2       | Urgency &lt; 2, Importance ≥ 2    | Schedule              |
+| Q3       | Urgency ≥ 2, Importance &lt; 2    | Delegate / Streamline |
+| Q4       | Urgency &lt; 2, Importance &lt; 2 | Defer                 |
 
 ### 4.2.1 Matrix ↔ Today information architecture (V1)
 
@@ -141,13 +141,13 @@ Primary nav destination **Complete** at `/complete`. Lists only tasks with `is_c
 
 **Date filters** (segmented control; default `this_week`). Bounds use the viewer’s local calendar (pass IANA `timeZone` into the API; do not assume UTC day boundaries):
 
-| Range | Bounds |
-|-------|--------|
-| This week | Monday 00:00:00 of the current week → end of today |
-| Last week | Monday 00:00:00 → Friday 23:59:59.999 of the **previous** week (weekdays only; excludes that week’s Sat/Sun) |
-| Last month | 1st 00:00:00 → last day 23:59:59.999 of the **previous** calendar month |
-| Last year | Jan 1 00:00:00 → Dec 31 23:59:59.999 of the **previous** calendar year |
-| All time | No `completed_at` bound (still `is_completed = true` only) |
+| Range      | Bounds                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| This week  | Monday 00:00:00 of the current week → end of today                                                           |
+| Last week  | Monday 00:00:00 → Friday 23:59:59.999 of the **previous** week (weekdays only; excludes that week’s Sat/Sun) |
+| Last month | 1st 00:00:00 → last day 23:59:59.999 of the **previous** calendar month                                      |
+| Last year  | Jan 1 00:00:00 → Dec 31 23:59:59.999 of the **previous** calendar year                                       |
+| All time   | No `completed_at` bound (still `is_completed = true` only)                                                   |
 
 URL: `/complete?range=this_week|last_week|last_month|last_year|all`.
 
@@ -163,10 +163,10 @@ For tasks with **ETC &gt; 60 minutes**, surface a progress control so users can 
 
 **Settings (global):** Users choose one app-wide control in Settings:
 
-| Value | UI | Default |
-|-------|-----|---------|
-| `pie` | Quartered circle/pie | **Yes** |
-| `slider` | Percentage slider + progress bar | No |
+| Value    | UI                               | Default |
+| -------- | -------------------------------- | ------- |
+| `pie`    | Quartered circle/pie             | **Yes** |
+| `slider` | Percentage slider + progress bar | No      |
 
 Persist as `user.task_progress_control` (`'pie' | 'slider'`, default `'pie'`) via preferences oRPC (same pattern as `celebrations` / daily capacity).
 
@@ -190,12 +190,12 @@ Persist as `user.task_progress_control` (`'pie' | 'slider'`, default `'pie'`) vi
 
 Mobile-first rule: **list rows show status; precise editing happens in a large hit-target surface** (task bottom sheet). Accidental progress bumps while scrolling are worse than one extra tap.
 
-| Surface | What the user sees | Interaction |
-|---------|--------------------|-------------|
-| Today / Matrix card | Compact indicator (pie ~32–40px visual inside a **≥ 44×44px** tap target, or a thin full-width bar ~6–8px under the title) + optional `%` text | **Tap indicator → open task bottom sheet** focused on progress (does **not** advance on the card) |
-| Task bottom sheet (mobile) | Large control: pie **≥ 120px**, or full-width slider (thumb ≥ 44px, track ≥ 8px) + live bar + “Progress” label | Primary place to change `progress_percent` |
-| Desktop detail / wide Today | Inline interactive pie or slider when spacing keeps ≥ 44×44px | Same semantics as sheet |
-| Matrix density | Compact read-only indicator | Edits via detail / sheet |
+| Surface                     | What the user sees                                                                                                                             | Interaction                                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Today / Matrix card         | Compact indicator (pie ~32–40px visual inside a **≥ 44×44px** tap target, or a thin full-width bar ~6–8px under the title) + optional `%` text | **Tap indicator → open task bottom sheet** focused on progress (does **not** advance on the card) |
+| Task bottom sheet (mobile)  | Large control: pie **≥ 120px**, or full-width slider (thumb ≥ 44px, track ≥ 8px) + live bar + “Progress” label                                 | Primary place to change `progress_percent`                                                        |
+| Desktop detail / wide Today | Inline interactive pie or slider when spacing keeps ≥ 44×44px                                                                                  | Same semantics as sheet                                                                           |
+| Matrix density              | Compact read-only indicator                                                                                                                    | Edits via detail / sheet                                                                          |
 
 Keep progress controls away from the Today checkbox and DnD handle so targets do not overlap. Vertical list scroll wins over horizontal slider until the thumb is clearly captured.
 
@@ -203,13 +203,13 @@ Keep progress controls away from the Today checkbox and DnD handle so targets do
 
 Progress fills read as “approaching done,” not capacity-warning red. Avoid purple gradients and glow-heavy treatments.
 
-| Progress | Token | Suggested value | Notes |
-|----------|-------|-----------------|-------|
-| 0% | `--progress-empty` | slate/stone muted stroke | Empty track only |
-| 1–49% | `--progress-low` | `#0f766e` (deep teal) | Early work |
-| 50–74% | `--progress-mid` | `#14b8a6` (teal) | Midway |
-| 75–99% | `--progress-high` | `#d97706` (soft amber) | Nearly there (warm, not alert-red) |
-| 100% | `--progress-done` | `#16a34a` (green) | Complete; brief success pulse |
+| Progress | Token              | Suggested value          | Notes                              |
+| -------- | ------------------ | ------------------------ | ---------------------------------- |
+| 0%       | `--progress-empty` | slate/stone muted stroke | Empty track only                   |
+| 1–49%    | `--progress-low`   | `#0f766e` (deep teal)    | Early work                         |
+| 50–74%   | `--progress-mid`   | `#14b8a6` (teal)         | Midway                             |
+| 75–99%   | `--progress-high`  | `#d97706` (soft amber)   | Nearly there (warm, not alert-red) |
+| 100%     | `--progress-done`  | `#16a34a` (green)        | Complete; brief success pulse      |
 
 Track/background: low-contrast `--progress-track`. Meet WCAG contrast for any `%` label.
 
@@ -233,11 +233,11 @@ GSAP is framework-agnostic and does not require React. Per stack conventions:
 
 #### Persistence
 
-| State | Where | How |
-|-------|-------|-----|
-| Task progress | `tasks.progress_percent` | `tasks.update` (session-scoped); optimistic UI + rollback/toast; focus / `visibilitychange` revalidation |
-| Control preference | `user.task_progress_control` | preferences oRPC; default `'pie'` |
-| Animation | Ephemeral (GSAP only) | Never stored |
+| State              | Where                        | How                                                                                                      |
+| ------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Task progress      | `tasks.progress_percent`     | `tasks.update` (session-scoped); optimistic UI + rollback/toast; focus / `visibilitychange` revalidation |
+| Control preference | `user.task_progress_control` | preferences oRPC; default `'pie'`                                                                        |
+| Animation          | Ephemeral (GSAP only)        | Never stored                                                                                             |
 
 Do **not** use `localStorage` as source of truth (breaks multi-device sync).
 
@@ -246,6 +246,36 @@ Do **not** use `localStorage` as source of truth (breaks multi-device sync).
 - Accessible name e.g. “Task progress, 50 percent”.
 - Sheet pie: Enter / Space advances one quarter when focused.
 - Slider: expose `aria-valuemin` / `aria-valuemax` / `aria-valuenow`.
+
+### 4.2.4 Subtasks (V1)
+
+One-level checklist items under a parent task. Subtasks are **not** first-class Matrix/Today tasks (no own urgency, importance, ETC, project, or capacity contribution).
+
+**Attributes:** `title`, `is_completed`, `sort_order`. Auth via parent `tasks.user_id`.
+
+**Completion gating:** A parent cannot be marked complete while any subtask is incomplete. Completing or removing the last open subtask unlocks the parent. If a subtask is reopened while the parent is complete, auto-reopen the parent (`is_completed = 0`, clear `completed_at`) so the invariant always holds. Server rejects illegal completes (`CONFLICT`); UI also blocks Complete with inline helper text (not toast-only).
+
+**Detail sheet:** Primary place to add, edit title, toggle, delete, and reorder subtasks. Completed rows use muted + strikethrough.
+
+**Ordering:** Persist `sort_order`. Desktop (`sm+`): Atlaskit drag-reorder with Today-style cues. Below `sm`: explicit up/down controls (≥ 44×44px); do not rely on fine drag handles alone. Tasks-page nested rows can toggle complete but do **not** reorder.
+
+**Tasks page (`/tasks`) — nested expandable:**
+
+- Collapsed: muted mono `n/m` progress chip (`completed/total`) when `subtaskCount > 0`.
+- Expand control is a **sibling** of the open-task control (`aria-expanded` / `aria-controls`), ≥ 44×44px.
+- Expanded: indented checklist (12–16px), checkbox + truncated title only (no project/quadrant/due/ETC chips). Nested checkbox ≥ 44×44px. Tap title does not open parent detail.
+- Default collapsed on load.
+
+**Mobile / small-screen parent row:**
+
+- Title always `min-w-0` truncate; never let meta shrink it unreadably.
+- Narrow (`&lt;sm`): two-line layout — line 1 title + `n/m`; line 2 wrapping meta (due → project → quadrant → ETC). Prefer dropping quadrant and/or ETC over horizontal scroll.
+- `sm+`: single-line meta allowed with truncated title.
+- No horizontal scroll on the Tasks list; expand several parents freely (main scroll + bottom-nav padding).
+
+**Today / Matrix:** Compact wrapping `n/m` chip on cards only — no nested expand on those surfaces.
+
+**Out of scope for V1 subtasks:** nested subtasks-of-subtasks, subtask due dates/ETC/projects, capacity contribution, persisted expand state, `blocked_by_task_id`.
 
 ### 4.3 "Today's Tasks" Screen & Capacity Engine
 
@@ -270,11 +300,11 @@ Do **not** use `localStorage` as source of truth (breaks multi-device sync).
 - **Default ratings on quadrant drop** (threshold ≥ 2; medium as the safe default):
 
 | Drop target | `is_urgent` | `is_important` |
-|-------------|-------------|----------------|
-| Q1 | 2 | 2 |
-| Q2 | 1 | 2 |
-| Q3 | 2 | 1 |
-| Q4 | 1 | 1 |
+| ----------- | ----------- | -------------- |
+| Q1          | 2           | 2              |
+| Q2          | 1           | 2              |
+| Q3          | 2           | 1              |
+| Q4          | 1           | 1              |
 
 ### 4.5 Recurring Tasks
 
@@ -285,15 +315,15 @@ Do **not** use `localStorage` as source of truth (breaks multi-device sync).
 
 Not required for V1 UI. Schema may reserve fields (§6) ahead of implementation.
 
-| Feature | Intent | Stack mapping |
-|---------|--------|---------------|
-| Global Quick Capture | Cmd/Ctrl+K palette for frictionless Inbox entry without leaving the current view | Preact island → oRPC create into Inbox |
-| Focus Mode | Pomodoro-style timer that dims the UI; logs spent time vs estimate | Timer island; persist `actual_minutes` on the task |
-| Two-Way Calendar Time Blocking | Sync Today tasks with duration into Google/Apple Calendar blocks | Better Auth OAuth plugins + calendar APIs |
-| Weekly Analytics & Quadrant Review | Q2 vs Q3 completion ratio; % protected / over-capacity days; “interruptions tax” narrative (not a scoreboard); personal reflective challenges only | Read-only oRPC aggregates + chart island |
-| Protected-day rhythm | Opt-in consecutive “protected day” counter (default off); neutral “rhythm paused” on miss—no freezes/shop | `user_day_stats` + rhythm fields on `user`; mutation rollup and/or cron |
-| Personal milestones | Sparse private unlocks (first under-capacity day, first balanced 1-3-5, Q2≥Q3 week, 7/30 protected days) | `user_milestones`; Settings list + toast; no public flair |
-| Sequential Blockers & Sub-Checklists | Lightweight subtasks; “blocked by” another task; Today shows actionable work only | `blocked_by_task_id` + `subtasks`; filter blocked from Today |
+| Feature                            | Intent                                                                                                                                             | Stack mapping                                                           |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Global Quick Capture               | Cmd/Ctrl+K palette for frictionless Inbox entry without leaving the current view                                                                   | Preact island → oRPC create into Inbox                                  |
+| Focus Mode                         | Pomodoro-style timer that dims the UI; logs spent time vs estimate                                                                                 | Timer island; persist `actual_minutes` on the task                      |
+| Two-Way Calendar Time Blocking     | Sync Today tasks with duration into Google/Apple Calendar blocks                                                                                   | Better Auth OAuth plugins + calendar APIs                               |
+| Weekly Analytics & Quadrant Review | Q2 vs Q3 completion ratio; % protected / over-capacity days; “interruptions tax” narrative (not a scoreboard); personal reflective challenges only | Read-only oRPC aggregates + chart island                                |
+| Protected-day rhythm               | Opt-in consecutive “protected day” counter (default off); neutral “rhythm paused” on miss—no freezes/shop                                          | `user_day_stats` + rhythm fields on `user`; mutation rollup and/or cron |
+| Personal milestones                | Sparse private unlocks (first under-capacity day, first balanced 1-3-5, Q2≥Q3 week, 7/30 protected days)                                           | `user_milestones`; Settings list + toast; no public flair               |
+| Sequential Blockers                | “Blocked by” another task; Today shows actionable work only                                                                                        | `blocked_by_task_id`; filter blocked from Today                         |
 
 ### 4.7 Task Governance & Automation Rules (Post-V1)
 
@@ -337,19 +367,19 @@ Gamification must reinforce **finishing what fits today**, not session count or 
 
 ## 5. Technical Architecture & Tech Stack
 
-| Component | Technology | Notes |
-|-----------|------------|-------|
-| Frontend shell | Astro (SSR) | `apps/web` |
-| Interactive islands | Preact (`@astrojs/preact`) | Add when needed |
-| Styling | Tailwind CSS | Mobile-first |
-| Backend API | Hono + oRPC | `apps/server`, `packages/api` |
-| Auth | Better Auth | `packages/auth` |
-| Database | Cloudflare D1 + Drizzle | `packages/db` |
-| Avatar objects | Cloudflare R2 | Alchemy-provisioned; served via server Worker |
-| Text-to-image | Hugging Face Inference Providers | `FLUX.1-schnell` for avatar generate |
-| Hosting | Cloudflare Workers via Alchemy | `packages/infra` (web + server) |
-| Task progress motion | GSAP core (dynamic import) | Long-task pie / slider islands only (§4.2.3); not celebration fireworks |
-| Scheduled jobs (Post-V1) | Worker Cron Triggers | On `apps/server` via Alchemy |
+| Component                | Technology                       | Notes                                                                   |
+| ------------------------ | -------------------------------- | ----------------------------------------------------------------------- |
+| Frontend shell           | Astro (SSR)                      | `apps/web`                                                              |
+| Interactive islands      | Preact (`@astrojs/preact`)       | Add when needed                                                         |
+| Styling                  | Tailwind CSS                     | Mobile-first                                                            |
+| Backend API              | Hono + oRPC                      | `apps/server`, `packages/api`                                           |
+| Auth                     | Better Auth                      | `packages/auth`                                                         |
+| Database                 | Cloudflare D1 + Drizzle          | `packages/db`                                                           |
+| Avatar objects           | Cloudflare R2                    | Alchemy-provisioned; served via server Worker                           |
+| Text-to-image            | Hugging Face Inference Providers | `FLUX.1-schnell` for avatar generate                                    |
+| Hosting                  | Cloudflare Workers via Alchemy   | `packages/infra` (web + server)                                         |
+| Task progress motion     | GSAP core (dynamic import)       | Long-task pie / slider islands only (§4.2.3); not celebration fireworks |
+| Scheduled jobs (Post-V1) | Worker Cron Triggers             | On `apps/server` via Alchemy                                            |
 
 ## 6. D1 Schema Guidance (Drizzle)
 
@@ -413,7 +443,7 @@ tasks
   created_at ...
 ```
 
-### Subtasks (reserved — Post-V1)
+### Subtasks (V1)
 
 ```text
 subtasks
@@ -421,12 +451,13 @@ subtasks
   task_id TEXT NOT NULL → tasks.id ON DELETE CASCADE
   title TEXT NOT NULL
   is_completed INTEGER DEFAULT 0
+  sort_order INTEGER DEFAULT 0
   created_at ...
 ```
 
-User scoping is via the parent task’s `user_id` (always join/authorize through the parent).
+User scoping is via the parent task’s `user_id` (always join/authorize through the parent). Index: `(task_id, sort_order)`.
 
-Suggested indexes:
+Suggested indexes (tasks):
 
 - `(user_id, due_date, is_completed)`
 - `(user_id, is_urgent, is_important)`
@@ -458,13 +489,13 @@ user_milestones
 
 ## 7. Mobile-First & Non-Functional Requirements
 
-- **Touch targets:** Primary controls ≥ 44×44px (including compact long-task progress indicators and slider thumbs; §4.2.3).
-- **Bottom sheets:** Task details, recurrence, project moves, quadrant moves, and long-task progress editing on mobile use swipeable bottom sheets (not centered modals).
+- **Touch targets:** Primary controls ≥ 44×44px (including compact long-task progress indicators and slider thumbs; §4.2.3; subtask expand, nested checkboxes, and sheet reorder up/down; §4.2.4).
+- **Bottom sheets:** Task details, recurrence, project moves, quadrant moves, long-task progress editing, and subtask management on mobile use swipeable bottom sheets (not centered modals). Subtasks live in the sheet’s primary scroll — no nested scroll trap (§4.2.4).
 - **Performance budget:**
   - Initial page load: &lt; 1.2s over 4G
   - Island JS payload: &lt; 35KB gzipped (dynamic-import GSAP only inside progress islands; §4.2.3)
   - D1 query latency: &lt; 30ms median
-- **Optimistic UI:** Checkbox toggles, reorders, and `progress_percent` updates update Preact/local state immediately; rollback + toast on failure.
+- **Optimistic UI:** Checkbox toggles, reorders, subtask toggles, and `progress_percent` updates update Preact/local state immediately; rollback + toast on failure.
 
 ## 8. Agent checklist for feature work
 

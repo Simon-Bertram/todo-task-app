@@ -1,6 +1,6 @@
+import type { InferEnv } from "@alchemy.run/cloudflare";
 import {
   D1,
-  type InferEnv,
   KV,
   providers,
   R2,

@@ -1,12 +1,11 @@
 import type { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
-
-import {
-  type AuthClientError,
-  type MapAuthClientErrorOptions,
-  type MappedAuthError,
-  mapAuthClientError,
+import type {
+  AuthClientError,
+  MapAuthClientErrorOptions,
+  MappedAuthError,
 } from "./auth-errors";
+import { mapAuthClientError } from "./auth-errors";
 
 export interface UseAuthFormOptions {
   errorId: string;

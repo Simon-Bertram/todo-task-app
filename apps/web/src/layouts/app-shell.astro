@@ -5,12 +5,10 @@ import BottomNav from "../components/shell/bottom-nav.astro";
 import MobileTopBar from "../components/shell/mobile-top-bar.astro";
 import SideNav from "../components/shell/side-nav.astro";
 import { loadSessionUser } from "../lib/session.server";
+import type { Project, Task, TaskProgressControl } from "../lib/task-helpers";
 import {
   DEFAULT_DAILY_CAPACITY_MINUTES,
   getTodayPlannedMinutes,
-  type Project,
-  type Task,
-  type TaskProgressControl,
 } from "../lib/task-helpers";
 import Layout from "./layout.astro";
 

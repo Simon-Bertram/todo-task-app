@@ -23,7 +23,7 @@ import type { Project, Task, TaskProgressControl } from "./task-helpers";
 
 new CloudflareTracer().enable();
 
-const TRAILING_SLASH = /\/$/;
+const TRAILING_SLASH = /\/$/u;
 
 export interface AppBoardData {
   dailyCapacityMinutes: number;

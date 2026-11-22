@@ -81,7 +81,7 @@ async function enforceGenerateRateLimit(
     .where(eq(rateLimit.key, key));
 }
 
-const TRAILING_SLASH = /\/$/;
+const TRAILING_SLASH = /\/$/u;
 
 function mediaUrl(assetBaseUrl: string, key: string): string {
   const base = assetBaseUrl.replace(TRAILING_SLASH, "");

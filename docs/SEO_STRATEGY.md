@@ -37,16 +37,16 @@ flowchart LR
 
 Brand in UI and SEO is **PlanSage**; primary domain is **`todo.sarl`** (permanent—no dependency on `todo.fr` or other expensive ccTLDs). Always pair them in public copy (“PlanSage (todo.sarl)”) so search associates brand ↔ domain.
 
-| Asset | Location | Role |
-|-------|----------|------|
-| Landing + FAQ | [`apps/web/src/pages/index.astro`](../apps/web/src/pages/index.astro) | Only strong indexable marketing page today |
-| Meta / OG / canonical | [`apps/web/src/layouts/layout.astro`](../apps/web/src/layouts/layout.astro) | Title, description, Open Graph, Twitter, canonical |
-| JSON-LD helper | [`apps/web/src/components/seo/json-ld.astro`](../apps/web/src/components/seo/json-ld.astro) | Landing ships `WebSite`, `SoftwareApplication`, `FAQPage` |
-| robots.txt | [`apps/web/public/robots.txt`](../apps/web/public/robots.txt) | Allow `/`; disallow app routes; allow major AI crawlers; sitemap URL |
-| sitemap.xml | [`apps/web/public/sitemap.xml`](../apps/web/public/sitemap.xml) | Manual; currently only `https://todo.sarl/` |
-| llms.txt | [`apps/web/public/llms.txt`](../apps/web/public/llms.txt) | AEO / LLM citation summary |
-| Astro `site` | [`apps/web/astro.config.mjs`](../apps/web/astro.config.mjs) | `https://todo.sarl`, `output: "server"` |
-| App shell | [`apps/web/src/layouts/app-shell.astro`](../apps/web/src/layouts/app-shell.astro) | Authenticated boards: `noindex, nofollow` |
+| Asset                 | Location                                                                                    | Role                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Landing + FAQ         | [`apps/web/src/pages/index.astro`](../apps/web/src/pages/index.astro)                       | Only strong indexable marketing page today                           |
+| Meta / OG / canonical | [`apps/web/src/layouts/layout.astro`](../apps/web/src/layouts/layout.astro)                 | Title, description, Open Graph, Twitter, canonical                   |
+| JSON-LD helper        | [`apps/web/src/components/seo/json-ld.astro`](../apps/web/src/components/seo/json-ld.astro) | Landing ships `WebSite`, `SoftwareApplication`, `FAQPage`            |
+| robots.txt            | [`apps/web/public/robots.txt`](../apps/web/public/robots.txt)                               | Allow `/`; disallow app routes; allow major AI crawlers; sitemap URL |
+| sitemap.xml           | [`apps/web/public/sitemap.xml`](../apps/web/public/sitemap.xml)                             | Manual; currently only `https://todo.sarl/`                          |
+| llms.txt              | [`apps/web/public/llms.txt`](../apps/web/public/llms.txt)                                   | AEO / LLM citation summary                                           |
+| Astro `site`          | [`apps/web/astro.config.mjs`](../apps/web/astro.config.mjs)                                 | `https://todo.sarl`, `output: "server"`                              |
+| App shell             | [`apps/web/src/layouts/app-shell.astro`](../apps/web/src/layouts/app-shell.astro)           | Authenticated boards: `noindex, nofollow`                            |
 
 Auth and app routes (`/today`, `/matrix`, `/tasks`, `/projects`, `/complete`, `/settings`, `/dashboard`, `/onboarding`, auth pages) are disallowed and/or `noindex`. Public crawlable product content is effectively **`/` only**. There is no blog, docs site, about, privacy, or terms page yet. Layout uses `lang="en"`; no i18n framework yet.
 
@@ -63,13 +63,13 @@ Landing document title target (when changing code): **`PlanSage — Get tasks do
 
 ### Cluster B — Differentiation long-tails (core growth engine)
 
-| Intent | Example queries | Page type |
-|--------|-----------------|-----------|
-| Eisenhower + software | “eisenhower matrix todo app”, “urgency importance task manager” | Feature / guide |
-| Capacity / overcommit | “time budgeted daily planner”, “daily task capacity limit”, “don’t overcommit todo list” | Feature / guide |
-| 1-3-5 method | “1-3-5 rule productivity app”, “1 3 5 task method” | Guide |
-| Persona | “todo app for indie hackers”, “task manager for overloaded professionals” | Landing sections / persona pages |
-| Problem | “endless checklist overwhelm”, “too many tasks not enough time” | Problem → product |
+| Intent                | Example queries                                                                          | Page type                        |
+| --------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| Eisenhower + software | “eisenhower matrix todo app”, “urgency importance task manager”                          | Feature / guide                  |
+| Capacity / overcommit | “time budgeted daily planner”, “daily task capacity limit”, “don’t overcommit todo list” | Feature / guide                  |
+| 1-3-5 method          | “1-3-5 rule productivity app”, “1 3 5 task method”                                       | Guide                            |
+| Persona               | “todo app for indie hackers”, “task manager for overloaded professionals”                | Landing sections / persona pages |
+| Problem               | “endless checklist overwhelm”, “too many tasks not enough time”                          | Problem → product                |
 
 ### Cluster C — Comparison / alternatives (high commercial intent)
 
@@ -102,16 +102,16 @@ Keep the existing landing SEO stack; close gaps that block trust and indexing as
 
 One indexable URL cannot compete. Ship a small, high-quality public content hub on the same origin (Astro content collection or MDX under `apps/web`).
 
-| URL | Purpose |
-|-----|---------|
-| `/` | Conversion + brand + product summary |
-| `/features/matrix` | Eisenhower / urgency–importance |
-| `/features/today` | Capacity budget, workload bar, 1-3-5 |
-| `/guides/eisenhower-matrix` | Educational pillar (method → how PlanSage applies it) |
-| `/guides/1-3-5-rule` | Educational pillar |
-| `/guides/time-budgeted-day` | Educational pillar |
-| `/compare/...` | 2–3 honest alternative pages |
-| `/blog/...` | Only if cadence is sustainable (≤2 strong posts/month beats 20 thin ones) |
+| URL                         | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `/`                         | Conversion + brand + product summary                                      |
+| `/features/matrix`          | Eisenhower / urgency–importance                                           |
+| `/features/today`           | Capacity budget, workload bar, 1-3-5                                      |
+| `/guides/eisenhower-matrix` | Educational pillar (method → how PlanSage applies it)                     |
+| `/guides/1-3-5-rule`        | Educational pillar                                                        |
+| `/guides/time-budgeted-day` | Educational pillar                                                        |
+| `/compare/...`              | 2–3 honest alternative pages                                              |
+| `/blog/...`                 | Only if cadence is sustainable (≤2 strong posts/month beats 20 thin ones) |
 
 **Content standards (SEO + AEO + EEAT)**
 
@@ -142,12 +142,12 @@ Avoid link schemes, PBNs, and mass guest-post networks.
 
 ## 5. Measurement
 
-| Horizon | KPI |
-|---------|-----|
-| 30 days | Search Console verified; brand query impressions; 0 critical coverage errors |
-| 90 days | Top-10 for ≥5 Cluster B long-tails; landing organic CTR trending up |
-| 6 months | Top-3 for brand + ≥3 differentiation queries; organic signups attributed in analytics |
-| 12 months | Stable Cluster B ownership; footholds in Cluster C; optional limited Cluster D tests |
+| Horizon   | KPI                                                                                   |
+| --------- | ------------------------------------------------------------------------------------- |
+| 30 days   | Search Console verified; brand query impressions; 0 critical coverage errors          |
+| 90 days   | Top-10 for ≥5 Cluster B long-tails; landing organic CTR trending up                   |
+| 6 months  | Top-3 for brand + ≥3 differentiation queries; organic signups attributed in analytics |
+| 12 months | Stable Cluster B ownership; footholds in Cluster C; optional limited Cluster D tests  |
 
 ---
 
@@ -155,7 +155,7 @@ Avoid link schemes, PBNs, and mass guest-post networks.
 
 ### What `.sarl` is (and is not)
 
-- gTLD referring to *Société à responsabilité limitée*; open registration; **not** a French ccTLD like `.fr`
+- gTLD referring to _Société à responsabilité limitée_; open registration; **not** a French ccTLD like `.fr`
 - Google treats new gTLDs like `.com`—**no ranking bonus** for the TLD string
 - Does **not** auto-geotarget France; Search Console country targeting is deprecated—locale comes from language, `hreflang`, URLs, and local signals
 - For francophones, `todo.sarl` can aid **CTR and trust** (todo + familiar business form), not algorithmic TLD juice
@@ -163,13 +163,13 @@ Avoid link schemes, PBNs, and mass guest-post networks.
 
 ### Benefits of French
 
-| Benefit | Strength | Notes |
-|---------|----------|--------|
-| French long-tail queries | High | e.g. *matrice d’Eisenhower application*, *gestionnaire de tâches capacité*, *méthode 1-3-5* |
-| Francophone markets | Medium–High | FR, BE, CH, CA-QC, parts of Africa—language targeting fits a gTLD |
-| Niche FR content scarcity | Medium | Eisenhower + daily capacity angle underserved in French |
-| Aligns with `.sarl` brand cue | Medium | Domain + FR copy reinforce each other |
-| Full in-app i18n | Lower near-term ROI | Large cost; does not unlock ranking if marketing stays EN-only |
+| Benefit                       | Strength            | Notes                                                                                       |
+| ----------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| French long-tail queries      | High                | e.g. _matrice d’Eisenhower application_, _gestionnaire de tâches capacité_, _méthode 1-3-5_ |
+| Francophone markets           | Medium–High         | FR, BE, CH, CA-QC, parts of Africa—language targeting fits a gTLD                           |
+| Niche FR content scarcity     | Medium              | Eisenhower + daily capacity angle underserved in French                                     |
+| Aligns with `.sarl` brand cue | Medium              | Domain + FR copy reinforce each other                                                       |
+| Full in-app i18n              | Lower near-term ROI | Large cost; does not unlock ranking if marketing stays EN-only                              |
 
 ### Chosen approach
 
@@ -222,11 +222,11 @@ Stay on the current Better-T-Stack / Astro surface (`apps/web`). Matrix / Today 
 
 ## 9. Related docs and code
 
-| Resource | Path |
-|----------|------|
-| Product requirements | [PRD.md](./PRD.md) |
-| Perf / CWV harness | [PERF_TESTING.md](./PERF_TESTING.md) |
-| Agent routing | [AGENTS.md](../AGENTS.md) |
-| Landing | [`apps/web/src/pages/index.astro`](../apps/web/src/pages/index.astro) |
-| Layout SEO | [`apps/web/src/layouts/layout.astro`](../apps/web/src/layouts/layout.astro) |
-| robots / sitemap / llms.txt | [`apps/web/public/`](../apps/web/public/) |
+| Resource                    | Path                                                                        |
+| --------------------------- | --------------------------------------------------------------------------- |
+| Product requirements        | [PRD.md](./PRD.md)                                                          |
+| Perf / CWV harness          | [PERF_TESTING.md](./PERF_TESTING.md)                                        |
+| Agent routing               | [AGENTS.md](../AGENTS.md)                                                   |
+| Landing                     | [`apps/web/src/pages/index.astro`](../apps/web/src/pages/index.astro)       |
+| Layout SEO                  | [`apps/web/src/layouts/layout.astro`](../apps/web/src/layouts/layout.astro) |
+| robots / sitemap / llms.txt | [`apps/web/public/`](../apps/web/public/)                                   |

@@ -8,12 +8,12 @@ Package manager: **pnpm@12** (see root `packageManager`). Alignment tool: **pnpm
 
 ## Source of truth
 
-| Mechanism | Where | Role |
-|-----------|--------|------|
-| `catalog:` | [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) → `catalog:` | Single declared version for shared / family deps |
-| `"pkg": "catalog:"` | Each workspace `package.json` | Consumer opts into the catalog version |
-| `workspace:*` | Internal `@todo-task-app/*` | Always use workspace protocol for monorepo packages |
-| Root-owned | Root [`package.json`](../package.json) | Tooling only used at the root (`@biomejs/biome`, `ultracite`, `turbo`) |
+| Mechanism           | Where                                                        | Role                                                                   |
+| ------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `catalog:`          | [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) → `catalog:` | Single declared version for shared / family deps                       |
+| `"pkg": "catalog:"` | Each workspace `package.json`                                | Consumer opts into the catalog version                                 |
+| `workspace:*`       | Internal `@todo-task-app/*`                                  | Always use workspace protocol for monorepo packages                    |
+| Root-owned          | Root [`package.json`](../package.json)                       | Tooling only used at the root (`@biomejs/biome`, `ultracite`, `turbo`) |
 
 Never pin a second literal version of a cataloged package in a workspace `package.json`. That reintroduces **skew**: the same dependency (or members of a coupled family) resolving to different versions across workspace packages. The catalog exists so everyone shares one declared version via `"catalog:"`; a local literal bypasses that and can leave peers half-satisfied or duplicate trees in the lockfile.
 
@@ -47,12 +47,12 @@ Root-only tooling (`@biomejs/biome`, `ultracite`, `turbo`) stays in the root `pa
 
 ## Pinning policy
 
-| Kind | Specifier style | Examples |
-|------|-----------------|----------|
-| Betas / RCs / fragile peers | **Exact** (`1.2.3` or `2.0.0-beta.46`) | `@orpc/*`, Alchemy, `drizzle-orm` / `drizzle-kit`, Effect |
-| Stable shared libs | Exact or caret as already cataloged | `better-auth`, `varlock` |
-| Stable float-safe tooling | Caret in catalog | `typescript`, `@types/node`, `zod`, `vitest`, `@cloudflare/workers-types` |
-| Local app libs | Caret in that package only | `astro`, `hono`, `preact` |
+| Kind                        | Specifier style                        | Examples                                                                  |
+| --------------------------- | -------------------------------------- | ------------------------------------------------------------------------- |
+| Betas / RCs / fragile peers | **Exact** (`1.2.3` or `2.0.0-beta.46`) | `@orpc/*`, Alchemy, `drizzle-orm` / `drizzle-kit`, Effect                 |
+| Stable shared libs          | Exact or caret as already cataloged    | `better-auth`, `varlock`                                                  |
+| Stable float-safe tooling   | Caret in catalog                       | `typescript`, `@types/node`, `zod`, `vitest`, `@cloudflare/workers-types` |
+| Local app libs              | Caret in that package only             | `astro`, `hono`, `preact`                                                 |
 
 When bumping a beta family, bump **every** catalog entry in that family in the same change.
 
@@ -60,10 +60,10 @@ When bumping a beta family, bump **every** catalog entry in that family in the s
 
 `pnpm outdated -r` may still report newer majors for these cataloged packages. Do **not** bump them in a routine outdated pass—treat each as its own migration PR:
 
-| Package | Hold on | Reason |
-|---------|---------|--------|
-| `typescript` | `^6.0.3` (6.x) | TypeScript 7 is a major language/tooling shift |
-| `vitest` | `^4.1.12` (4.x) | Vitest 5 is a major with stricter Node engines and ecosystem churn |
+| Package      | Hold on         | Reason                                                             |
+| ------------ | --------------- | ------------------------------------------------------------------ |
+| `typescript` | `^6.0.3` (6.x)  | TypeScript 7 is a major language/tooling shift                     |
+| `vitest`     | `^4.1.12` (4.x) | Vitest 5 is a major with stricter Node engines and ecosystem churn |
 
 ### Overrides (rare)
 
@@ -120,11 +120,11 @@ Examples: `--filter web`, `--filter server`, `--filter @todo-task-app/db`.
 
 Run these after any dependency change and periodically:
 
-| Check | Command | Expect |
-|-------|---------|--------|
-| Peer satisfaction | `pnpm peers check` | No unmet peers for workspace packages |
-| Outdated survey | `pnpm outdated -r` | Review; do not blindly bump betas |
-| Duplicate trees | Inspect `pnpm-lock.yaml` / install output | One resolved version per cataloged family |
+| Check             | Command                                   | Expect                                    |
+| ----------------- | ----------------------------------------- | ----------------------------------------- |
+| Peer satisfaction | `pnpm peers check`                        | No unmet peers for workspace packages     |
+| Outdated survey   | `pnpm outdated -r`                        | Review; do not blindly bump betas         |
+| Duplicate trees   | Inspect `pnpm-lock.yaml` / install output | One resolved version per cataloged family |
 
 ### When to investigate duplicate lockfile trees
 

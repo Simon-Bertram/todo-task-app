@@ -1,11 +1,6 @@
 import { defineRelationsPart, sql } from "drizzle-orm";
-import {
-  type AnySQLiteColumn,
-  index,
-  integer,
-  sqliteTable,
-  text,
-} from "drizzle-orm/sqlite-core";
+import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import { user } from "./auth";
 import { projects } from "./projects";

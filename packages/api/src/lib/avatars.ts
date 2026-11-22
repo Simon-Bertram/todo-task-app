@@ -21,9 +21,9 @@ export const AVATAR_GALLERY_PATHS = [
 export type AvatarGalleryPath = (typeof AVATAR_GALLERY_PATHS)[number];
 
 const GALLERY_SET = new Set<string>(AVATAR_GALLERY_PATHS);
-const WHITESPACE = /\s+/g;
-const NAME_PARTS = /\s+/;
-const OWNED_AVATAR_FILE = /^[0-9a-f-]{36}\.png$/i;
+const WHITESPACE = /\s+/gu;
+const NAME_PARTS = /\s+/u;
+const OWNED_AVATAR_FILE = /^[0-9a-f-]{36}\.png$/iu;
 
 export function isAllowedGalleryPath(path: string): path is AvatarGalleryPath {
   return GALLERY_SET.has(path);

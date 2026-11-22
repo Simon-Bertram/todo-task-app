@@ -14,7 +14,7 @@ const migrationsRoot = join(
   "migrations"
 );
 
-const STATEMENT_BREAKPOINT = /-->\s*statement-breakpoint\s*/;
+const STATEMENT_BREAKPOINT = /-->\s*statement-breakpoint\s*/u;
 
 function loadMigrationStatements(): string[] {
   const folders = readdirSync(migrationsRoot)

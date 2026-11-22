@@ -15,14 +15,14 @@ This skill targets oRPC v2. Pretrained oRPC knowledge describes v1 and is often 
 A procedure defaults to `POST` with a path derived from the router structure (`planet.create` becomes `POST /planet/create`). Override with `openapi` metadata, on server (`os`) and contract (`oc`) builders alike:
 
 ```ts
-import { openapi } from '@orpc/openapi'
-import { os } from '@orpc/server'
-import { z } from 'zod'
+import { openapi } from "@orpc/openapi";
+import { os } from "@orpc/server";
+import { z } from "zod";
 
 const getPlanet = os
-  .meta(openapi({ method: 'GET', path: '/planets/{id}', successStatus: 200 }))
+  .meta(openapi({ method: "GET", path: "/planets/{id}", successStatus: 200 }))
   .input(z.object({ id: z.string() }))
-  .handler(async ({ input }) => ({ id: input.id, name: 'Earth' }))
+  .handler(async ({ input }) => ({ id: input.id, name: "Earth" }));
 ```
 
 - Path params: put `{id}` in `path` and the same key as a required field in the input schema. Use `{+path}` for catch-all segments that may contain `/`.
@@ -33,9 +33,11 @@ const getPlanet = os
 For direct routing without `.meta(openapi(...))`, enable the `.route` extension with a side-effect import in a module that always runs at startup (base builder file or server entry):
 
 ```ts
-import '@orpc/openapi/extensions/route'
+import "@orpc/openapi/extensions/route";
 
-const ping = os.route({ method: 'GET', path: '/ping' }).handler(async () => 'pong')
+const ping = os
+  .route({ method: "GET", path: "/ping" })
+  .handler(async () => "pong");
 ```
 
 ## Input and output mapping
@@ -57,19 +59,24 @@ Override decoding per parameter with `paramsStyles` (`'primitive'`, `'comma-deli
 Import from the adapter subpath (`@orpc/openapi/fetch`, `@orpc/openapi/node`, ...):
 
 ```ts
-import { SmartCoercionHandlerPlugin } from '@orpc/json-schema'
-import { OpenAPIHandler } from '@orpc/openapi/fetch'
-import { ZodToJsonSchemaConverter } from '@orpc/zod'
+import { SmartCoercionHandlerPlugin } from "@orpc/json-schema";
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
+import { ZodToJsonSchemaConverter } from "@orpc/zod";
 
 const handler = new OpenAPIHandler(router, {
   plugins: [
-    new SmartCoercionHandlerPlugin({ converters: [new ZodToJsonSchemaConverter()] }),
+    new SmartCoercionHandlerPlugin({
+      converters: [new ZodToJsonSchemaConverter()],
+    }),
   ],
-})
+});
 
 export async function fetch(request: Request): Promise<Response> {
-  const { matched, response } = await handler.handle(request, { prefix: '/api', context: {} })
-  return matched ? response : new Response('Not Found', { status: 404 })
+  const { matched, response } = await handler.handle(request, {
+    prefix: "/api",
+    context: {},
+  });
+  return matched ? response : new Response("Not Found", { status: 404 });
 }
 ```
 
@@ -84,20 +91,21 @@ Other handler options: `interceptors`/`routingInterceptors`/`clientInterceptors`
 `OpenAPILink` calls an OpenAPI-shaped oRPC API (or any spec-compliant server) through a typesafe client. It needs the contract or router type to know each procedure's route:
 
 ```ts
-import type { RouterContractClient } from '@orpc/contract'
-import type { JsonifiedClient } from '@orpc/openapi'
-import { createORPCClient } from '@orpc/client'
-import { OpenAPILink } from '@orpc/openapi/fetch'
+import type { RouterContractClient } from "@orpc/contract";
+import type { JsonifiedClient } from "@orpc/openapi";
+import { createORPCClient } from "@orpc/client";
+import { OpenAPILink } from "@orpc/openapi/fetch";
 
 const link = new OpenAPILink(contract, {
-  origin: 'https://api.example.com',
-  url: '/api',
+  origin: "https://api.example.com",
+  url: "/api",
   headers: ({ context }) => ({
     authorization: context?.token ? `Bearer ${context.token}` : undefined,
   }),
-})
+});
 
-const client: JsonifiedClient<RouterContractClient<typeof contract>> = createORPCClient(link)
+const client: JsonifiedClient<RouterContractClient<typeof contract>> =
+  createORPCClient(link);
 ```
 
 With a router instead of a contract, type the client as `JsonifiedClient<RouterClient<typeof router>>` (`RouterClient` from `@orpc/server`). `JsonifiedClient` exists because OpenAPI serialization is one-way: a `Date` returns as a string. Add `SmartCoercionLinkPlugin` from `@orpc/json-schema` (same converters, first argument is the contract) to restore native types on responses, then drop the `JsonifiedClient` wrapper from the client type.
@@ -109,24 +117,27 @@ To ship a contract to clients without bundling server code, minify it to JSON an
 `OpenAPIGenerator` turns a router or contract into an OpenAPI 3.2 document (pass any `3.1.x` or `3.0.x` `version` for tools that stop at an older version; `QUERY` procedures need 3.2). `OpenAPIReferenceHandlerPlugin` serves the spec at `/spec.json` and a Scalar UI at `/` under the handler prefix (change with `specPath`/`docsPath`, or set `provider: 'swagger'` for Swagger UI):
 
 ```ts
-import { OpenAPIGenerator } from '@orpc/openapi'
-import { OpenAPIReferenceHandlerPlugin } from '@orpc/openapi/plugins'
-import { ZodToJsonSchemaConverter } from '@orpc/zod'
+import { OpenAPIGenerator } from "@orpc/openapi";
+import { OpenAPIReferenceHandlerPlugin } from "@orpc/openapi/plugins";
+import { ZodToJsonSchemaConverter } from "@orpc/zod";
 
-const generator = new OpenAPIGenerator({ converters: [new ZodToJsonSchemaConverter()] })
+const generator = new OpenAPIGenerator({
+  converters: [new ZodToJsonSchemaConverter()],
+});
 
 const handler = new OpenAPIHandler(router, {
   plugins: [
     new OpenAPIReferenceHandlerPlugin({
-      spec: () => generator.generate(router, {
-        base: {
-          info: { title: 'Planet API', version: '1.0.0' },
-          servers: [{ url: '/api' }], // absolute URL in production
-        },
-      }),
+      spec: () =>
+        generator.generate(router, {
+          base: {
+            info: { title: "Planet API", version: "1.0.0" },
+            servers: [{ url: "/api" }], // absolute URL in production
+          },
+        }),
     }),
   ],
-})
+});
 ```
 
 Enrich the document through `openapi` metadata: `operationId`, `summary`, `description`, `tags`, `successDescription`, and a `spec` callback that receives the generated operation object and returns an extended one (security requirements, extra responses). Write `spec` and `base` as OpenAPI 3.2 objects even when generating 3.1 or 3.0; the generator downgrades the whole document. Converters also exist for Valibot (`@orpc/valibot`) and ArkType (`@orpc/arktype`); schemas without a matching converter fall back to Standard JSON Schema conversion.

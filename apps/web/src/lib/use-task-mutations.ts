@@ -1,6 +1,7 @@
 import { useCallback } from "preact/hooks";
 import { orpc } from "./orpc";
-import { defaultRatingsForQuadrant, type QuadrantId } from "./quadrant";
+import type { QuadrantId } from "./quadrant";
+import { defaultRatingsForQuadrant } from "./quadrant";
 import type { Task } from "./task-helpers";
 import { showToast } from "./toast";
 

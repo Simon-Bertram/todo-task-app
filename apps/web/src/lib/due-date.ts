@@ -8,7 +8,7 @@ export type DueReminderStatus =
 export const DUE_SOON_DAYS = 2;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/u;
 
 export function parseDateOnly(value: string): Date | null {
   if (!DATE_ONLY.test(value)) {

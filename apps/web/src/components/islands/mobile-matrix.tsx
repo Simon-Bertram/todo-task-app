@@ -1,17 +1,12 @@
 import { useCallback, useMemo, useState } from "preact/hooks";
-import {
-  formatMinutes,
-  getQuadrant,
-  QUADRANT_META,
-  type QuadrantId,
-} from "../../lib/quadrant";
-import {
-  getLocalDateString,
-  isLongTask,
-  type Project,
-  type Task,
-  type TaskProgressControl,
+import type { QuadrantId } from "../../lib/quadrant";
+import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
 } from "../../lib/task-helpers";
+import { getLocalDateString, isLongTask } from "../../lib/task-helpers";
 import {
   useMoveTaskToQuadrant,
   useOptimisticTaskUpdate,

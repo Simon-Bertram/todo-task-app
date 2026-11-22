@@ -1,5 +1,5 @@
-const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
-const EVERY_DAYS = /^EVERY:(\d+)D$/;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/u;
+const EVERY_DAYS = /^EVERY:(\d+)D$/u;
 
 function parseDateOnly(value: string): Date | null {
   if (!DATE_ONLY.test(value)) {

@@ -63,11 +63,11 @@ If you see that and still get `Unauthorized: Authentication error`, the stored t
 
 ### Production hosts (`todo.sarl`)
 
-| Role | Hostname |
-|------|----------|
-| Web (Astro) | `https://todo.sarl` (`www.todo.sarl` → 301) |
-| API / Better Auth | `https://api.todo.sarl` |
-| Auth email From (Resend) | `PlanSage <noreply@mail.todo.sarl>` |
+| Role                     | Hostname                                    |
+| ------------------------ | ------------------------------------------- |
+| Web (Astro)              | `https://todo.sarl` (`www.todo.sarl` → 301) |
+| API / Better Auth        | `https://api.todo.sarl`                     |
+| Auth email From (Resend) | `PlanSage <noreply@mail.todo.sarl>`         |
 
 Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/infra/alchemy.run.ts) (`domain` + `workersDev: false`). Deploy attaches them once the zone exists.
 
@@ -90,18 +90,17 @@ Auth sets session cookies with `Domain=.todo.sarl` so the apex web Worker can fo
 
 ### Resend domain (`mail.todo.sarl`)
 
-
 Auth verification and password-reset emails go through Resend (not Fastmail). Fastmail is optional and only for a personal `@todo.sarl` inbox.
 
 1. Domain `mail.todo.sarl` is registered in Resend (or add it under [Domains](https://resend.com/domains)).
 2. In the Cloudflare DNS UI for `todo.sarl`, add the records from the Resend domain page for `mail.todo.sarl` (DNS Write). Current Resend values (re-check the dashboard if rotated):
 
-| Type | Name | Content / priority |
-|------|------|--------------------|
-| TXT | `resend._domainkey.mail` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrEf72ZoML4BgNA0lHE6sCnVRYo697oNsCMmMzUm2WyC7nLLtgPxhlod5i8TDU7IfpGjsCXHZVqtzHt53Z8ZWbpHKERC1ikDDKuIOoi10TwJSbOOZ18DQZsauJi8w+WdO88vh5LzB932admCC14x5n+tTTMgj2xiPPxXBVu1JL0QIDAQAB` |
-| MX | `send.mail` | `feedback-smtp.us-east-1.amazonses.com` (priority `10`) |
-| TXT | `send.mail` | `v=spf1 include:amazonses.com ~all` |
-| CNAME | `rsend.mail` | `send.forge.rmta.net` (**DNS only**, not proxied) |
+| Type  | Name                     | Content / priority                                                                                                                                                                                                           |
+| ----- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TXT   | `resend._domainkey.mail` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrEf72ZoML4BgNA0lHE6sCnVRYo697oNsCMmMzUm2WyC7nLLtgPxhlod5i8TDU7IfpGjsCXHZVqtzHt53Z8ZWbpHKERC1ikDDKuIOoi10TwJSbOOZ18DQZsauJi8w+WdO88vh5LzB932admCC14x5n+tTTMgj2xiPPxXBVu1JL0QIDAQAB` |
+| MX    | `send.mail`              | `feedback-smtp.us-east-1.amazonses.com` (priority `10`)                                                                                                                                                                      |
+| TXT   | `send.mail`              | `v=spf1 include:amazonses.com ~all`                                                                                                                                                                                          |
+| CNAME | `rsend.mail`             | `send.forge.rmta.net` (**DNS only**, not proxied)                                                                                                                                                                            |
 
 Keep apex MX free unless you intentionally add a mailbox provider (Fastmail is optional and unrelated to auth sends).
 
@@ -198,11 +197,11 @@ You should see Cloudflare connected with a redacted token and the correct `accou
 
 Alchemy loads deployment inputs via `varlock/auto-load` in [`packages/infra/alchemy.run.ts`](../packages/infra/alchemy.run.ts). Worker secrets/config use Effect `Config` bindings (see [Secrets & env](https://alchemy.run/cloudflare/security/secrets-env/)).
 
-| File | Required for local |
-|------|--------------------|
-| [`apps/server/.env`](../apps/server/.env) | `BETTER_AUTH_SECRET` (≥32 chars), `CORS_ORIGIN=http://localhost:4321`, `BETTER_AUTH_URL=http://localhost:3000`, `RESEND_API_KEY`, `EMAIL_FROM` (use `PlanSage <noreply@mail.todo.sarl>` once Resend is verified; `onboarding@resend.dev` only for self-inbox tests) |
-| [`apps/web/.env`](../apps/web/.env) | `PUBLIC_SERVER_URL=http://localhost:3000` |
-| [`packages/infra/.env.schema`](../packages/infra/.env.schema) | Imports server secrets including Resend; optional `ALCHEMY_PASSWORD` |
+| File                                                          | Required for local                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`apps/server/.env`](../apps/server/.env)                     | `BETTER_AUTH_SECRET` (≥32 chars), `CORS_ORIGIN=http://localhost:4321`, `BETTER_AUTH_URL=http://localhost:3000`, `RESEND_API_KEY`, `EMAIL_FROM` (use `PlanSage <noreply@mail.todo.sarl>` once Resend is verified; `onboarding@resend.dev` only for self-inbox tests) |
+| [`apps/web/.env`](../apps/web/.env)                           | `PUBLIC_SERVER_URL=http://localhost:3000`                                                                                                                                                                                                                           |
+| [`packages/infra/.env.schema`](../packages/infra/.env.schema) | Imports server secrets including Resend; optional `ALCHEMY_PASSWORD`                                                                                                                                                                                                |
 
 [`packages/infra/.env.schema`](../packages/infra/.env.schema) imports `NODE_ENV`, `CORS_ORIGIN`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, and `EMAIL_FROM` from the server app. You usually do not need a separate `packages/infra/.env` for local if those values exist under `apps/server/.env`.
 
@@ -243,15 +242,15 @@ If the working tree uses `localState()` instead, Alchemy writes stack state unde
 
 Scripts in [`packages/infra/package.json`](../packages/infra/package.json):
 
-| Command | What it does |
-|---------|----------------|
-| `pnpm exec alchemy profile show` | Inspect linked providers (redacted) |
-| `pnpm exec alchemy profile edit --add Cloudflare …` | First-time Cloudflare link only |
-| `pnpm exec alchemy profile edit --reconfigure Cloudflare …` | Replace Cloudflare credentials when already connected |
-| `pnpm exec alchemy state bootstrap --backend cloudflare` | Provision/adopt remote state store |
-| `pnpm run dev` | `alchemy dev` — local Workers + cloud resources; stage defaults to `dev_$USER` |
-| `pnpm run deploy` | `alchemy deploy` — default stage `live_$USER` |
-| `pnpm run destroy` | `alchemy destroy` — tear down a stage |
+| Command                                                     | What it does                                                                   |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `pnpm exec alchemy profile show`                            | Inspect linked providers (redacted)                                            |
+| `pnpm exec alchemy profile edit --add Cloudflare …`         | First-time Cloudflare link only                                                |
+| `pnpm exec alchemy profile edit --reconfigure Cloudflare …` | Replace Cloudflare credentials when already connected                          |
+| `pnpm exec alchemy state bootstrap --backend cloudflare`    | Provision/adopt remote state store                                             |
+| `pnpm run dev`                                              | `alchemy dev` — local Workers + cloud resources; stage defaults to `dev_$USER` |
+| `pnpm run deploy`                                           | `alchemy deploy` — default stage `live_$USER`                                  |
+| `pnpm run destroy`                                          | `alchemy destroy` — tear down a stage                                          |
 
 Production deploy example:
 
@@ -272,14 +271,14 @@ Then open http://localhost:4321 (web) and http://localhost:3000 (API).
 
 ## 6. Recovery checklist
 
-| Symptom | What to do |
-|---------|------------|
-| `Unknown subcommand "configure"` | Use `alchemy profile`, not `alchemy configure` |
-| `Provider 'Cloudflare' is already connected` | Use `--reconfigure Cloudflare`, not `--add` |
-| `Unauthorized: Authentication error` while deploying `alchemy-state-store` | Reconfigure with a valid, sufficiently scoped token + correct account id |
-| `alchemy profile show` shows connected but `dev` still Unauthorized | Stored token is bad; reconfigure or set both env vars |
-| D1 HTTP migrate from `packages/db` asks for account/database/token | Skip for day-to-day; Alchemy applies migrations from the path in `alchemy.run.ts` during `dev`/`deploy` |
-| Sign-in succeeds but `/today` redirects to `/login` | Session cookie not shared with apex: redeploy server, clear `todo.sarl` / `api.todo.sarl` cookies, sign in again; cookie must use `Domain=.todo.sarl` |
+| Symptom                                                                                         | What to do                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Unknown subcommand "configure"`                                                                | Use `alchemy profile`, not `alchemy configure`                                                                                                                                                                                                                        |
+| `Provider 'Cloudflare' is already connected`                                                    | Use `--reconfigure Cloudflare`, not `--add`                                                                                                                                                                                                                           |
+| `Unauthorized: Authentication error` while deploying `alchemy-state-store`                      | Reconfigure with a valid, sufficiently scoped token + correct account id                                                                                                                                                                                              |
+| `alchemy profile show` shows connected but `dev` still Unauthorized                             | Stored token is bad; reconfigure or set both env vars                                                                                                                                                                                                                 |
+| D1 HTTP migrate from `packages/db` asks for account/database/token                              | Skip for day-to-day; Alchemy applies migrations from the path in `alchemy.run.ts` during `dev`/`deploy`                                                                                                                                                               |
+| Sign-in succeeds but `/today` redirects to `/login`                                             | Session cookie not shared with apex: redeploy server, clear `todo.sarl` / `api.todo.sarl` cookies, sign in again; cookie must use `Domain=.todo.sarl`                                                                                                                 |
 | Onboarding loads but avatar save/generate returns 401; `get-session` from the browser is `null` | Stale **HostOnly** `__Secure-better-auth.session_token` on `api.todo.sarl` shadowing `Domain=.todo.sarl`. Delete the HostOnly cookie (or sign in after deploy so auth responses expire it). See [CROSS_SUBDOMAIN_AUTH_COOKIES.md](./CROSS_SUBDOMAIN_AUTH_COOKIES.md). |
 
 After first production deploy, set `CORS_ORIGIN=https://todo.sarl` (and confirmed Resend `EMAIL_FROM`) for the deploy stage and deploy again (see [README](../README.md)).

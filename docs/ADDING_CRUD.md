@@ -8,14 +8,14 @@ Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). 
 
 ## 1. Stack map
 
-| Package / app | Owns | CRUD role |
-|---------------|------|-----------|
-| `packages/db` | Drizzle schema, relations, D1 migrations | Tables, FKs, indexes |
-| `packages/api` | oRPC routers + Zod | Create / list / update / delete procedures |
-| `apps/server` | Hono Worker: Better Auth + `RPCHandler` at `/rpc` | Usually **unchanged** when you only add routers |
-| `apps/web` | Astro SSR + Preact islands | Load data, forms, mutations |
-| `packages/auth` | Better Auth | Session; do not invent a parallel users table |
-| `packages/infra` | Alchemy (D1 + Workers) | Only for new Cloudflare resources |
+| Package / app    | Owns                                              | CRUD role                                       |
+| ---------------- | ------------------------------------------------- | ----------------------------------------------- |
+| `packages/db`    | Drizzle schema, relations, D1 migrations          | Tables, FKs, indexes                            |
+| `packages/api`   | oRPC routers + Zod                                | Create / list / update / delete procedures      |
+| `apps/server`    | Hono Worker: Better Auth + `RPCHandler` at `/rpc` | Usually **unchanged** when you only add routers |
+| `apps/web`       | Astro SSR + Preact islands                        | Load data, forms, mutations                     |
+| `packages/auth`  | Better Auth                                       | Session; do not invent a parallel users table   |
+| `packages/infra` | Alchemy (D1 + Workers)                            | Only for new Cloudflare resources               |
 
 Browser client: [`apps/web/src/lib/orpc.ts`](../apps/web/src/lib/orpc.ts) (`credentials: "include"`).  
 SSR client: [`apps/web/src/lib/orpc.server.ts`](../apps/web/src/lib/orpc.server.ts) (forwards cookies via the `SERVER` service binding).
@@ -24,10 +24,10 @@ SSR client: [`apps/web/src/lib/orpc.server.ts`](../apps/web/src/lib/orpc.server.
 
 ## 2. Edit order (always)
 
-1. **Schema** in `packages/db` → `pnpm run db:generate` when columns/tables change  
-2. **oRPC** in `packages/api` (`protectedProcedure`, register on `appRouter`)  
-3. **`apps/server`** only if mounts, middleware, or bindings change  
-4. **`apps/web`** — SSR load + Preact island or small `<script>` mutations  
+1. **Schema** in `packages/db` → `pnpm run db:generate` when columns/tables change
+2. **oRPC** in `packages/api` (`protectedProcedure`, register on `appRouter`)
+3. **`apps/server`** only if mounts, middleware, or bindings change
+4. **`apps/web`** — SSR load + Preact island or small `<script>` mutations
 5. **Tests** in `packages/api` + Ultracite (`pnpm exec ultracite fix` / `pnpm check`)
 
 Skip step 1 when the table already exists (projects/tasks already did).
@@ -82,7 +82,12 @@ export const thingsRouter = {
     }),
 
   update: protectedProcedure
-    .input(z.object({ id: z.string().min(1), name: z.string().trim().min(1).optional() }))
+    .input(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().trim().min(1).optional(),
+      })
+    )
     .handler(async ({ context, input }) => {
       const userId = context.session.user.id;
       // update where id AND userId; throw NOT_FOUND if empty
@@ -113,7 +118,7 @@ export const thingsRouter = {
 Optional filters belong on `list` input. Example from tasks:
 
 ```ts
-projectId: z.string().nullable().optional()
+projectId: z.string().nullable().optional();
 // undefined = all; null = unassigned only; string = that project
 ```
 
@@ -178,8 +183,8 @@ Pass SSR props into islands with `client:load` (or a lighter directive if the is
 
 ## 7. Linking related resources
 
-1. **Schema:** nullable FK + clear `onDelete` (set null vs cascade)  
-2. **API:** before create/update with a foreign id, assert the related row is owned by the same user  
+1. **Schema:** nullable FK + clear `onDelete` (set null vs cascade)
+2. **API:** before create/update with a foreign id, assert the related row is owned by the same user
 3. **UI:**
    - Create with the parent locked (e.g. **Add task** on a project card → `tasks.create({ title, projectId })`)
    - Or a select of parents (quick-add / task detail → Inbox vs `#project`)
@@ -193,7 +198,7 @@ Projects page patterns: filter chips + per-project **Add task** in [`project-boa
 
 Two complementary layers:
 
-1. **URL + UI filter** — e.g. `/projects?project=<id>|inbox` for shareable views; filter client-side or in SSR from the full list  
+1. **URL + UI filter** — e.g. `/projects?project=<id>|inbox` for shareable views; filter client-side or in SSR from the full list
 2. **API list filter** — pass `projectId` into `tasks.list` when you want the database to do the work (indexed `(user_id, project_id)`)
 
 Start with URL + in-memory filter if the board already loads all open tasks; add API filtering when lists grow.
@@ -206,15 +211,15 @@ Add Vitest coverage next to the router (see [`projects.test.ts`](../packages/api
 
 Use fixtures from [`packages/api/src/test/fixtures.ts`](../packages/api/src/test/fixtures.ts):
 
-| Case | Assert |
-|------|--------|
-| Unauthed | `UNAUTHORIZED` on create/list/update/delete |
-| Create | defaults + trimmed fields + returned id |
-| Validation | empty strings / bad enums / bad colors rejected |
-| List | only session user’s rows; ordering; optional filters |
-| Update / delete | owned row works; other user’s id → `NOT_FOUND` |
-| FK ownership | foreign `projectId` → `BAD_REQUEST` |
-| Cascade / set null | delete parent leaves children in the expected state |
+| Case               | Assert                                               |
+| ------------------ | ---------------------------------------------------- |
+| Unauthed           | `UNAUTHORIZED` on create/list/update/delete          |
+| Create             | defaults + trimmed fields + returned id              |
+| Validation         | empty strings / bad enums / bad colors rejected      |
+| List               | only session user’s rows; ordering; optional filters |
+| Update / delete    | owned row works; other user’s id → `NOT_FOUND`       |
+| FK ownership       | foreign `projectId` → `BAD_REQUEST`                  |
+| Cascade / set null | delete parent leaves children in the expected state  |
 
 Run:
 
@@ -226,26 +231,26 @@ pnpm --filter @todo-task-app/api test
 
 ## 10. Done-when checklist
 
-- [ ] Schema (if needed) + migration generated  
-- [ ] `create` / `list` / `update` / `delete` on a `protectedProcedure` router  
-- [ ] Router registered on `appRouter`  
-- [ ] Every query/mutation scoped by session `user_id`  
-- [ ] Related FKs ownership-checked  
-- [ ] SSR page loads data (or island hydrated from SSR props)  
-- [ ] UI can create, edit, delete, and (if linked) assign the parent  
-- [ ] Filter view exists when the resource is a grouping (projects)  
-- [ ] Router tests cover auth + isolation + happy path  
-- [ ] `pnpm exec ultracite fix` / `pnpm check` clean  
+- [ ] Schema (if needed) + migration generated
+- [ ] `create` / `list` / `update` / `delete` on a `protectedProcedure` router
+- [ ] Router registered on `appRouter`
+- [ ] Every query/mutation scoped by session `user_id`
+- [ ] Related FKs ownership-checked
+- [ ] SSR page loads data (or island hydrated from SSR props)
+- [ ] UI can create, edit, delete, and (if linked) assign the parent
+- [ ] Filter view exists when the resource is a grouping (projects)
+- [ ] Router tests cover auth + isolation + happy path
+- [ ] `pnpm exec ultracite fix` / `pnpm check` clean
 
 ---
 
 ## Worked example pointers
 
-| Concern | Where |
-|---------|--------|
-| Project CRUD API | [`packages/api/src/routers/projects.ts`](../packages/api/src/routers/projects.ts) |
-| Task CRUD + `projectId` list filter | [`packages/api/src/routers/tasks.ts`](../packages/api/src/routers/tasks.ts) |
-| Projects manage + filter + add-task UI | [`apps/web/src/components/islands/project-board.tsx`](../apps/web/src/components/islands/project-board.tsx) |
-| Task edit title / project / complete | [`apps/web/src/components/islands/task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) |
-| Quick-add with optional project | [`apps/web/src/layouts/app-shell.astro`](../apps/web/src/layouts/app-shell.astro) |
-| Projects page entry | [`apps/web/src/pages/projects.astro`](../apps/web/src/pages/projects.astro) |
+| Concern                                | Where                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Project CRUD API                       | [`packages/api/src/routers/projects.ts`](../packages/api/src/routers/projects.ts)                                   |
+| Task CRUD + `projectId` list filter    | [`packages/api/src/routers/tasks.ts`](../packages/api/src/routers/tasks.ts)                                         |
+| Projects manage + filter + add-task UI | [`apps/web/src/components/islands/project-board.tsx`](../apps/web/src/components/islands/project-board.tsx)         |
+| Task edit title / project / complete   | [`apps/web/src/components/islands/task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) |
+| Quick-add with optional project        | [`apps/web/src/layouts/app-shell.astro`](../apps/web/src/layouts/app-shell.astro)                                   |
+| Projects page entry                    | [`apps/web/src/pages/projects.astro`](../apps/web/src/pages/projects.astro)                                         |

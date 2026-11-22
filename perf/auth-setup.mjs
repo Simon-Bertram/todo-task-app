@@ -24,7 +24,7 @@ try {
   await page.locator("#signin-password").fill(config.password);
 
   await Promise.all([
-    page.waitForURL(/\/(today|onboarding)/, { timeout: 60_000 }),
+    page.waitForURL(/\/(today|onboarding)/u, { timeout: 60_000 }),
     page.locator('#signin-form button[type="submit"]').click(),
   ]);
 

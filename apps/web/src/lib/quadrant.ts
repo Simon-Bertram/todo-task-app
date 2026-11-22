@@ -1,11 +1,7 @@
-import {
-  type CapacityBucket as ApiCapacityBucket,
-  getCapacityBucket as resolveCapacityBucket,
-} from "@todo-task-app/api/lib/capacity-bucket";
-import {
-  type QuadrantId as ApiQuadrantId,
-  getQuadrant as resolveQuadrant,
-} from "@todo-task-app/api/lib/quadrant";
+import type { CapacityBucket as ApiCapacityBucket } from "@todo-task-app/api/lib/capacity-bucket";
+import { getCapacityBucket as resolveCapacityBucket } from "@todo-task-app/api/lib/capacity-bucket";
+import type { QuadrantId as ApiQuadrantId } from "@todo-task-app/api/lib/quadrant";
+import { getQuadrant as resolveQuadrant } from "@todo-task-app/api/lib/quadrant";
 
 export type CapacityBucket = ApiCapacityBucket;
 export type QuadrantId = ApiQuadrantId;
@@ -87,9 +83,9 @@ export function formatMinutes(minutes: number): string {
   if (minutes >= 60) {
     const hours = Math.floor(minutes / 60);
     const rem = minutes % 60;
-    return `${hours}h ${rem}m`;
+    return `${hours}h ${rem}mins`;
   }
-  return `${minutes}m`;
+  return `${minutes}mins`;
 }
 
 export type CapacityTone = "ok" | "warn" | "over";

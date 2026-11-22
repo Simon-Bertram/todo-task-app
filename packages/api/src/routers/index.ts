@@ -6,6 +6,7 @@ import { errorsRouter } from "./errors";
 import { gamificationRouter } from "./gamification";
 import { preferencesRouter } from "./preferences";
 import { projectsRouter } from "./projects";
+import { subtasksRouter } from "./subtasks";
 import { tasksRouter } from "./tasks";
 
 export const appRouter = {
@@ -19,6 +20,7 @@ export const appRouter = {
     user: context.session?.user,
   })),
   projects: projectsRouter,
+  subtasks: subtasksRouter,
   tasks: tasksRouter,
 };
 export type AppRouter = typeof appRouter;

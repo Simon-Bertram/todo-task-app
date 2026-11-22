@@ -1,18 +1,17 @@
 import { useMemo } from "preact/hooks";
+import type { CompletedRangeId } from "../../lib/completed-range";
 import {
   COMPLETED_RANGE_OPTIONS,
-  type CompletedRangeId,
   emptyStateForRange,
   formatCompletedAt,
 } from "../../lib/completed-range";
 import { getQuadrant, QUADRANT_META } from "../../lib/quadrant";
-import {
-  getProject,
-  isLongTask,
-  type Project,
-  type Task,
-  type TaskProgressControl,
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
 } from "../../lib/task-helpers";
+import { getProject, isLongTask } from "../../lib/task-helpers";
 import TaskProgress from "./task-progress";
 
 interface Props {

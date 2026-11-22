@@ -9,7 +9,7 @@ export interface CreateContextOptions {
   context: HonoContext;
 }
 
-const TRAILING_SLASH = /\/$/;
+const TRAILING_SLASH = /\/$/u;
 
 function sessionLookupHeaders(requestHeaders: Headers): Headers {
   const rewritten = preferLastDuplicateCookies(requestHeaders.get("cookie"));

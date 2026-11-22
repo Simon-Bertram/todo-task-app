@@ -17,9 +17,9 @@ Two paths. Pick incremental when the app must keep shipping or the tRPC router i
 Install `@orpc/trpc@beta` and convert. The result is a regular oRPC router: expose it through an RPC or OpenAPI handler, or call it with a server-side client, while the tRPC code keeps working untouched.
 
 ```ts
-import { toORPCRouter } from '@orpc/trpc'
+import { toORPCRouter } from "@orpc/trpc";
 
-const orpcRouter = toORPCRouter(trpcRouter)
+const orpcRouter = toORPCRouter(trpcRouter);
 ```
 
 - tRPC error formatting is not supported: tRPC errors arrive wrapped in `ORPCError` with the `TRPCError` as `cause` (and a `ZodError` below that for validation failures). Reshape them in a handler interceptor if consumers need structured errors.

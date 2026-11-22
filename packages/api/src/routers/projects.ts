@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { protectedProcedure } from "../index";
 
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/u;
 const DEFAULT_COLOR = "#3b82f6";
 
 const colorSchema = z.string().regex(HEX_COLOR, "Color must be #RRGGBB");

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 
 import type { Task } from "./task-helpers";
-import {
-  TASK_PROGRESS_UPDATED_EVENT,
-  type TaskProgressUpdatedDetail,
-} from "./task-progress";
+import type { TaskProgressUpdatedDetail } from "./task-progress";
+import { TASK_PROGRESS_UPDATED_EVENT } from "./task-progress";
 
 /** Keep local task list in sync when progress islands persist. */
 export function useTaskProgressSync(
@@ -41,4 +39,17 @@ export function useIsDesktopLg(): boolean {
     return () => mq.removeEventListener("change", update);
   }, []);
   return isDesktop;
+}
+
+/** Tailwind `sm` breakpoint — pointer drag reorder vs up/down controls. */
+export function useIsDesktopSm(): boolean {
+  const [isSm, setIsSm] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const update = () => setIsSm(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isSm;
 }

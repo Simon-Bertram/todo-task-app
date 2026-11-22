@@ -1,15 +1,18 @@
 import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
-import { useCallback, useMemo } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { countDueReminders } from "../../lib/due-date";
+import type {
+  Project,
+  Subtask,
+  Task,
+  TaskProgressControl,
+} from "../../lib/task-helpers";
 import {
   filterTasksList,
   getLocalDateString,
   hasActiveTasksBoardFilters,
-  type Project,
   sortTasksList,
-  type Task,
-  type TaskProgressControl,
 } from "../../lib/task-helpers";
 import { useTasksBoardPrefs } from "../../lib/use-tasks-board-prefs";
 import { TaskListRow } from "./task-list-row";
@@ -60,7 +63,7 @@ function parsePriorityMin(value: string): TasksBoardPrefs["importanceMin"] {
 }
 
 export default function TasksBoard({
-  tasks,
+  tasks: initialTasks,
   projects,
   initialPrefs,
   initialQuery,
@@ -70,6 +73,15 @@ export default function TasksBoard({
     initialPrefs,
     initialQuery
   );
+  const [tasks, setTasks] = useState(initialTasks);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [subtasksByTask, setSubtasksByTask] = useState<
+    Record<string, Subtask[]>
+  >({});
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const visibleTasks = useMemo(() => {
     const filtered = filterTasksList(tasks, projects, {
@@ -81,6 +93,41 @@ export default function TasksBoard({
     });
     return sortTasksList(filtered, prefs.sort);
   }, [prefs, projects, query, tasks]);
+
+  const onToggleExpand = useCallback((taskId: string) => {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  }, []);
+
+  const onSubtasksChange = useCallback(
+    (taskId: string, nextSubtasks: Subtask[]) => {
+      setSubtasksByTask((current) => ({
+        ...current,
+        [taskId]: nextSubtasks,
+      }));
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                subtaskCompletedCount: nextSubtasks.filter(
+                  (item) => item.isCompleted
+                ).length,
+                subtaskCount: nextSubtasks.length,
+              }
+            : task
+        )
+      );
+    },
+    []
+  );
 
   const filtersActive = hasActiveTasksBoardFilters(prefs, query);
 
@@ -260,8 +307,12 @@ export default function TasksBoard({
           {visibleTasks.map((task) => (
             <TaskListRow
               control={taskProgressControl}
+              expanded={expandedIds.has(task.id)}
               key={task.id}
+              onSubtasksChange={onSubtasksChange}
+              onToggleExpand={onToggleExpand}
               projects={projects}
+              subtasks={subtasksByTask[task.id] ?? []}
               task={task}
             />
           ))}

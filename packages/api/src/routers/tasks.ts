@@ -10,11 +10,12 @@ import { COMPLETED_RANGES, completedRangeBounds } from "../lib/completed-range";
 import { evaluateMilestones } from "../lib/milestones";
 import { nextDueDateForRecurrence } from "../lib/recurrence";
 import { upsertDayStatsAndRhythm } from "../lib/rhythm";
+import { countOpenSubtasks, loadSubtaskCounts } from "./subtasks";
 
 const prioritySchema = z.number().int().min(0).max(3);
 const dueDateSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .regex(/^\d{4}-\d{2}-\d{2}$/u)
   .nullable();
 const estimatedMinutesSchema = z.number().int().min(1).max(480);
 const progressPercentSchema = z.number().int().min(0).max(100);
@@ -33,12 +34,17 @@ const taskOutputSchema = z.object({
   projectId: z.string().nullable(),
   recurrenceRule: z.string().nullable(),
   sortOrder: z.number().int(),
+  subtaskCompletedCount: z.number().int(),
+  subtaskCount: z.number().int(),
   title: z.string(),
 });
 
 type TaskRow = typeof tasks.$inferSelect;
 
-function toTaskOutput(row: TaskRow) {
+function toTaskOutput(
+  row: TaskRow,
+  counts?: { completed: number; total: number }
+) {
   return {
     completedAt: row.completedAt ?? null,
     dueDate: row.dueDate,
@@ -53,8 +59,20 @@ function toTaskOutput(row: TaskRow) {
     projectId: row.projectId,
     recurrenceRule: row.recurrenceRule,
     sortOrder: row.sortOrder,
+    subtaskCompletedCount: counts?.completed ?? 0,
+    subtaskCount: counts?.total ?? 0,
     title: row.title,
   };
+}
+
+async function mapTasksWithCounts(db: Database, rows: TaskRow[]) {
+  const counts = await loadSubtaskCounts(
+    db,
+    rows.map((row) => row.id)
+  );
+  return rows.map((row) =>
+    toTaskOutput(row, counts.get(row.id) ?? { completed: 0, total: 0 })
+  );
 }
 
 const completedRangeSchema = z.enum(COMPLETED_RANGES);
@@ -281,7 +299,7 @@ export const tasksRouter = {
         .where(and(...conditions))
         .orderBy(asc(tasks.sortOrder), asc(tasks.createdAt));
 
-      return rows.map(toTaskOutput);
+      return mapTasksWithCounts(context.db, rows);
     }),
 
   listCompleted: protectedProcedure
@@ -321,7 +339,7 @@ export const tasksRouter = {
         .where(and(...conditions))
         .orderBy(desc(tasks.completedAt), asc(tasks.title));
 
-      return rows.map(toTaskOutput);
+      return mapTasksWithCounts(context.db, rows);
     }),
 
   update: protectedProcedure
@@ -370,6 +388,16 @@ export const tasksRouter = {
         throw new ORPCError("NOT_FOUND", { message: "Task not found" });
       }
 
+      if (patch.isCompleted === true && current.isCompleted === false) {
+        const openCount = await countOpenSubtasks(context.db, id);
+        if (openCount > 0) {
+          throw new ORPCError("CONFLICT", {
+            message:
+              "Finish or remove all subtasks before completing this task",
+          });
+        }
+      }
+
       const [row] = await context.db
         .update(tasks)
         .set(updates)
@@ -403,8 +431,9 @@ export const tasksRouter = {
         }
       }
 
+      const counts = await loadSubtaskCounts(context.db, [row.id]);
       return {
-        ...toTaskOutput(row),
+        ...toTaskOutput(row, counts.get(row.id) ?? { completed: 0, total: 0 }),
         unlockedMilestones,
       };
     }),

@@ -8,9 +8,9 @@ Teaching note for contributors debugging **“SSR thinks I’m logged in, but br
 
 This monorepo follows Better-T-Stack’s split Workers layout (see [AGENTS.md](../AGENTS.md)):
 
-| Host | Worker | Role |
-|------|--------|------|
-| `https://todo.sarl` | Astro (`apps/web`) | HTML, SSR, Preact islands |
+| Host                    | Worker               | Role                                                     |
+| ----------------------- | -------------------- | -------------------------------------------------------- |
+| `https://todo.sarl`     | Astro (`apps/web`)   | HTML, SSR, Preact islands                                |
 | `https://api.todo.sarl` | Hono (`apps/server`) | Better Auth (`/api/auth/*`), oRPC (`/rpc`), avatar media |
 
 Custom domains are declared in [`packages/infra/alchemy.run.ts`](../packages/infra/alchemy.run.ts). Locally the same split is `localhost:4321` (web) and `localhost:3000` (API).

@@ -236,7 +236,7 @@ try {
     const card = visibleTask(page, longTarget.id);
     const inlineProgress = page
       .locator(`li:has([data-task-id="${longTarget.id}"]:visible)`)
-      .getByRole("button", { name: /Set progress to 50 percent/i });
+      .getByRole("button", { name: /Set progress to 50 percent/iu });
 
     if ((await inlineProgress.count()) > 0) {
       return measureRpcAround(
@@ -254,7 +254,7 @@ try {
       async () => {
         await card.click();
         await page
-          .getByRole("button", { name: /Set progress to 50 percent/i })
+          .getByRole("button", { name: /Set progress to 50 percent/iu })
           .click();
       }
     );

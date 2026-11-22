@@ -1,11 +1,6 @@
 import type { Session } from "@todo-task-app/auth";
-import {
-  createTestDb,
-  type SeedProjectInput,
-  type SeedUserInput,
-  seedProject,
-  seedUser,
-} from "@todo-task-app/db/test";
+import type { SeedProjectInput, SeedUserInput } from "@todo-task-app/db/test";
+import { createTestDb, seedProject, seedUser } from "@todo-task-app/db/test";
 
 import type { AvatarsBucket, Context } from "../context";
 

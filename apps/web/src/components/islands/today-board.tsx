@@ -3,6 +3,7 @@ import {
   dropTargetForElements,
   monitorForElements,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { ORPCError } from "@orpc/client";
 import {
   useCallback,
   useEffect,
@@ -16,8 +17,8 @@ import {
 } from "../../lib/celebrate";
 import { countDueReminders } from "../../lib/due-date";
 import { orpc } from "../../lib/orpc";
+import type { CapacityBucket } from "../../lib/quadrant";
 import {
-  type CapacityBucket,
   capacityTone,
   capacityToneBarClass,
   capacityToneTextClass,
@@ -26,6 +27,11 @@ import {
   QUADRANT_META,
 } from "../../lib/quadrant";
 import { stopPointerPropagation } from "../../lib/stop-pointer";
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
+} from "../../lib/task-helpers";
 import {
   getLocalDateString,
   getProject,
@@ -34,9 +40,6 @@ import {
   getTodayPlannedMinutes,
   getTodayTasks,
   isLongTask,
-  type Project,
-  type Task,
-  type TaskProgressControl,
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
 import {
@@ -62,17 +65,17 @@ const BUCKET_META: Record<
   { hint: string; slotIds: string[]; title: string }
 > = {
   major: {
-    hint: "1 slot · 60–120m deep work",
+    hint: "1 slot · 60–120mins deep work",
     slotIds: ["major-1"],
     title: "1 Major",
   },
   medium: {
-    hint: "3 slots · 30–60m",
+    hint: "3 slots · 30–60mins",
     slotIds: ["medium-1", "medium-2", "medium-3"],
     title: "3 Medium",
   },
   quick: {
-    hint: "5 slots · under 15m",
+    hint: "5 slots · under 15mins",
     slotIds: ["quick-1", "quick-2", "quick-3", "quick-4", "quick-5"],
     title: "5 Quick wins",
   },
@@ -228,9 +231,13 @@ export default function TodayBoard({
         } else {
           showToast("Task completed", "success");
         }
-      } catch {
+      } catch (error) {
         setTasks(previous);
-        showToast("Could not complete task. Try again.", "error");
+        const message =
+          error instanceof ORPCError && error.code === "CONFLICT"
+            ? "Finish or remove all subtasks before completing this task"
+            : "Could not complete task. Try again.";
+        showToast(message, "error");
       } finally {
         setBusyId(null);
       }

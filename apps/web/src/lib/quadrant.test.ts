@@ -37,8 +37,8 @@ describe("getCapacityBucket", () => {
 describe("formatMinutes", () => {
   it("formats whole hours, mixed durations, and minutes", () => {
     expect(formatMinutes(120)).toBe("2h");
-    expect(formatMinutes(90)).toBe("1h 30m");
-    expect(formatMinutes(45)).toBe("45m");
+    expect(formatMinutes(90)).toBe("1h 30mins");
+    expect(formatMinutes(45)).toBe("45mins");
   });
 });
 

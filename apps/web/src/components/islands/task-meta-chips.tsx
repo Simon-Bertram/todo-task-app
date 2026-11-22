@@ -74,6 +74,11 @@ export function TaskMetaChips({
           #{project.name}
         </span>
       ) : null}
+      {(task.subtaskCount ?? 0) > 0 ? (
+        <span className="tabular-metrics inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">
+          {task.subtaskCompletedCount ?? 0}/{task.subtaskCount}
+        </span>
+      ) : null}
     </div>
   );
 }

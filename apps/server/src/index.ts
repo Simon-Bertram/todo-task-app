@@ -170,7 +170,7 @@ app.use("/*", async (c, next) => {
 
 app.get("/", (c) => c.text("OK"));
 
-const AVATAR_FILE = /^[0-9a-f-]{36}\.png$/i;
+const AVATAR_FILE = /^[0-9a-f-]{36}\.png$/iu;
 
 app.get("/media/avatars/:userId/:file", async (c) => {
   const userId = c.req.param("userId");

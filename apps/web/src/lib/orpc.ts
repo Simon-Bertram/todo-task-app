@@ -58,7 +58,7 @@ export const link = new RPCLink({
       }
     },
   ],
-  origin: ENV.PUBLIC_SERVER_URL.replace(/\/$/, ""),
+  origin: ENV.PUBLIC_SERVER_URL.replace(/\/$/u, ""),
   url: "/rpc",
 });
 

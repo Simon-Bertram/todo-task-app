@@ -10,10 +10,10 @@ Agent edit order: [AGENTS.md](../AGENTS.md). Local deploy/secrets: [ALCHEMY_SETU
 
 ## 1. Part 1 vs Part 2 status
 
-| Part | Status | What it is |
-|------|--------|------------|
+| Part                     | Status           | What it is                                                                                                                                          |
+| ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Part 1 — Development** | **Done in code** | D1-backed Better Auth `rateLimit`, captcha plugin, Preact Turnstile islands, Varlock/Alchemy env slots, Cloudflare **test keys** as schema defaults |
-| **Part 2 — Production** | **Not done** | Create a real Turnstile widget (e.g. via Spin); set real `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SECRET_KEY`; deploy |
+| **Part 2 — Production**  | **Not done**     | Create a real Turnstile widget (e.g. via Spin); set real `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SECRET_KEY`; deploy                                |
 
 Part 1 makes local `pnpm run dev` exercise the full challenge + verify path without a dashboard widget. Part 2 is ops: real widget + real secrets + deploy. `createAuth` rejects Cloudflare’s always-pass test secret when `NODE_ENV=production`.
 
@@ -23,10 +23,10 @@ Part 1 makes local `pnpm run dev` exercise the full challenge + verify path with
 
 Rate limiting and Turnstile cover **different** attack vectors. Cloudflare’s guidance for login and sensitive forms is to use **both**.
 
-| Layer | Stops | Does not stop alone |
-|-------|-------|---------------------|
-| **Rate limit** (per IP, Better Auth → D1) | High-volume abuse from one IP / subnet | Slow distributed bots, many IPs |
-| **Turnstile** (human check + siteverify) | Automated form / API submissions without a valid token | High volume of humans (or stolen tokens) without a volume cap |
+| Layer                                     | Stops                                                  | Does not stop alone                                           |
+| ----------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------- |
+| **Rate limit** (per IP, Better Auth → D1) | High-volume abuse from one IP / subnet                 | Slow distributed bots, many IPs                               |
+| **Turnstile** (human check + siteverify)  | Automated form / API submissions without a valid token | High volume of humans (or stolen tokens) without a volume cap |
 
 Classic failure mode: embed a widget on the page but **never** validate the token on the server. The UI looks protected; the endpoint is not. Turnstile Spin exists largely to prevent that gap (see [§5](#5-turnstile-spin)).
 
@@ -40,13 +40,13 @@ flowchart LR
 
 Protected auth surfaces today:
 
-| Surface | Endpoint | Turnstile | Custom rate limit |
-|---------|----------|-----------|-------------------|
-| Sign-in | `/sign-in/email` | Yes | 5 / 60s |
-| Sign-up | `/sign-up/email` | Yes | 3 / 60s |
-| Forgot password | `/request-password-reset` | Yes | 3 / 60s |
-| Resend verification | `/send-verification-email` | Yes | 3 / 60s |
-| Reset password (token form) | `/reset-password` | No (token-gated) | 5 / 60s |
+| Surface                     | Endpoint                   | Turnstile        | Custom rate limit |
+| --------------------------- | -------------------------- | ---------------- | ----------------- |
+| Sign-in                     | `/sign-in/email`           | Yes              | 5 / 60s           |
+| Sign-up                     | `/sign-up/email`           | Yes              | 3 / 60s           |
+| Forgot password             | `/request-password-reset`  | Yes              | 3 / 60s           |
+| Resend verification         | `/send-verification-email` | Yes              | 3 / 60s           |
+| Reset password (token form) | `/reset-password`          | No (token-gated) | 5 / 60s           |
 
 Config: [`packages/auth/src/index.ts`](../packages/auth/src/index.ts).
 
@@ -83,13 +83,13 @@ Regenerates typed `env.ts` files (e.g. [`apps/web/src/env.ts`](../apps/web/src/e
 
 ### How values reach Workers
 
-| Concern | Mechanism |
-|---------|-----------|
+| Concern                     | Mechanism                                                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
 | Alchemy loads deploy inputs | `import "varlock/auto-load"` in [`packages/infra/alchemy.run.ts`](../packages/infra/alchemy.run.ts) |
-| Server secret | `TURNSTILE_SECRET_KEY: Redacted("TURNSTILE_SECRET_KEY")` on the API Worker |
-| Web public sitekey | `PUBLIC_TURNSTILE_SITEKEY: ConfigString("PUBLIC_TURNSTILE_SITEKEY")` on the Astro Worker |
-| Browser islands | [`apps/web/src/env.public.ts`](../apps/web/src/env.public.ts) reads `import.meta.env.PUBLIC_*` |
-| Server runtime | `cloudflare:workers` `ENV` → `createAuth(ENV, …)` |
+| Server secret               | `TURNSTILE_SECRET_KEY: Redacted("TURNSTILE_SECRET_KEY")` on the API Worker                          |
+| Web public sitekey          | `PUBLIC_TURNSTILE_SITEKEY: ConfigString("PUBLIC_TURNSTILE_SITEKEY")` on the Astro Worker            |
+| Browser islands             | [`apps/web/src/env.public.ts`](../apps/web/src/env.public.ts) reads `import.meta.env.PUBLIC_*`      |
+| Server runtime              | `cloudflare:workers` `ENV` → `createAuth(ENV, …)`                                                   |
 
 There is **no** `wrangler.toml` / `wrangler.jsonc` for app secrets. Prefer Varlock + Alchemy over `wrangler secret put` for this project.
 
@@ -101,10 +101,10 @@ Nothing in Part 1 created a Turnstile widget in your Cloudflare account.
 
 Local/dev works because the schemas default to Cloudflare’s **official always-pass test keys** ([testing docs](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)):
 
-| Role | Test value (always passes) |
-|------|----------------------------|
-| Sitekey | `1x00000000000000000000AA` |
-| Secret | `1x0000000000000000000000000000000AA` |
+| Role    | Test value (always passes)            |
+| ------- | ------------------------------------- |
+| Sitekey | `1x00000000000000000000AA`            |
+| Secret  | `1x0000000000000000000000000000000AA` |
 
 Those are public dummy credentials, not a dashboard widget. Production must replace them.
 
@@ -159,11 +159,11 @@ When you select **Set up with Spin** on the Turnstile widgets page:
 
 All three can produce the same kind of Managed widget; they differ mainly in where create/wiring runs:
 
-| Path | How |
-|------|-----|
-| **Dashboard** | Turnstile → **Set up with Spin** → domains → Set up |
-| **Wrangler CLI** | `wrangler turnstile widget create "name" --domain example.com --mode managed` (prints sitekey + secret; you wire by hand) |
-| **AI coding agent** | Paste the Spin prompt; agent loads the Turnstile Spin skill, creates the widget if needed, embeds, wires siteverify |
+| Path                | How                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**       | Turnstile → **Set up with Spin** → domains → Set up                                                                       |
+| **Wrangler CLI**    | `wrangler turnstile widget create "name" --domain example.com --mode managed` (prints sitekey + secret; you wire by hand) |
+| **AI coding agent** | Paste the Spin prompt; agent loads the Turnstile Spin skill, creates the widget if needed, embeds, wires siteverify       |
 
 The Spin skill includes insertion snippets for Next.js (App / Pages), Astro, SvelteKit, Hugo, and vanilla HTML. Other frameworks get a proposed pattern for confirmation first.
 
@@ -171,7 +171,7 @@ The Spin skill includes insertion snippets for Next.js (App / Pages), Astro, Sve
 
 The Turnstile dashboard can flag widgets that see embed traffic but **no matching siteverify** traffic (widget without backend). Those show **Fix with Spin** — a prompt aimed at adding the missing server verification.
 
-### How to use Spin for Part 2 on *this* repo
+### How to use Spin for Part 2 on _this_ repo
 
 Part 1 already embedded the widget pattern and wired siteverify through Better Auth. For production:
 
@@ -196,19 +196,19 @@ Do **not** let a Spin agent re-add a custom Hono `validateTurnstile` or rewrite 
 
 ### Generic guides vs this stack
 
-| Generic advice | Do this instead |
-|----------------|-----------------|
+| Generic advice                                                                | Do this instead                                                                                |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Layout `<script>` + `<div class="cf-turnstile">` + form POST to `/api/signup` | Existing Preact explicit render + Better Auth client → `/api/auth/*` with `x-captcha-response` |
-| `wrangler.jsonc` + `wrangler secret put` | Varlock + Alchemy `Redacted` / `ConfigString` |
-| Custom Hono siteverify helper | Better Auth `captcha` plugin (already configured) |
-| Trust `X-Forwarded-For` | `cf-connecting-ip` only |
-| Hardcode sitekey in HTML | `PUBLIC_TURNSTILE_SITEKEY` via `env.public.ts` |
-| Turnstile on every password-reset UI | Protect request/resend email paths; skip tokened reset-password form |
+| `wrangler.jsonc` + `wrangler secret put`                                      | Varlock + Alchemy `Redacted` / `ConfigString`                                                  |
+| Custom Hono siteverify helper                                                 | Better Auth `captcha` plugin (already configured)                                              |
+| Trust `X-Forwarded-For`                                                       | `cf-connecting-ip` only                                                                        |
+| Hardcode sitekey in HTML                                                      | `PUBLIC_TURNSTILE_SITEKEY` via `env.public.ts`                                                 |
+| Turnstile on every password-reset UI                                          | Protect request/resend email paths; skip tokened reset-password form                           |
 
 Test-key pairs ([docs](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)):
 
-| Behavior | Sitekey | Secret |
-|----------|---------|--------|
+| Behavior    | Sitekey                    | Secret                                |
+| ----------- | -------------------------- | ------------------------------------- |
 | Always pass | `1x00000000000000000000AA` | `1x0000000000000000000000000000000AA` |
 | Always fail | `2x00000000000000000000AB` | `2x0000000000000000000000000000000AA` |
 

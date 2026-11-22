@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useCallback, useEffect } from "preact/hooks";
 import type {
   Project,
   Task,
@@ -66,6 +66,34 @@ export default function TaskDetailSheet({
     sheet.progressSectionRef,
   ]);
 
+  const { baseTask, setLocalTasks } = sheet;
+
+  const onSubtaskCountsChange = useCallback(
+    (counts: { subtaskCompletedCount: number; subtaskCount: number }) => {
+      if (!baseTask) {
+        return;
+      }
+      const taskId = baseTask.id;
+      const hasOpen = counts.subtaskCount - counts.subtaskCompletedCount > 0;
+      setLocalTasks((current) =>
+        current.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                isCompleted: hasOpen ? false : task.isCompleted,
+                subtaskCompletedCount: counts.subtaskCompletedCount,
+                subtaskCount: counts.subtaskCount,
+              }
+            : task
+        )
+      );
+      if (hasOpen && form.values.isCompleted) {
+        form.setIsCompleted(false);
+      }
+    },
+    [baseTask, form, setLocalTasks]
+  );
+
   if (!sheet.baseTask) {
     return null;
   }
@@ -85,6 +113,7 @@ export default function TaskDetailSheet({
       onProgressPersisted={actions.onProgressPersisted}
       onProjectNotesSaved={actions.onProjectNotesSaved}
       onSave={actions.onSave}
+      onSubtaskCountsChange={onSubtaskCountsChange}
       plannedMinutes={plannedMinutes}
       progressSectionRef={sheet.progressSectionRef}
       projects={sheet.localProjects}

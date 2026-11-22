@@ -1,6 +1,7 @@
 import type { TaskProgressControl } from "../../lib/task-helpers";
 import { openTaskSheet } from "../../lib/task-progress";
-import TaskProgressPie, { type ProgressSize } from "./task-progress-pie";
+import type { ProgressSize } from "./task-progress-pie";
+import TaskProgressPie from "./task-progress-pie";
 import TaskProgressSlider from "./task-progress-slider";
 
 interface Props {

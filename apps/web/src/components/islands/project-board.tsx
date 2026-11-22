@@ -5,7 +5,8 @@ import type {
   TaskProgressControl,
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
-import { BoardPanel, type PanelMode } from "./project-board-panel";
+import type { PanelMode } from "./project-board-panel";
+import { BoardPanel } from "./project-board-panel";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
 import { TaskListRow } from "./task-list-row";
 

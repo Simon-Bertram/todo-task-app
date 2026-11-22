@@ -46,11 +46,11 @@ export function getPerfConfig() {
   }
 
   const baseUrl = (process.env.PERF_BASE_URL ?? "https://todo.sarl").replace(
-    /\/$/,
+    /\/$/u,
     ""
   );
   const apiUrl = (process.env.PERF_API_URL ?? "https://api.todo.sarl").replace(
-    /\/$/,
+    /\/$/u,
     ""
   );
 
@@ -58,7 +58,7 @@ export function getPerfConfig() {
     apiUrl,
     authDir: resolve(PERF_ROOT, ".auth"),
     baseUrl,
-    compareUrl: process.env.PERF_COMPARE_URL?.replace(/\/$/, "") || null,
+    compareUrl: process.env.PERF_COMPARE_URL?.replace(/\/$/u, "") || null,
     email,
     password,
     perfRoot: PERF_ROOT,

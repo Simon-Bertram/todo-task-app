@@ -4,7 +4,7 @@
  * @type {import('@lhci/cli').Config}
  */
 const baseUrl = (process.env.PERF_BASE_URL || "https://todo.sarl").replace(
-  /\/$/,
+  /\/$/u,
   ""
 );
 const cookie = process.env.PERF_COOKIE_HEADER || "";

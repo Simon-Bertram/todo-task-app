@@ -10,15 +10,20 @@ import {
   useRef,
   useState,
 } from "preact/hooks";
+import type { QuadrantId } from "../../lib/quadrant";
 import {
   capacityTone,
   capacityToneBarClass,
   capacityToneTextClass,
   formatMinutes,
   QUADRANT_META,
-  type QuadrantId,
 } from "../../lib/quadrant";
 import { stopPointerPropagation } from "../../lib/stop-pointer";
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
+} from "../../lib/task-helpers";
 import {
   getLocalDateString,
   getProject,
@@ -26,9 +31,6 @@ import {
   getTodayPlannedMinutes,
   getTodayTasks,
   isLongTask,
-  type Project,
-  type Task,
-  type TaskProgressControl,
 } from "../../lib/task-helpers";
 import {
   useMoveTaskToQuadrant,

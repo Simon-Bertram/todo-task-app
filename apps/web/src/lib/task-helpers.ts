@@ -6,12 +6,8 @@ import {
   tasksBoardSortSchema,
 } from "@todo-task-app/api/schemas/tasks-board-prefs";
 
-import {
-  type CapacityBucket,
-  getCapacityBucket,
-  getQuadrant,
-  type QuadrantId,
-} from "./quadrant";
+import type { CapacityBucket, QuadrantId } from "./quadrant";
+import { getCapacityBucket, getQuadrant } from "./quadrant";
 
 export interface Project {
   color: string;
@@ -34,7 +30,26 @@ export interface Task {
   projectId: string | null;
   recurrenceRule: string | null;
   sortOrder: number;
+  subtaskCompletedCount?: number;
+  subtaskCount?: number;
   title: string;
+}
+
+export interface Subtask {
+  id: string;
+  isCompleted: boolean;
+  sortOrder: number;
+  taskId: string;
+  title: string;
+}
+
+export function openSubtaskCount(task: {
+  subtaskCompletedCount?: number;
+  subtaskCount?: number;
+}): number {
+  const total = task.subtaskCount ?? 0;
+  const done = task.subtaskCompletedCount ?? 0;
+  return Math.max(total - done, 0);
 }
 
 export type TaskProgressControl = "pie" | "slider";

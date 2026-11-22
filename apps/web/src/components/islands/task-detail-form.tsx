@@ -10,16 +10,17 @@ import type {
   Task,
   TaskProgressControl,
 } from "../../lib/task-helpers";
-import { isLongTask } from "../../lib/task-helpers";
+import { isLongTask, openSubtaskCount } from "../../lib/task-helpers";
 import type { TaskDetailFormApi } from "../../lib/use-task-detail-form";
 import {
   TASK_DETAIL_ETC_PRESETS,
-  TASK_DETAIL_RATING,
   TASK_DETAIL_RECURRENCE,
 } from "../../lib/use-task-detail-form";
 import DayPicker from "./day-picker";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
+import RatingRow from "./rating-row";
 import TaskProgress from "./task-progress";
+import TaskSubtasksEditor from "./task-subtasks-editor";
 
 /**
  * Presentational sheet body for task editing.
@@ -29,8 +30,7 @@ import TaskProgress from "./task-progress";
  * - save / delete / today / complete → `useTaskDetailMutations` via `TaskDetailSheet`
  *
  * Interactive sections reused elsewhere are sibling islands (`DayPicker`,
- * `ProjectNotesDisclosure`, `TaskProgress`). Urgency/importance use the local
- * `RatingRow` helper at the bottom of this module.
+ * `ProjectNotesDisclosure`, `RatingRow`, `TaskProgress`).
  */
 export interface TaskDetailFormProps {
   baseTask: Task;
@@ -46,6 +46,10 @@ export interface TaskDetailFormProps {
   onProgressPersisted: (next: number) => void;
   onProjectNotesSaved: (notes: string | null) => void;
   onSave: () => void;
+  onSubtaskCountsChange: (counts: {
+    subtaskCompletedCount: number;
+    subtaskCount: number;
+  }) => void;
   plannedMinutes: number;
   /** Set by the sheet so deep-links can scroll/focus the progress block. */
   progressSectionRef: { current: HTMLElement | null };
@@ -69,6 +73,7 @@ export function TaskDetailForm({
   onProgressPersisted,
   onProjectNotesSaved,
   onSave,
+  onSubtaskCountsChange,
   plannedMinutes,
   progressSectionRef,
   projects,
@@ -81,7 +86,6 @@ export function TaskDetailForm({
   const meta = QUADRANT_META[quadrant];
   const selectedProject = projects.find((item) => item.id === values.projectId);
   const [isRecurrenceOpen, setIsRecurrenceOpen] = useState(false);
-
   // If the task is not already on Today, treat its ETC as additional load so
   // we can warn before the user schedules it over budget.
   const projectedPlanned = values.isToday
@@ -92,6 +96,7 @@ export function TaskDetailForm({
   const showOverWarning = !values.isToday && overBy > 0;
   const tone = capacityTone(projectedPlanned, budgetMinutes);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when navigating to another task
   useEffect(() => {
     setIsRecurrenceOpen(false);
   }, [baseTask.id]);
@@ -115,10 +120,6 @@ export function TaskDetailForm({
   } else if (confirmDelete) {
     deleteLabel = "Confirm delete";
   }
-
-  const completeButtonClass = values.isCompleted
-    ? "flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
-    : "flex min-h-11 w-full items-center justify-center rounded-sm bg-capacity-ok font-semibold text-on-primary text-sm disabled:opacity-60";
 
   return (
     <div
@@ -215,6 +216,12 @@ export function TaskDetailForm({
             />
           </label>
 
+          <TaskSubtasksEditor
+            key={baseTask.id}
+            onCountsChange={onSubtaskCountsChange}
+            taskId={baseTask.id}
+          />
+
           <section className="space-y-2">
             <h4 className="font-medium text-sm text-text-secondary">
               Due date
@@ -283,7 +290,7 @@ export function TaskDetailForm({
             {showOverWarning ? (
               <p className="rounded-sm border border-capacity-over/40 bg-capacity-over/10 px-3 py-2 text-capacity-over text-sm">
                 Adding {formatMinutes(values.estimatedMinutes)} exceeds the
-                remaining {remaining}m budget by {overBy}m ({tone} load).
+                remaining {remaining}mins budget by {overBy}mins ({tone} load).
               </p>
             ) : null}
           </section>
@@ -370,15 +377,12 @@ export function TaskDetailForm({
                 ? "Remove from Today's board"
                 : "Schedule to Today's board"}
             </button>
-            <button
-              className={completeButtonClass}
-              data-testid="task-detail-completed"
-              disabled={busy}
-              onClick={toggleCompleted}
-              type="button"
-            >
-              {values.isCompleted ? "Reopen task" : "Mark as Completed"}
-            </button>
+            <CompleteTaskControl
+              busy={busy}
+              isCompleted={values.isCompleted}
+              onToggle={toggleCompleted}
+              openCount={openSubtaskCount(baseTask)}
+            />
             <button
               className="flex min-h-11 w-full items-center justify-center rounded-sm text-capacity-over text-sm hover:bg-capacity-over/10 disabled:opacity-60"
               disabled={busy}
@@ -407,52 +411,39 @@ export function TaskDetailForm({
   );
 }
 
-/** 0–3 rating control shared by Urgency and Importance in the matrix section. */
-function RatingRow({
-  label,
-  value,
-  onChange,
+function CompleteTaskControl({
+  busy,
+  isCompleted,
+  openCount,
+  onToggle,
 }: {
-  label: string;
-  onChange: (next: number) => void;
-  value: number;
+  busy: boolean;
+  isCompleted: boolean;
+  onToggle: () => void;
+  openCount: number;
 }) {
-  const onClick = useCallback(
-    (event: Event) => {
-      const button = event.currentTarget as HTMLButtonElement;
-      onChange(Number(button.dataset.rating));
-    },
-    [onChange]
-  );
+  const blocked = !isCompleted && openCount > 0;
+  const buttonClass = isCompleted
+    ? "flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast text-sm text-text-primary disabled:opacity-60"
+    : "flex min-h-11 w-full items-center justify-center rounded-sm bg-capacity-ok font-semibold text-on-primary text-sm disabled:opacity-60";
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between">
-        <span className="text-sm text-text-secondary">{label}</span>
-        <span className="tabular-metrics font-mono text-text-muted text-xs">
-          {value}/3
-        </span>
-      </div>
-      <div className="flex gap-1">
-        {TASK_DETAIL_RATING.map((rating) => {
-          const selected = value === rating;
-          return (
-            <button
-              className={`min-h-11 flex-1 rounded-sm border font-mono text-sm ${
-                selected
-                  ? "border-primary bg-primary/20 text-primary"
-                  : "border-border-contrast bg-canvas/40 text-text-secondary"
-              }`}
-              data-rating={rating}
-              key={rating}
-              onClick={onClick}
-              type="button"
-            >
-              {rating}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <>
+      <button
+        className={buttonClass}
+        data-testid="task-detail-completed"
+        disabled={busy || blocked}
+        onClick={onToggle}
+        type="button"
+      >
+        {isCompleted ? "Reopen task" : "Mark as Completed"}
+      </button>
+      {blocked ? (
+        <p className="text-center text-sm text-text-secondary">
+          Finish or remove all subtasks before completing this task ({openCount}{" "}
+          open).
+        </p>
+      ) : null}
+    </>
   );
 }

@@ -4,7 +4,10 @@
  */
 import type { JSX } from "preact";
 
+import { formatMinutes } from "../../lib/quadrant";
 import { useQuickAddDialog } from "../../lib/use-quick-add-dialog";
+import { TASK_DETAIL_ETC_PRESETS } from "../../lib/use-task-detail-form";
+import RatingRow from "./rating-row";
 
 export interface QuickAddProject {
   id: string;
@@ -20,12 +23,25 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
     busy,
     dialogRef,
     error,
+    estimatedMinutes,
     formRef,
     handleAddToday,
     handleCancel,
     handleSubmit,
+    isDurationOpen,
+    isImportant,
+    isPriorityOpen,
+    isUrgent,
+    onDurationToggle,
+    onEtcClick,
+    onPriorityToggle,
+    setIsImportant,
+    setIsUrgent,
     titleRef,
   } = useQuickAddDialog();
+
+  const durationToggleLabel = `Duration · ${formatMinutes(estimatedMinutes)}`;
+  const priorityToggleLabel = `Priority · U${isUrgent} · I${isImportant}`;
 
   return (
     <dialog
@@ -41,7 +57,7 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
       >
         <h2 className="font-semibold text-lg">Quick add</h2>
         <p className="text-sm text-text-secondary">
-          Capture a task title. You can refine priorities in the detail sheet.
+          Capture a title. Optionally set duration and priority below.
         </p>
         <input
           className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
@@ -70,6 +86,71 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
             </select>
           </label>
         ) : null}
+
+        <div className="space-y-2">
+          <button
+            aria-expanded={isDurationOpen}
+            className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-sm border border-border-contrast px-3 text-left text-sm text-text-secondary hover:bg-surface-elevated"
+            onClick={onDurationToggle}
+            type="button"
+          >
+            <span>{durationToggleLabel}</span>
+            <span aria-hidden="true" className="text-text-muted">
+              {isDurationOpen ? "▾" : "▸"}
+            </span>
+          </button>
+          {isDurationOpen ? (
+            <div className="flex flex-wrap gap-2">
+              {TASK_DETAIL_ETC_PRESETS.map((minutes) => {
+                const selected = estimatedMinutes === minutes;
+                return (
+                  <button
+                    className={`min-h-11 rounded-full border px-3 font-mono text-sm ${
+                      selected
+                        ? "border-primary bg-primary text-on-primary"
+                        : "border-border-contrast bg-surface-subtle text-text-secondary"
+                    }`}
+                    data-etc={minutes}
+                    key={minutes}
+                    onClick={onEtcClick}
+                    type="button"
+                  >
+                    {formatMinutes(minutes)}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <button
+            aria-expanded={isPriorityOpen}
+            className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-sm border border-border-contrast px-3 text-left text-sm text-text-secondary hover:bg-surface-elevated"
+            onClick={onPriorityToggle}
+            type="button"
+          >
+            <span>{priorityToggleLabel}</span>
+            <span aria-hidden="true" className="text-text-muted">
+              {isPriorityOpen ? "▾" : "▸"}
+            </span>
+          </button>
+          {isPriorityOpen ? (
+            <div className="space-y-3 rounded-sm border border-border-contrast bg-surface-subtle p-3">
+              <RatingRow
+                label="Urgency"
+                onChange={setIsUrgent}
+                value={isUrgent}
+              />
+              <RatingRow
+                label="Importance"
+                onChange={setIsImportant}
+                value={isImportant}
+              />
+            </div>
+          ) : null}
+        </div>
+
         <p
           className={
             error

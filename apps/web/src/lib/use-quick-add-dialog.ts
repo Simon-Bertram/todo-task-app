@@ -14,14 +14,26 @@ const TRIGGER_IDS = [
   "quick-add-sidenav",
 ] as const;
 
+const DEFAULT_ESTIMATED_MINUTES = 30;
+
 export interface UseQuickAddDialogResult {
   busy: boolean;
   dialogRef: RefObject<HTMLDialogElement | null>;
   error: string | null;
+  estimatedMinutes: number;
   formRef: RefObject<HTMLFormElement | null>;
   handleAddToday: () => Promise<void>;
   handleCancel: () => void;
   handleSubmit: (event: Event) => Promise<void>;
+  isDurationOpen: boolean;
+  isImportant: number;
+  isPriorityOpen: boolean;
+  isUrgent: number;
+  onDurationToggle: () => void;
+  onEtcClick: (event: Event) => void;
+  onPriorityToggle: () => void;
+  setIsImportant: (next: number) => void;
+  setIsUrgent: (next: number) => void;
   titleRef: RefObject<HTMLInputElement | null>;
 }
 
@@ -35,10 +47,22 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
   const titleRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(
+    DEFAULT_ESTIMATED_MINUTES
+  );
+  const [isUrgent, setIsUrgent] = useState(0);
+  const [isImportant, setIsImportant] = useState(0);
+  const [isDurationOpen, setIsDurationOpen] = useState(false);
+  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
 
   useEffect(() => {
     const openQuickAdd = () => {
       setError(null);
+      setEstimatedMinutes(DEFAULT_ESTIMATED_MINUTES);
+      setIsUrgent(0);
+      setIsImportant(0);
+      setIsDurationOpen(false);
+      setIsPriorityOpen(false);
       formRef.current?.reset();
       // Native dialog: showModal() then focus title after the modal paints.
       dialogRef.current?.showModal();
@@ -47,7 +71,7 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
       });
     };
 
-    const triggers = TRIGGER_IDS.map((id) => document.getElementById(id));
+    const triggers = TRIGGER_IDS.map((id) => document.querySelector(`#${id}`));
     for (const trigger of triggers) {
       trigger?.addEventListener("click", openQuickAdd);
     }
@@ -63,6 +87,19 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
 
   const handleCancel = useCallback(() => {
     dialogRef.current?.close();
+  }, []);
+
+  const onDurationToggle = useCallback(() => {
+    setIsDurationOpen((open) => !open);
+  }, []);
+
+  const onPriorityToggle = useCallback(() => {
+    setIsPriorityOpen((open) => !open);
+  }, []);
+
+  const onEtcClick = useCallback((event: Event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    setEstimatedMinutes(Number(button.dataset.etc));
   }, []);
 
   // Shared by form onSubmit (isToday=false) and the Today button (isToday=true).
@@ -81,6 +118,9 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
         const rawProjectId = String(data.get("projectId") ?? "").trim();
         await orpc.tasks.create({
           title,
+          estimatedMinutes,
+          isUrgent,
+          isImportant,
           ...(rawProjectId.length > 0 ? { projectId: rawProjectId } : {}),
           ...(isToday ? { isToday: true } : {}),
         });
@@ -95,7 +135,7 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
         setBusy(false);
       }
     },
-    []
+    [estimatedMinutes, isImportant, isUrgent]
   );
 
   const handleSubmit = useCallback(
@@ -109,7 +149,7 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
 
   const handleAddToday = useCallback(async () => {
     const form = formRef.current;
-    if (!form.reportValidity()) {
+    if (!form?.reportValidity()) {
       return;
     }
     await createTask(form, true);
@@ -119,10 +159,20 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
     busy,
     dialogRef,
     error,
+    estimatedMinutes,
     formRef,
     handleAddToday,
     handleCancel,
     handleSubmit,
+    isDurationOpen,
+    isImportant,
+    isPriorityOpen,
+    isUrgent,
+    onDurationToggle,
+    onEtcClick,
+    onPriorityToggle,
+    setIsImportant,
+    setIsUrgent,
     titleRef,
   };
 }
