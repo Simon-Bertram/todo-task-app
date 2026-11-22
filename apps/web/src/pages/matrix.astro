@@ -22,6 +22,14 @@ const plannedMinutes = getTodayPlannedMinutes(tasks);
 const todayCount = getTodayTasks(tasks).length;
 const backlogCount = tasks.filter((task) => !task.isCompleted).length;
 const filter = Astro.url.searchParams.get("filter") ?? "all";
+const quadrantParam = Astro.url.searchParams.get("quadrant");
+const initialQuadrant =
+  quadrantParam === "Q1" ||
+  quadrantParam === "Q2" ||
+  quadrantParam === "Q3" ||
+  quadrantParam === "Q4"
+    ? quadrantParam
+    : "Q1";
 ---
 
 <AppShell
@@ -36,6 +44,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
     <MobileMatrix
       backlogCount={backlogCount}
       budgetMinutes={dailyCapacityMinutes}
+      initialQuadrant={initialQuadrant}
       plannedMinutes={plannedMinutes}
       projects={projects}
       taskProgressControl={taskProgressControl}
@@ -47,6 +56,7 @@ const filter = Astro.url.searchParams.get("filter") ?? "all";
   <DesktopMatrixBoard
     budgetMinutes={dailyCapacityMinutes}
     initialFilter={filter}
+    initialQuadrant={initialQuadrant}
     projects={projects}
     taskProgressControl={taskProgressControl}
     tasks={tasks}

@@ -19,6 +19,7 @@ import TaskProgress from "./task-progress";
 interface Props {
   backlogCount: number;
   budgetMinutes: number;
+  initialQuadrant?: QuadrantId;
   plannedMinutes: number;
   projects: Project[];
   taskProgressControl?: TaskProgressControl;
@@ -40,9 +41,10 @@ export default function MobileMatrix({
   projects,
   budgetMinutes,
   backlogCount,
+  initialQuadrant = "Q1",
   taskProgressControl = "pie",
 }: Props) {
-  const [selected, setSelected] = useState<QuadrantId>("Q1");
+  const [selected, setSelected] = useState<QuadrantId>(initialQuadrant);
   const [localTasks, setLocalTasks] = useState(() =>
     ORDER.flatMap((id) => initialByQuadrant[id])
   );

@@ -1,14 +1,31 @@
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import {
+  draggable,
+  dropTargetForElements,
+  monitorForElements,
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
+import { orpc } from "../../lib/orpc";
 import type {
   Project,
   Task,
   TaskProgressControl,
 } from "../../lib/task-helpers";
 import { showToast } from "../../lib/toast";
+import { useIsDesktopSm } from "../../lib/use-task-progress-sync";
 import type { PanelMode } from "./project-board-panel";
 import { BoardPanel } from "./project-board-panel";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
 import { TaskListRow } from "./task-list-row";
+
+function isProjectReorder(data: Record<string | symbol, unknown>): boolean {
+  return data.type === "project-reorder" && typeof data.projectId === "string";
+}
 
 interface Props {
   initialFilter: string;
@@ -247,6 +264,7 @@ export default function ProjectBoard({
         onEdit={onEditProjectClick}
         onFilter={onProjectRowFilter}
         onNotesSaved={onProjectNotesSaved}
+        onReorder={setProjects}
         openTasks={openTasks}
         projects={projects}
       />
@@ -356,14 +374,122 @@ function ProjectList({
   onAddTask,
   onEdit,
   onNotesSaved,
+  onReorder,
 }: {
   onAddTask: (event: Event) => void;
   onEdit: (event: Event) => void;
   onFilter: (event: Event) => void;
   onNotesSaved: (projectId: string, notes: string | null) => void;
+  onReorder: (next: Project[]) => void;
   openTasks: Task[];
   projects: Project[];
 }) {
+  const isSm = useIsDesktopSm();
+  const projectsRef = useRef(projects);
+  projectsRef.current = projects;
+
+  const persistOrder = useCallback(
+    async (next: Project[], previous: Project[]) => {
+      onReorder(next);
+      try {
+        await Promise.all(
+          next.map((project) =>
+            orpc.projects.update({
+              id: project.id,
+              sortOrder: project.sortOrder,
+            })
+          )
+        );
+      } catch {
+        onReorder(previous);
+        showToast("Could not reorder projects. Try again.", "error");
+      }
+    },
+    [onReorder]
+  );
+
+  const reorderById = useCallback(
+    async (activeId: string, targetId: string) => {
+      if (activeId === targetId) {
+        return;
+      }
+      const previous = projectsRef.current;
+      const fromIndex = previous.findIndex((item) => item.id === activeId);
+      const toIndex = previous.findIndex((item) => item.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) {
+        return;
+      }
+      const next = [...previous];
+      const [moved] = next.splice(fromIndex, 1);
+      if (!moved) {
+        return;
+      }
+      next.splice(toIndex, 0, moved);
+      const withOrder = next.map((item, index) => ({
+        ...item,
+        sortOrder: index,
+      }));
+      await persistOrder(withOrder, previous);
+    },
+    [persistOrder]
+  );
+
+  const moveByOffset = useCallback(
+    async (projectId: string, offset: number) => {
+      const previous = projectsRef.current;
+      const fromIndex = previous.findIndex((item) => item.id === projectId);
+      const toIndex = fromIndex + offset;
+      if (fromIndex < 0 || toIndex < 0 || toIndex >= previous.length) {
+        return;
+      }
+      const target = previous[toIndex];
+      if (!target) {
+        return;
+      }
+      await reorderById(projectId, target.id);
+    },
+    [reorderById]
+  );
+
+  const onMoveClick = useCallback(
+    (event: Event) => {
+      const button = event.currentTarget as HTMLButtonElement;
+      const { offset: offsetRaw, projectId } = button.dataset;
+      const offset = Number(offsetRaw);
+      if (!(projectId && Number.isFinite(offset))) {
+        return;
+      }
+      moveByOffset(projectId, offset).catch(() => undefined);
+    },
+    [moveByOffset]
+  );
+
+  useEffect(() => {
+    if (!isSm) {
+      return;
+    }
+    return monitorForElements({
+      onDrop({ location, source }) {
+        if (!isProjectReorder(source.data)) {
+          return;
+        }
+        const [target] = location.current.dropTargets;
+        const targetId =
+          target && typeof target.data.projectId === "string"
+            ? target.data.projectId
+            : null;
+        if (!targetId) {
+          return;
+        }
+        const activeId = source.data.projectId;
+        if (typeof activeId !== "string") {
+          return;
+        }
+        reorderById(activeId, targetId).catch(() => undefined);
+      },
+    });
+  }, [isSm, reorderById]);
+
   if (projects.length === 0) {
     return (
       <p className="rounded-md border border-border-contrast bg-surface p-6 text-sm text-text-secondary">
@@ -375,17 +501,22 @@ function ProjectList({
 
   return (
     <ul className="space-y-3">
-      {projects.map((project) => (
+      {projects.map((project, index) => (
         <ProjectListItem
+          canDrag={isSm}
+          index={index}
           key={project.id}
           onAddTask={onAddTask}
           onEdit={onEdit}
           onFilter={onFilter}
+          onMove={onMoveClick}
           onNotesSaved={onNotesSaved}
           openTaskCount={
             openTasks.filter((task) => task.projectId === project.id).length
           }
           project={project}
+          showUpDown={!isSm}
+          total={projects.length}
         />
       ))}
     </ul>
@@ -399,14 +530,28 @@ function ProjectListItem({
   onAddTask,
   onEdit,
   onNotesSaved,
+  canDrag,
+  showUpDown,
+  index,
+  total,
+  onMove,
 }: {
+  canDrag: boolean;
+  index: number;
   onAddTask: (event: Event) => void;
   onEdit: (event: Event) => void;
   onFilter: (event: Event) => void;
+  onMove: (event: Event) => void;
   onNotesSaved: (projectId: string, notes: string | null) => void;
   openTaskCount: number;
   project: Project;
+  showUpDown: boolean;
+  total: number;
 }) {
+  const ref = useRef<HTMLLIElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [isOver, setIsOver] = useState(false);
+
   const handleNotesSaved = useCallback(
     (notes: string | null) => {
       onNotesSaved(project.id, notes);
@@ -414,8 +559,45 @@ function ProjectListItem({
     [onNotesSaved, project.id]
   );
 
+  useEffect(() => {
+    if (!canDrag) {
+      return;
+    }
+    const element = ref.current as HTMLLIElement | null;
+    if (!element) {
+      return;
+    }
+    const cleanupDrag = draggable({
+      element,
+      getInitialData: () => ({
+        projectId: project.id,
+        type: "project-reorder",
+      }),
+      onDragStart: () => setDragging(true),
+      onDrop: () => setDragging(false),
+    });
+    const cleanupDrop = dropTargetForElements({
+      canDrop: ({ source }) =>
+        isProjectReorder(source.data) && source.data.projectId !== project.id,
+      element,
+      getData: () => ({ projectId: project.id }),
+      onDragEnter: () => setIsOver(true),
+      onDragLeave: () => setIsOver(false),
+      onDrop: () => setIsOver(false),
+    });
+    return () => {
+      cleanupDrag();
+      cleanupDrop();
+    };
+  }, [canDrag, project.id]);
+
   return (
-    <li className="rounded-md border border-border-contrast bg-surface p-4">
+    <li
+      className={`rounded-md border bg-surface p-4 ${
+        isOver ? "border-primary" : "border-border-contrast"
+      } ${dragging ? "opacity-60" : ""}`}
+      ref={ref}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <button
           className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
@@ -435,6 +617,32 @@ function ProjectListItem({
             {openTaskCount} tasks
           </span>
         </button>
+        {showUpDown ? (
+          <>
+            <button
+              aria-label={`Move ${project.name} up`}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border-contrast text-sm text-text-secondary hover:bg-surface-elevated disabled:opacity-40"
+              data-offset="-1"
+              data-project-id={project.id}
+              disabled={index === 0}
+              onClick={onMove}
+              type="button"
+            >
+              ↑
+            </button>
+            <button
+              aria-label={`Move ${project.name} down`}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border-contrast text-sm text-text-secondary hover:bg-surface-elevated disabled:opacity-40"
+              data-offset="1"
+              data-project-id={project.id}
+              disabled={index >= total - 1}
+              onClick={onMove}
+              type="button"
+            >
+              ↓
+            </button>
+          </>
+        ) : null}
         <button
           aria-label={`Add task to ${project.name}`}
           className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 text-sm text-text-primary hover:bg-surface-elevated"
@@ -462,6 +670,11 @@ function ProjectListItem({
           projectId={project.id}
         />
       </div>
+      {canDrag ? (
+        <p className="mt-2 font-mono text-text-muted text-xs">
+          Drag to reorder projects
+        </p>
+      ) : null}
     </li>
   );
 }

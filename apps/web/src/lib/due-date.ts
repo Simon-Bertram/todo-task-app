@@ -103,6 +103,16 @@ export function getDueReminderLabel(
   return `Due in ${delta} days`;
 }
 
+export function formatDueWithTime(
+  labelOrDate: string,
+  dueTime: string | null
+): string {
+  if (dueTime) {
+    return `${labelOrDate} · ${dueTime}`;
+  }
+  return labelOrDate;
+}
+
 export function getDueReminderColor(status: DueReminderStatus): string {
   if (status === "overdue") {
     return "var(--color-capacity-over)";

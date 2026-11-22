@@ -17,12 +17,17 @@ const dueDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/u)
   .nullable();
+const dueTimeSchema = z
+  .string()
+  .regex(/^\d{2}:\d{2}$/u)
+  .nullable();
 const estimatedMinutesSchema = z.number().int().min(1).max(480);
 const progressPercentSchema = z.number().int().min(0).max(100);
 
 const taskOutputSchema = z.object({
   completedAt: z.date().nullable(),
   dueDate: z.string().nullable(),
+  dueTime: z.string().nullable(),
   estimatedMinutes: z.number().int(),
   id: z.string(),
   isCompleted: z.boolean(),
@@ -48,6 +53,7 @@ function toTaskOutput(
   return {
     completedAt: row.completedAt ?? null,
     dueDate: row.dueDate,
+    dueTime: row.dueTime ?? null,
     estimatedMinutes: row.estimatedMinutes,
     id: row.id,
     isCompleted: row.isCompleted,
@@ -201,7 +207,7 @@ export const tasksRouter = {
     .input(
       z.object({
         dueDate: dueDateSchema.optional(),
-        dueTime: z.string().nullable().optional(),
+        dueTime: dueTimeSchema.optional(),
         estimatedMinutes: estimatedMinutesSchema.optional(),
         isImportant: prioritySchema.optional(),
         isToday: z.boolean().optional(),
@@ -346,7 +352,7 @@ export const tasksRouter = {
     .input(
       z.object({
         dueDate: dueDateSchema.optional(),
-        dueTime: z.string().nullable().optional(),
+        dueTime: dueTimeSchema.optional(),
         estimatedMinutes: estimatedMinutesSchema.optional(),
         id: z.string().min(1),
         isCompleted: z.boolean().optional(),

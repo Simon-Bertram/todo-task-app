@@ -19,6 +19,7 @@ import {
 function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
   return {
     dueDate: null,
+    dueTime: null,
     estimatedMinutes: 30,
     isCompleted: false,
     isImportant: 0,
@@ -26,6 +27,7 @@ function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
     isUrgent: 0,
     notes: null,
     projectId: null,
+    progressPercent: 0,
     recurrenceRule: null,
     sortOrder: 0,
     ...overrides,
@@ -34,8 +36,8 @@ function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
 
 describe("getProject", () => {
   const projects: Project[] = [
-    { color: "#111", id: "p1", name: "Alpha", notes: null },
-    { color: "#222", id: "p2", name: "Beta", notes: null },
+    { color: "#111", id: "p1", name: "Alpha", notes: null, sortOrder: 0 },
+    { color: "#222", id: "p2", name: "Beta", notes: null, sortOrder: 1 },
   ];
 
   it("returns null when projectId is null or unknown", () => {
@@ -180,8 +182,8 @@ describe("matchesDueDateFilter", () => {
 
 describe("filterTasksList and sortTasksList", () => {
   const projects: Project[] = [
-    { color: "#111", id: "p1", name: "Alpha", notes: null },
-    { color: "#222", id: "p2", name: "Beta", notes: null },
+    { color: "#111", id: "p1", name: "Alpha", notes: null, sortOrder: 0 },
+    { color: "#222", id: "p2", name: "Beta", notes: null, sortOrder: 1 },
   ];
 
   const tasks = [

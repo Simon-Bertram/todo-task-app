@@ -16,6 +16,7 @@ const projectOutputSchema = z.object({
   id: z.string(),
   name: z.string(),
   notes: z.string().nullable(),
+  sortOrder: z.number().int(),
 });
 
 type ProjectRow = typeof projects.$inferSelect;
@@ -26,6 +27,7 @@ function toProjectOutput(row: ProjectRow) {
     id: row.id,
     name: row.name,
     notes: row.notes ?? null,
+    sortOrder: row.sortOrder,
   };
 }
 
@@ -89,6 +91,7 @@ export const projectsRouter = {
           id: projects.id,
           name: projects.name,
           notes: projects.notes,
+          sortOrder: projects.sortOrder,
         })
         .from(projects)
         .where(eq(projects.userId, userId))

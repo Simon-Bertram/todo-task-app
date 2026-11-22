@@ -2,10 +2,19 @@ const MIN_HIDDEN_MS = 15_000;
 
 let wired = false;
 let hiddenAt: number | null = null;
+let blurredAt: number | null = null;
+
+function shouldReload(since: number | null): boolean {
+  if (since === null) {
+    return false;
+  }
+  return Date.now() - since >= MIN_HIDDEN_MS;
+}
 
 /**
  * Reload board data when the user returns after the tab was hidden
- * for a short while (multi-device optimistic sync without websockets).
+ * or the window lost focus for a short while (multi-device optimistic
+ * sync without websockets).
  */
 export function revalidateOnFocus(): void {
   if (wired || typeof document === "undefined") {
@@ -18,13 +27,24 @@ export function revalidateOnFocus(): void {
       hiddenAt = Date.now();
       return;
     }
-    if (hiddenAt === null) {
+    if (shouldReload(hiddenAt)) {
+      hiddenAt = null;
+      location.reload();
       return;
     }
-    const elapsed = Date.now() - hiddenAt;
     hiddenAt = null;
-    if (elapsed >= MIN_HIDDEN_MS) {
+  });
+
+  window.addEventListener("blur", () => {
+    blurredAt = Date.now();
+  });
+
+  window.addEventListener("focus", () => {
+    if (shouldReload(blurredAt)) {
+      blurredAt = null;
       location.reload();
+      return;
     }
+    blurredAt = null;
   });
 }

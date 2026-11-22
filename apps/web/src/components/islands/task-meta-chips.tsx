@@ -1,4 +1,5 @@
 import {
+  formatDueWithTime,
   getDueReminderColor,
   getDueReminderLabel,
   getDueReminderStatus,
@@ -16,6 +17,20 @@ function tintStyle(color: string): {
     borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
     color,
   };
+}
+
+function formatDueChipLabel(
+  dueLabel: string | null,
+  dueDate: string | null,
+  dueTime: string | null
+): string | null {
+  if (dueLabel) {
+    return formatDueWithTime(dueLabel, dueTime);
+  }
+  if (dueDate) {
+    return formatDueWithTime(dueDate, dueTime);
+  }
+  return dueTime;
 }
 
 interface TaskMetaChipsProps {
@@ -37,6 +52,7 @@ export function TaskMetaChips({
   const dueStatus = getDueReminderStatus(task.dueDate, today);
   const dueLabel = getDueReminderLabel(dueStatus, task.dueDate, today);
   const dueColor = getDueReminderColor(dueStatus);
+  const dueChipLabel = formatDueChipLabel(dueLabel, task.dueDate, task.dueTime);
   const quadrant = getQuadrant(task.isUrgent, task.isImportant);
   const meta = QUADRANT_META[quadrant];
 
@@ -48,19 +64,20 @@ export function TaskMetaChips({
         </span>
       ) : null}
       {showQuadrant ? (
-        <span
-          className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
+        <a
+          className="inline-flex min-h-11 items-center rounded-full border px-2 font-mono text-xs hover:opacity-90"
+          href={`/matrix?quadrant=${quadrant}`}
           style={tintStyle(meta.colorVar)}
         >
           {quadrant} {meta.label}
-        </span>
+        </a>
       ) : null}
-      {dueLabel ? (
+      {dueChipLabel ? (
         <span
           className="inline-flex min-h-6 items-center rounded-full border px-2 font-mono text-xs"
           style={tintStyle(dueColor)}
         >
-          {dueLabel}
+          {dueChipLabel}
         </span>
       ) : null}
       <span className="inline-flex min-h-6 items-center rounded-full border border-border-contrast bg-surface-subtle px-2 font-mono text-text-secondary text-xs">

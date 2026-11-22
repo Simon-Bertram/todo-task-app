@@ -15,6 +15,24 @@ const TRIGGER_IDS = [
 ] as const;
 
 const DEFAULT_ESTIMATED_MINUTES = 30;
+const DUE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
+const DUE_TIME_PATTERN = /^\d{2}:\d{2}$/u;
+
+function readOptionalDueFields(form: HTMLFormElement): {
+  dueDate?: string;
+  dueTime?: string;
+} {
+  const data = new FormData(form);
+  const rawDueDate = String(data.get("dueDate") ?? "").trim();
+  const rawDueTime = String(data.get("dueTime") ?? "").trim();
+  const dueDate = DUE_DATE_PATTERN.test(rawDueDate) ? rawDueDate : null;
+  const dueTime =
+    dueDate && DUE_TIME_PATTERN.test(rawDueTime) ? rawDueTime : null;
+  return {
+    ...(dueDate ? { dueDate } : {}),
+    ...(dueTime ? { dueTime } : {}),
+  };
+}
 
 export interface UseQuickAddDialogResult {
   busy: boolean;
@@ -122,6 +140,7 @@ export function useQuickAddDialog(): UseQuickAddDialogResult {
           isUrgent,
           isImportant,
           ...(rawProjectId.length > 0 ? { projectId: rawProjectId } : {}),
+          ...readOptionalDueFields(form),
           ...(isToday ? { isToday: true } : {}),
         });
         dialogRef.current?.close();

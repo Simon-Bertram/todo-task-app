@@ -14,11 +14,13 @@ export interface Project {
   id: string;
   name: string;
   notes: string | null;
+  sortOrder: number;
 }
 
 export interface Task {
   completedAt?: Date | string | null;
   dueDate: string | null;
+  dueTime: string | null;
   estimatedMinutes: number;
   id: string;
   isCompleted: boolean;

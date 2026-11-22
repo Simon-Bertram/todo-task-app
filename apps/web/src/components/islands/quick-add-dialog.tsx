@@ -87,6 +87,29 @@ export default function QuickAddDialog({ projects = [] }: Props): JSX.Element {
           </label>
         ) : null}
 
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block space-y-1.5">
+            <span className="font-medium text-sm text-text-secondary">
+              Due date
+            </span>
+            <input
+              className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
+              name="dueDate"
+              type="date"
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className="font-medium text-sm text-text-secondary">
+              Due time
+            </span>
+            <input
+              className="min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
+              name="dueTime"
+              type="time"
+            />
+          </label>
+        </div>
+
         <div className="space-y-2">
           <button
             aria-expanded={isDurationOpen}

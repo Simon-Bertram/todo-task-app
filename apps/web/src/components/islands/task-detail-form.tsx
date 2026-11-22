@@ -5,6 +5,7 @@ import {
   getQuadrant,
   QUADRANT_META,
 } from "../../lib/quadrant";
+import { RECURRENCE_WEEKDAYS } from "../../lib/recurrence-form";
 import type {
   Project,
   Task,
@@ -14,9 +15,10 @@ import { isLongTask, openSubtaskCount } from "../../lib/task-helpers";
 import type { TaskDetailFormApi } from "../../lib/use-task-detail-form";
 import {
   TASK_DETAIL_ETC_PRESETS,
-  TASK_DETAIL_RECURRENCE,
+  TASK_DETAIL_RECURRENCE_MODES,
 } from "../../lib/use-task-detail-form";
 import DayPicker from "./day-picker";
+import NotesEditor from "./notes-editor";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
 import RatingRow from "./rating-row";
 import TaskProgress from "./task-progress";
@@ -105,13 +107,10 @@ export function TaskDetailForm({
     setIsRecurrenceOpen((open) => !open);
   }, []);
 
-  const recurrenceLabel =
-    TASK_DETAIL_RECURRENCE.find((rule) => rule.value === values.recurrence)
-      ?.label ?? "None";
   const recurrenceToggleLabel =
-    values.recurrence === null
+    values.recurrence.mode === "none"
       ? "Recurrence"
-      : `Recurrence · ${recurrenceLabel}`;
+      : `Recurrence · ${form.recurrenceLabel}`;
 
   // Two-tap delete: first tap arms confirm; second tap (confirmDelete) deletes.
   let deleteLabel = "Delete task";
@@ -204,17 +203,7 @@ export function TaskDetailForm({
             />
           ) : null}
 
-          <label className="block space-y-1.5">
-            <span className="font-medium text-sm text-text-secondary">
-              Notes
-            </span>
-            <textarea
-              className="min-h-24 w-full rounded-sm border border-border-contrast bg-surface-subtle px-3 py-2 text-sm text-text-primary focus:border-primary focus:outline-none"
-              onInput={form.onNotesInput}
-              placeholder="Optional notes (markdown supported later)"
-              value={values.notes}
-            />
-          </label>
+          <NotesEditor onInput={form.onNotesInput} value={values.notes} />
 
           <TaskSubtasksEditor
             key={baseTask.id}
@@ -222,12 +211,7 @@ export function TaskDetailForm({
             taskId={baseTask.id}
           />
 
-          <section className="space-y-2">
-            <h4 className="font-medium text-sm text-text-secondary">
-              Due date
-            </h4>
-            <DayPicker onChange={form.setDueDate} value={values.dueDate} />
-          </section>
+          <DueDateSection form={form} />
 
           {/* Eisenhower: quadrant is derived from urgency/importance (≥ 2 = high). */}
           <section className="space-y-3 rounded-sm border border-border-contrast bg-surface-subtle p-3">
@@ -309,41 +293,12 @@ export function TaskDetailForm({
             </section>
           ) : null}
 
-          <div className="space-y-2">
-            <button
-              aria-expanded={isRecurrenceOpen}
-              className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-sm border border-border-contrast px-3 text-left text-sm text-text-secondary hover:bg-surface-elevated"
-              onClick={onRecurrenceToggle}
-              type="button"
-            >
-              <span>{recurrenceToggleLabel}</span>
-              <span aria-hidden="true" className="text-text-muted">
-                {isRecurrenceOpen ? "▾" : "▸"}
-              </span>
-            </button>
-            {isRecurrenceOpen ? (
-              <div className="flex flex-wrap gap-1 rounded-full border border-border-subtle bg-surface-subtle p-1">
-                {TASK_DETAIL_RECURRENCE.map((rule) => {
-                  const selected = values.recurrence === rule.value;
-                  return (
-                    <button
-                      className={`min-h-10 rounded-full px-3 font-medium text-sm ${
-                        selected
-                          ? "bg-surface-elevated text-text-primary"
-                          : "text-text-secondary"
-                      }`}
-                      data-recurrence={rule.value ?? "null"}
-                      key={rule.label}
-                      onClick={form.onRecurrenceClick}
-                      type="button"
-                    >
-                      {rule.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
+          <RecurrenceSection
+            form={form}
+            isOpen={isRecurrenceOpen}
+            onToggle={onRecurrenceToggle}
+            toggleLabel={recurrenceToggleLabel}
+          />
 
           {error ? (
             <p className="text-capacity-over text-sm" role="alert">
@@ -407,6 +362,131 @@ export function TaskDetailForm({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DueDateSection({ form }: { form: TaskDetailFormApi }) {
+  const { values } = form;
+  return (
+    <section className="space-y-2">
+      <h4 className="font-medium text-sm text-text-secondary">Due date</h4>
+      <DayPicker onChange={form.setDueDate} value={values.dueDate} />
+      <label className="block space-y-1.5">
+        <span className="font-medium text-sm text-text-secondary">
+          Due time (optional)
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            className="min-h-11 rounded-sm border border-border-contrast bg-surface-subtle px-3 text-text-primary focus:border-primary focus:outline-none"
+            disabled={!values.dueDate}
+            onInput={form.onDueTimeInput}
+            type="time"
+            value={values.dueTime ?? ""}
+          />
+          {values.dueTime ? (
+            <button
+              className="inline-flex min-h-11 items-center rounded-sm border border-border-contrast px-3 text-sm text-text-secondary hover:bg-surface-elevated"
+              onClick={form.clearDueTime}
+              type="button"
+            >
+              Clear time
+            </button>
+          ) : null}
+        </div>
+      </label>
+    </section>
+  );
+}
+
+function RecurrenceSection({
+  form,
+  isOpen,
+  onToggle,
+  toggleLabel,
+}: {
+  form: TaskDetailFormApi;
+  isOpen: boolean;
+  onToggle: () => void;
+  toggleLabel: string;
+}) {
+  const { values } = form;
+  return (
+    <div className="space-y-2">
+      <button
+        aria-expanded={isOpen}
+        className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-sm border border-border-contrast px-3 text-left text-sm text-text-secondary hover:bg-surface-elevated"
+        onClick={onToggle}
+        type="button"
+      >
+        <span>{toggleLabel}</span>
+        <span aria-hidden="true" className="text-text-muted">
+          {isOpen ? "▾" : "▸"}
+        </span>
+      </button>
+      {isOpen ? (
+        <div className="space-y-3 rounded-sm border border-border-contrast bg-surface-subtle p-3">
+          <div className="flex flex-wrap gap-1">
+            {TASK_DETAIL_RECURRENCE_MODES.map((rule) => {
+              const selected = values.recurrence.mode === rule.value;
+              return (
+                <button
+                  className={`min-h-10 rounded-full px-3 font-medium text-sm ${
+                    selected
+                      ? "bg-surface-elevated text-text-primary"
+                      : "text-text-secondary"
+                  }`}
+                  data-recurrence={rule.value}
+                  key={rule.value}
+                  onClick={form.onRecurrenceModeClick}
+                  type="button"
+                >
+                  {rule.label}
+                </button>
+              );
+            })}
+          </div>
+          {values.recurrence.mode === "WEEKLY_DAYS" ? (
+            <div className="flex flex-wrap gap-1">
+              {RECURRENCE_WEEKDAYS.map((day) => {
+                const selected = values.recurrence.weeklyDays.includes(
+                  day.value
+                );
+                return (
+                  <button
+                    aria-pressed={selected}
+                    className={`min-h-11 min-w-11 rounded-full border px-2 font-mono text-xs ${
+                      selected
+                        ? "border-primary bg-primary text-on-primary"
+                        : "border-border-contrast text-text-secondary"
+                    }`}
+                    data-day={day.value}
+                    key={day.value}
+                    onClick={form.onWeeklyDayClick}
+                    type="button"
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+          {values.recurrence.mode === "EVERY" ? (
+            <label className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+              Every
+              <input
+                className="min-h-11 w-20 rounded-sm border border-border-contrast bg-surface px-2 text-text-primary focus:border-primary focus:outline-none"
+                max={365}
+                min={1}
+                onInput={form.onEveryDaysInput}
+                type="number"
+                value={values.recurrence.everyDays}
+              />
+              days
+            </label>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -44,6 +44,7 @@ import TaskProgress from "./task-progress";
 interface Props {
   budgetMinutes: number;
   initialFilter?: string;
+  initialQuadrant?: QuadrantId;
   projects: Project[];
   taskProgressControl?: TaskProgressControl;
   tasks: Task[];
@@ -64,14 +65,30 @@ export default function DesktopMatrixBoard({
   projects,
   budgetMinutes,
   initialFilter = "all",
+  initialQuadrant = "Q1",
   taskProgressControl = "pie",
 }: Props) {
   const [tasks, setTasks] = useState(initialTasks);
   useTaskProgressSync(setTasks);
   const [filter, setFilter] = useState(initialFilter);
+  const [focusQuadrant, setFocusQuadrant] = useState<QuadrantId | null>(
+    initialQuadrant
+  );
   const [dockHoverMinutes, setDockHoverMinutes] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const isSaving = busyId !== null;
+
+  useEffect(() => {
+    if (!focusQuadrant) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setFocusQuadrant(null);
+    }, 1600);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [focusQuadrant]);
 
   const updateTask = useOptimisticTaskUpdate(
     tasks,
@@ -204,6 +221,7 @@ export default function DesktopMatrixBoard({
           {ORDER.map((quadrant) => (
             <QuadrantDrop
               control={taskProgressControl}
+              highlighted={focusQuadrant === quadrant}
               key={quadrant}
               onAddToToday={addToToday}
               onRemoveFromToday={removeFromToday}
@@ -231,10 +249,12 @@ function QuadrantDrop({
   tasks,
   projects,
   control,
+  highlighted = false,
   onAddToToday,
   onRemoveFromToday,
 }: {
   control: TaskProgressControl;
+  highlighted?: boolean;
   onAddToToday: (taskId: string) => void;
   onRemoveFromToday: (taskId: string) => void;
   projects: Project[];
@@ -260,11 +280,18 @@ function QuadrantDrop({
     });
   }, [quadrant]);
 
+  useEffect(() => {
+    if (!highlighted) {
+      return;
+    }
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [highlighted]);
+
   return (
     <section
       aria-labelledby={`quad-${quadrant}`}
       className={`flex min-h-64 flex-col rounded-md border p-3 ${meta.tintClass} ${
-        isOver
+        isOver || highlighted
           ? "border-primary ring-2 ring-primary/40"
           : "border-border-contrast"
       }`}

@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useCallback, useEffect, useId, useState } from "preact/hooks";
 import {
+  formatDueWithTime,
   getDueReminderColor,
   getDueReminderLabel,
   getDueReminderStatus,
@@ -103,12 +104,12 @@ export function TaskListRow({
                 className="shrink-0 font-mono text-xs"
                 style={{ color: dueColor }}
               >
-                {dueLabel}
+                {formatDueWithTime(dueLabel, task.dueTime)}
               </span>
             ) : null}
             {showDue && !dueLabel && task.dueDate ? (
               <span className="shrink-0 font-mono text-text-muted text-xs">
-                {task.dueDate}
+                {formatDueWithTime(task.dueDate, task.dueTime)}
               </span>
             ) : null}
             {project ? (

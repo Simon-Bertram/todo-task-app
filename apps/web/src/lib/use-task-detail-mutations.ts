@@ -2,6 +2,7 @@ import { ORPCError } from "@orpc/client";
 import { useCallback, useState } from "preact/hooks";
 import { celebrateTaskComplete, completionIntensity } from "./celebrate";
 import { orpc } from "./orpc";
+import { buildRecurrenceRule } from "./recurrence-form";
 import type { Project, Task } from "./task-helpers";
 import { openSubtaskCount } from "./task-helpers";
 import { showToast } from "./toast";
@@ -70,7 +71,7 @@ export function useTaskDetailMutations({
         isImportant: values.isImportant,
         isToday: nextIsToday,
         isUrgent: values.isUrgent,
-        recurrenceRule: values.recurrence,
+        recurrenceRule: buildRecurrenceRule(values.recurrence),
       });
       setLocalTasks((current) =>
         current.map((task) =>
