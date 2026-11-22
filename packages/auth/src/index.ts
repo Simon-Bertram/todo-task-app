@@ -8,6 +8,7 @@ import {
   verification,
 } from "@todo-task-app/db/schema/auth";
 import { betterAuth } from "better-auth";
+import { captcha } from "better-auth/plugins";
 
 import {
   resetPasswordEmailContent,
@@ -15,12 +16,24 @@ import {
   verificationEmailContent,
 } from "./email";
 
+/** Cloudflare always-pass dummy secret — never allow in production. */
+const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
+
+const CAPTCHA_ENDPOINTS = [
+  "/sign-up/email",
+  "/sign-in/email",
+  "/request-password-reset",
+  "/send-verification-email",
+] as const;
+
 export interface AuthConfig {
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   CORS_ORIGIN: string;
   EMAIL_FROM: string;
+  NODE_ENV?: string;
   RESEND_API_KEY: string;
+  TURNSTILE_SECRET_KEY: string;
 }
 
 export interface CreateAuthOptions {
@@ -102,6 +115,15 @@ export function createAuth(
   database: Database,
   options: CreateAuthOptions = {}
 ) {
+  if (
+    env.NODE_ENV === "production" &&
+    env.TURNSTILE_SECRET_KEY === TURNSTILE_TEST_SECRET
+  ) {
+    throw new Error(
+      "TURNSTILE_SECRET_KEY must not use the Cloudflare test secret in production"
+    );
+  }
+
   const cookieDomain = sharedCookieDomain(env.BETTER_AUTH_URL, env.CORS_ORIGIN);
   const emailConfig = {
     apiKey: env.RESEND_API_KEY,
@@ -135,7 +157,9 @@ export function createAuth(
         secure: true,
       },
       ipAddress: {
-        ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"],
+        // Only the Cloudflare-owned client IP header — never trust
+        // client-controlled X-Forwarded-For for rate-limit keys.
+        ipAddressHeaders: ["cf-connecting-ip"],
       },
     },
     baseURL: env.BETTER_AUTH_URL,
@@ -173,10 +197,24 @@ export function createAuth(
         });
       },
     },
-    plugins: [],
+    plugins: [
+      captcha({
+        endpoints: [...CAPTCHA_ENDPOINTS],
+        provider: "cloudflare-turnstile",
+        secretKey: env.TURNSTILE_SECRET_KEY,
+      }),
+    ],
     rateLimit: {
       customRules: {
         "/request-password-reset": {
+          max: 3,
+          window: 60,
+        },
+        "/reset-password": {
+          max: 5,
+          window: 60,
+        },
+        "/send-verification-email": {
           max: 3,
           window: 60,
         },

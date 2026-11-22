@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { mapAuthClientError } from "./auth-errors";
 
-const INCORRECT_CREDENTIALS = /Incorrect email or password/i;
-const IF_ACCOUNT_EXISTS = /if an account exists/i;
-const ALREADY_EXISTS = /already exists/i;
+const INCORRECT_CREDENTIALS = /Incorrect email or password/iu;
+const IF_ACCOUNT_EXISTS = /if an account exists/iu;
+const ALREADY_EXISTS = /already exists/iu;
+const VERIFICATION_CHALLENGE = /verification challenge/iu;
 
 describe("mapAuthClientError", () => {
   it("maps EMAIL_NOT_VERIFIED with email CTA", () => {
@@ -49,5 +50,13 @@ describe("mapAuthClientError", () => {
     });
 
     expect(mapped.body).toBe("Custom failure");
+  });
+
+  it("maps captcha failures to retry copy", () => {
+    const missing = mapAuthClientError({ code: "MISSING_RESPONSE" });
+    const failed = mapAuthClientError({ code: "VERIFICATION_FAILED" });
+
+    expect(missing.body).toMatch(VERIFICATION_CHALLENGE);
+    expect(failed.body).toMatch(VERIFICATION_CHALLENGE);
   });
 });

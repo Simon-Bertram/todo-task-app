@@ -1,8 +1,9 @@
 import type { JSX } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
-
+import { captchaFetchHeaders } from "../../lib/turnstile";
 import { useAuthForm } from "../../lib/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
+import { TurnstileWidget } from "./turnstile-widget";
 
 const SUBMIT_CLASS =
   "flex min-h-11 w-full items-center justify-center rounded-sm border border-border-contrast bg-surface-subtle font-semibold text-sm text-text-primary transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
@@ -38,6 +39,21 @@ export default function CheckEmailPanel(): JSX.Element {
   } = useAuthForm({
     errorId: "check-email-error",
   });
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const handleCaptchaToken = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
+
+  const resetTurnstile = useCallback(() => {
+    setCaptchaToken(null);
+    setTurnstileKey((key) => key + 1);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -55,6 +71,11 @@ export default function CheckEmailPanel(): JSX.Element {
         return;
       }
 
+      if (!captchaToken) {
+        showError({ code: "MISSING_RESPONSE" });
+        return;
+      }
+
       clearError();
       setSuccess(null);
       setBusy(true);
@@ -64,9 +85,13 @@ export default function CheckEmailPanel(): JSX.Element {
         const { error: sendError } = await authClient.sendVerificationEmail({
           callbackURL: `${window.location.origin}/login`,
           email,
+          fetchOptions: {
+            headers: captchaFetchHeaders(captchaToken),
+          },
         });
 
         if (sendError) {
+          resetTurnstile();
           showError(sendError);
           return;
         }
@@ -74,13 +99,15 @@ export default function CheckEmailPanel(): JSX.Element {
         setSuccess(
           "Verification email sent. Check your inbox and spam folder."
         );
+        resetTurnstile();
       } catch {
+        resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {
         setBusy(false);
       }
     },
-    [clearError, email, setBusy, showError]
+    [captchaToken, clearError, email, resetTurnstile, setBusy, showError]
   );
 
   return (
@@ -103,6 +130,15 @@ export default function CheckEmailPanel(): JSX.Element {
       >
         <input name="email" type="hidden" value={email ?? ""} />
 
+        {canResend ? (
+          <TurnstileWidget
+            action="send-verification"
+            key={turnstileKey}
+            onExpire={handleCaptchaExpire}
+            onToken={handleCaptchaToken}
+          />
+        ) : null}
+
         <AuthFormError error={error} errorId={errorId} errorRef={errorRef} />
 
         <p
@@ -119,7 +155,11 @@ export default function CheckEmailPanel(): JSX.Element {
         </p>
 
         {canResend ? (
-          <button className={SUBMIT_CLASS} disabled={busy} type="submit">
+          <button
+            className={SUBMIT_CLASS}
+            disabled={busy || !captchaToken}
+            type="submit"
+          >
             {busy ? "Sending…" : "Resend verification email"}
           </button>
         ) : null}

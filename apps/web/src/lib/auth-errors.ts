@@ -71,6 +71,12 @@ export function mapAuthClientError(
         body: "Too many attempts. Wait a moment, then try again.",
         code,
       };
+    case "MISSING_RESPONSE":
+    case "VERIFICATION_FAILED":
+      return {
+        body: "Complete the verification challenge, then try again.",
+        code,
+      };
     case "USER_ALREADY_EXISTS":
     case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
       return {

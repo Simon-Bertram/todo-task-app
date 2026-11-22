@@ -52,6 +52,7 @@ export const server = Worker(
         HF_TOKEN: Redacted("HF_TOKEN"),
         NODE_ENV: isCustomDomainStage ? "production" : "development",
         RESEND_API_KEY: Redacted("RESEND_API_KEY"),
+        TURNSTILE_SECRET_KEY: Redacted("TURNSTILE_SECRET_KEY"),
       },
       main: "../../apps/server/src/index.ts",
       name: "todo-server",
@@ -73,6 +74,7 @@ export type ServerEnv = InferEnv<typeof server>;
  */
 export type WebEnv = InferEnv<{
   PUBLIC_SERVER_URL: string;
+  PUBLIC_TURNSTILE_SITEKEY: string;
   SERVER: typeof server;
   SESSION: ReturnType<typeof KV.Namespace>;
 }>;
@@ -98,6 +100,7 @@ export default Stack(
         PUBLIC_SERVER_URL: isCustomDomainStage
           ? API_ORIGIN
           : serverWorker.url.as<string>(),
+        PUBLIC_TURNSTILE_SITEKEY: ConfigString("PUBLIC_TURNSTILE_SITEKEY"),
         SERVER: serverWorker,
         SESSION: KV.Namespace("session"),
       },

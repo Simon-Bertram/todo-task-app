@@ -1,8 +1,9 @@
 import type { JSX } from "preact";
 import { useCallback, useState } from "preact/hooks";
-
+import { captchaFetchHeaders } from "../../lib/turnstile";
 import { useAuthForm } from "../../lib/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
+import { TurnstileWidget } from "./turnstile-widget";
 
 const INPUT_CLASS =
   "min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
@@ -27,6 +28,21 @@ export default function ForgotPasswordForm(): JSX.Element {
   } = useAuthForm({
     errorId: "forgot-form-error",
   });
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const handleCaptchaToken = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
+
+  const resetTurnstile = useCallback(() => {
+    setCaptchaToken(null);
+    setTurnstileKey((key) => key + 1);
+  }, []);
 
   const handleSubmit = useCallback(
     async (event: Event) => {
@@ -34,6 +50,11 @@ export default function ForgotPasswordForm(): JSX.Element {
       const form = event.currentTarget as HTMLFormElement;
       const data = new FormData(form);
       const email = String(data.get("email") ?? "");
+
+      if (!captchaToken) {
+        showError({ code: "MISSING_RESPONSE" });
+        return;
+      }
 
       clearError();
       setSuccess(null);
@@ -43,10 +64,14 @@ export default function ForgotPasswordForm(): JSX.Element {
         const { authClient } = await import("../../lib/auth-client");
         const { error: requestError } = await authClient.requestPasswordReset({
           email,
+          fetchOptions: {
+            headers: captchaFetchHeaders(captchaToken),
+          },
           redirectTo: `${window.location.origin}/reset-password`,
         });
 
         if (requestError) {
+          resetTurnstile();
           showError(requestError);
           return;
         }
@@ -54,13 +79,15 @@ export default function ForgotPasswordForm(): JSX.Element {
         setSuccess(
           "If this email exists in our system, check your inbox for a reset link."
         );
+        resetTurnstile();
       } catch {
+        resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {
         setBusy(false);
       }
     },
-    [clearError, setBusy, showError]
+    [captchaToken, clearError, resetTurnstile, setBusy, showError]
   );
 
   return (
@@ -98,6 +125,13 @@ export default function ForgotPasswordForm(): JSX.Element {
           />
         </div>
 
+        <TurnstileWidget
+          action="forgot-password"
+          key={turnstileKey}
+          onExpire={handleCaptchaExpire}
+          onToken={handleCaptchaToken}
+        />
+
         <AuthFormError error={error} errorId={errorId} errorRef={errorRef} />
 
         <p
@@ -113,7 +147,11 @@ export default function ForgotPasswordForm(): JSX.Element {
           {success}
         </p>
 
-        <button className={SUBMIT_CLASS} disabled={busy} type="submit">
+        <button
+          className={SUBMIT_CLASS}
+          disabled={busy || !captchaToken}
+          type="submit"
+        >
           {busy ? "Sending…" : "Send reset link"}
         </button>
       </form>

@@ -1,8 +1,9 @@
 import type { JSX } from "preact";
-import { useCallback } from "preact/hooks";
-
+import { useCallback, useState } from "preact/hooks";
+import { captchaFetchHeaders } from "../../lib/turnstile";
 import { useAuthForm } from "../../lib/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
+import { TurnstileWidget } from "./turnstile-widget";
 
 const INPUT_CLASS =
   "min-h-11 w-full rounded-sm border border-border-contrast bg-surface-subtle px-4 text-text-primary placeholder:text-text-muted focus:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
@@ -31,6 +32,21 @@ export default function SignUpForm(): JSX.Element {
       password: PASSWORD_HINT_ID,
     },
   });
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const handleCaptchaToken = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
+
+  const resetTurnstile = useCallback(() => {
+    setCaptchaToken(null);
+    setTurnstileKey((key) => key + 1);
+  }, []);
 
   const handleSubmit = useCallback(
     async (event: Event) => {
@@ -40,6 +56,11 @@ export default function SignUpForm(): JSX.Element {
       const name = String(data.get("name") ?? "");
       const email = String(data.get("email") ?? "");
       const password = String(data.get("password") ?? "");
+
+      if (!captchaToken) {
+        showError({ code: "MISSING_RESPONSE" });
+        return;
+      }
 
       clearError();
       setBusy(true);
@@ -54,7 +75,9 @@ export default function SignUpForm(): JSX.Element {
             password,
           },
           {
+            headers: captchaFetchHeaders(captchaToken),
             onError: (ctx) => {
+              resetTurnstile();
               showError(ctx.error, { email });
             },
             onSuccess: () => {
@@ -64,12 +87,13 @@ export default function SignUpForm(): JSX.Element {
           }
         );
       } catch {
+        resetTurnstile();
         showError({ message: "An unexpected error occurred." });
       } finally {
         setBusy(false);
       }
     },
-    [clearError, setBusy, showError]
+    [captchaToken, clearError, resetTurnstile, setBusy, showError]
   );
 
   return (
@@ -143,6 +167,13 @@ export default function SignUpForm(): JSX.Element {
           </p>
         </div>
 
+        <TurnstileWidget
+          action="signup"
+          key={turnstileKey}
+          onExpire={handleCaptchaExpire}
+          onToken={handleCaptchaToken}
+        />
+
         <AuthFormError
           error={error}
           errorId={errorId}
@@ -150,7 +181,11 @@ export default function SignUpForm(): JSX.Element {
           variant="inline"
         />
 
-        <button className={SUBMIT_CLASS} disabled={busy} type="submit">
+        <button
+          className={SUBMIT_CLASS}
+          disabled={busy || !captchaToken}
+          type="submit"
+        >
           {busy ? "Creating account…" : "Sign up"}
         </button>
       </form>
