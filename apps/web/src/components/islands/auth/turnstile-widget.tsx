@@ -1,8 +1,8 @@
 import type { JSX } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
-import { ENV } from "../../env.public";
-import { loadTurnstile } from "../../lib/turnstile";
+import { ENV } from "@/env.public";
+import { loadTurnstile } from "@/lib/auth/turnstile";
 
 export interface TurnstileWidgetProps {
   action: string;

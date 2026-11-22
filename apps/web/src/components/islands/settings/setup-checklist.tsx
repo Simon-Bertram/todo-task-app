@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
-import type { Project, Task } from "../../lib/task-helpers";
+import { orpc } from "@/lib/rpc/orpc";
+import type { Project, Task } from "@/lib/tasks/task-helpers";
 
 interface Props {
   capacitySet: boolean;

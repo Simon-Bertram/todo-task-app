@@ -1,0 +1,25 @@
+---
+import SignInFormIsland from "./islands/auth/sign-in-form";
+
+interface Props {
+  heading?: string;
+  headingLevel?: 1 | 2;
+  showHeading?: boolean;
+  variant?: "glass" | "solid";
+}
+
+const {
+  variant = "solid",
+  heading = "Welcome back",
+  headingLevel = 1,
+  showHeading = true,
+} = Astro.props;
+---
+
+<SignInFormIsland
+  heading={heading}
+  headingLevel={headingLevel}
+  showHeading={showHeading}
+  variant={variant}
+  client:idle={{ timeout: 500 }}
+/>

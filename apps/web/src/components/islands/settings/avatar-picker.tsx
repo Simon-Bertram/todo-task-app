@@ -5,8 +5,8 @@ import {
   isAllowedGalleryPath,
 } from "@todo-task-app/api/lib/avatars";
 import { useCallback, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
-import { showToast } from "../../lib/toast";
+import { orpc } from "@/lib/rpc/orpc";
+import { showToast } from "@/lib/ui/toast";
 
 const SESSION_EXPIRED_MESSAGE =
   "Session expired. Sign in again, then choose your avatar.";

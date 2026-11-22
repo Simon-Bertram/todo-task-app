@@ -1,8 +1,8 @@
 ---
-import TasksBoard from "../components/islands/tasks-board";
+import TasksBoard from "@/components/islands/tasks/tasks-board";
+import { loadAppBoardData } from "@/lib/rpc/orpc.server";
+import { mergeTasksBoardPrefs } from "@/lib/tasks/task-helpers";
 import AppShell from "../layouts/app-shell.astro";
-import { loadAppBoardData } from "../lib/orpc.server";
-import { mergeTasksBoardPrefs } from "../lib/task-helpers";
 
 const data = await loadAppBoardData(Astro.request, {
   requestId: Astro.locals.requestId,

@@ -1,8 +1,7 @@
 ---
 import { userMessageForUnknownError } from "@todo-task-app/api/lib/app-error";
-
+import { referenceIdForError } from "@/lib/rpc/orpc-errors";
 import Layout from "../layouts/layout.astro";
-import { referenceIdForError } from "../lib/orpc-errors";
 
 interface Props {
   error: unknown;

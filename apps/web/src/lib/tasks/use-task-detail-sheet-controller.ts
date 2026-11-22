@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "preact/hooks";
-import type { Project, Task } from "./task-helpers";
+import type { Project, Task } from "@/lib/tasks/task-helpers";
 
 export function useTaskDetailSheetController(
   initialTasks: Task[],

@@ -4,7 +4,7 @@ A practical guide for splitting heavy Preact islands into **controller hook**, *
 
 Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). CRUD vertical slice: [ADDING_CRUD.md](./ADDING_CRUD.md). Lint / island standards: [`.agents/skills/ultracite/SKILL.md`](../.agents/skills/ultracite/SKILL.md).
 
-**Status:** Implemented for the task detail sheet — see [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) (wiring), [`use-task-detail-sheet-controller.ts`](../apps/web/src/lib/use-task-detail-sheet-controller.ts), [`use-task-detail-form.ts`](../apps/web/src/lib/use-task-detail-form.ts), [`use-task-detail-mutations.ts`](../apps/web/src/lib/use-task-detail-mutations.ts), and [`task-detail-form.tsx`](../apps/web/src/components/islands/task-detail-form.tsx).
+**Status:** Implemented for the task detail sheet — see [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task/task-detail-sheet.tsx) (wiring), [`use-task-detail-sheet-controller.ts`](../apps/web/src/lib/tasks/use-task-detail-sheet-controller.ts), [`use-task-detail-form.ts`](../apps/web/src/lib/tasks/use-task-detail-form.ts), [`use-task-detail-mutations.ts`](../apps/web/src/lib/tasks/use-task-detail-mutations.ts), and [`task-detail-form.tsx`](../apps/web/src/components/islands/task/task-detail-form.tsx).
 
 ---
 
@@ -31,11 +31,11 @@ Three layers (plus an optional mutations hook). Each **owns** one job and **must
 
 | Layer                                | Module (task detail)                                                                             | Owns                                                                                                                                                                                                                                      | Must not own                                                                                             |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Controller hook**                  | [`use-task-detail-sheet-controller.ts`](../apps/web/src/lib/use-task-detail-sheet-controller.ts) | Sheet lifecycle: which task is open, open/close, document/`plansage:open-task` listeners, focus-progress scroll, local list caches, capacity / quadrant **derived** display inputs, confirm-delete chrome, busy aggregation for the shell | Field values (`title`, `notes`, …); raw JSX for inputs; direct `orpc.*` calls if you extracted mutations |
-| **Form hook**                        | [`use-task-detail-form.ts`](../apps/web/src/lib/use-task-detail-form.ts)                         | Editable field state, reset/hydrate from `baseTask`, field change handlers, client validation (“title required”), packing a save payload                                                                                                  | Sheet open state; event listeners; toasts; `location.reload`; markup                                     |
-| **Mutations hook** (optional fourth) | [`use-task-detail-mutations.ts`](../apps/web/src/lib/use-task-detail-mutations.ts)               | `isSaving` / `isDeleting`, `orpc.tasks.update` / `delete`, error strings for alerts, toast + celebrate + reload side effects, optimistic list patches                                                                                     | Form field storage; dialog chrome layout                                                                 |
-| **Presentational form**              | [`task-detail-form.tsx`](../apps/web/src/components/islands/task-detail-form.tsx)                | Labels, inputs, rating rows, presets, ARIA on controls; calls callbacks only                                                                                                                                                              | `useState` for domain data; `orpc`; knowing _why_ the sheet opened                                       |
-| **Thin island**                      | [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx)              | Compose hooks + dialog shell + `<TaskDetailForm … />`                                                                                                                                                                                     | Business logic beyond wiring                                                                             |
+| **Controller hook**                  | [`use-task-detail-sheet-controller.ts`](../apps/web/src/lib/tasks/use-task-detail-sheet-controller.ts) | Sheet lifecycle: which task is open, open/close, document/`plansage:open-task` listeners, focus-progress scroll, local list caches, capacity / quadrant **derived** display inputs, confirm-delete chrome, busy aggregation for the shell | Field values (`title`, `notes`, …); raw JSX for inputs; direct `orpc.*` calls if you extracted mutations |
+| **Form hook**                        | [`use-task-detail-form.ts`](../apps/web/src/lib/tasks/use-task-detail-form.ts)                         | Editable field state, reset/hydrate from `baseTask`, field change handlers, client validation (“title required”), packing a save payload                                                                                                  | Sheet open state; event listeners; toasts; `location.reload`; markup                                     |
+| **Mutations hook** (optional fourth) | [`use-task-detail-mutations.ts`](../apps/web/src/lib/tasks/use-task-detail-mutations.ts)               | `isSaving` / `isDeleting`, `orpc.tasks.update` / `delete`, error strings for alerts, toast + celebrate + reload side effects, optimistic list patches                                                                                     | Form field storage; dialog chrome layout                                                                 |
+| **Presentational form**              | [`task-detail-form.tsx`](../apps/web/src/components/islands/task/task-detail-form.tsx)                | Labels, inputs, rating rows, presets, ARIA on controls; calls callbacks only                                                                                                                                                              | `useState` for domain data; `orpc`; knowing _why_ the sheet opened                                       |
+| **Thin island**                      | [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task/task-detail-sheet.tsx)              | Compose hooks + dialog shell + `<TaskDetailForm … />`                                                                                                                                                                                     | Business logic beyond wiring                                                                             |
 
 **Rule of thumb:** if a piece of state would still make sense with the dialog closed and no DOM, it probably belongs in a hook—not in the presentational form. If it is only how a control looks or how a click maps to a callback prop, it stays presentational (or a tiny local UI helper like `RatingRow`).
 
@@ -73,12 +73,12 @@ Without a separate mutations hook, save/delete/toggle live on the controller (or
 
 ## 4. Layer sketches
 
-Illustrative TypeScript / Preact. Names and props should match real types in [`task-helpers`](../apps/web/src/lib/task-helpers.ts) when you implement; sketches omit imports for clarity.
+Illustrative TypeScript / Preact. Names and props should match real types in [`task-helpers`](../apps/web/src/lib/tasks/task-helpers.ts) when you implement; sketches omit imports for clarity.
 
 ### 4.1 Controller hook
 
 ```ts
-// apps/web/src/lib/use-task-detail-sheet-controller.ts
+// apps/web/src/lib/tasks/use-task-detail-sheet-controller.ts
 export function useTaskDetailSheetController(props: {
   budgetMinutes: number;
   plannedMinutes: number;
@@ -116,7 +116,7 @@ export function useTaskDetailSheetController(props: {
 ### 4.2 Form hook
 
 ```ts
-// apps/web/src/lib/use-task-detail-form.ts
+// apps/web/src/lib/tasks/use-task-detail-form.ts
 export function useTaskDetailForm(baseTask: Task | null) {
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -162,7 +162,7 @@ export function useTaskDetailForm(baseTask: Task | null) {
 ### 4.3 Mutations hook (optional)
 
 ```ts
-// apps/web/src/lib/use-task-detail-mutations.ts
+// apps/web/src/lib/tasks/use-task-detail-mutations.ts
 export function useTaskDetailMutations(options: {
   baseTask: Task | null;
   form: ReturnType<typeof useTaskDetailForm>;
@@ -206,7 +206,7 @@ export function useTaskDetailMutations(options: {
 ### 4.4 Presentational form
 
 ```tsx
-// apps/web/src/components/islands/task-detail-form.tsx
+// apps/web/src/components/islands/task/task-detail-form.tsx
 export interface TaskDetailFormProps {
   title: string;
   notes: string;
@@ -243,7 +243,7 @@ export default function TaskDetailForm(props: TaskDetailFormProps) {
 ### 4.5 Thin sheet wiring
 
 ```tsx
-// apps/web/src/components/islands/task-detail-sheet.tsx
+// apps/web/src/components/islands/task/task-detail-sheet.tsx
 export default function TaskDetailSheet(props: Props) {
   const controller = useTaskDetailSheetController(props)
   const form = useTaskDetailForm(controller.baseTask)
@@ -322,7 +322,7 @@ Auth often keeps mutations inside the form hook because there is no sheet lifecy
 | Form hook               | Usually **absent** on the board itself—editing belongs in the task detail sheet                            |
 | Presentational          | Column layout, task cards, drag handles (props in, callbacks out)                                          |
 
-Boards are “controller + presentational list.” When a card opens task detail, prefer **events or a shared open API** (`plansage:open-task` / `.task-open`) so the board does not import the full form stack. See [`desktop-matrix-board.tsx`](../apps/web/src/components/islands/desktop-matrix-board.tsx) and [`mobile-matrix.tsx`](../apps/web/src/components/islands/mobile-matrix.tsx) as board-side cousins; the sheet remains the edit form owner.
+Boards are “controller + presentational list.” When a card opens task detail, prefer **events or a shared open API** (`plansage:open-task` / `.task-open`) so the board does not import the full form stack. See [`desktop-matrix-board.tsx`](../apps/web/src/components/islands/matrix/desktop-matrix-board.tsx) and [`mobile-matrix.tsx`](../apps/web/src/components/islands/matrix/mobile-matrix.tsx) as board-side cousins; the sheet remains the edit form owner.
 
 ---
 
@@ -343,7 +343,7 @@ God sheets force “render 600 lines or don’t test.” Layered hooks let API c
 
 ## 8. Checklist: splitting a god sheet
 
-Use this when refactoring [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) (or a similar island).
+Use this when refactoring [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task/task-detail-sheet.tsx) (or a similar island).
 
 1. **Inventory state** — List every `useState` / `useRef` / `useMemo`. Tag each as _shell_, _form field_, _mutation flag_, or _derived_.
 2. **Inventory effects** — Tag listeners, hydrations (`baseTask → fields`), focus scrolls, prop syncs.
@@ -362,7 +362,7 @@ Use this when refactoring [`task-detail-sheet.tsx`](../apps/web/src/components/i
 
 ## Related
 
-- Current god sheet: [`apps/web/src/components/islands/task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx)
+- Current god sheet: [`apps/web/src/components/islands/task/task-detail-sheet.tsx`](../apps/web/src/components/islands/task/task-detail-sheet.tsx)
 - Intended modules: `use-task-detail-sheet-controller.ts`, `use-task-detail-form.ts`, `use-task-detail-mutations.ts`, `task-detail-form.tsx` (paths under `apps/web/src/lib/` and `apps/web/src/components/islands/`)
-- Domain helpers: [`apps/web/src/lib/task-helpers.ts`](../apps/web/src/lib/task-helpers.ts), [`apps/web/src/lib/quadrant.ts`](../apps/web/src/lib/quadrant.ts)
-- Mutation client: [`apps/web/src/lib/orpc.ts`](../apps/web/src/lib/orpc.ts)
+- Domain helpers: [`apps/web/src/lib/tasks/task-helpers.ts`](../apps/web/src/lib/tasks/task-helpers.ts), [`apps/web/src/lib/tasks/quadrant.ts`](../apps/web/src/lib/tasks/quadrant.ts)
+- Mutation client: [`apps/web/src/lib/rpc/orpc.ts`](../apps/web/src/lib/rpc/orpc.ts)

@@ -3,8 +3,8 @@ import { RPCLink } from "@orpc/client/fetch";
 import { REQUEST_ID_HEADER } from "@todo-task-app/api/lib/app-error";
 import type { AppRouterClient } from "@todo-task-app/api/routers/index";
 
-import { ENV } from "../env.public";
-import { shouldReportOrpcError } from "./orpc-errors";
+import { ENV } from "@/env.public";
+import { shouldReportOrpcError } from "@/lib/rpc/orpc-errors";
 
 let reporting = false;
 let client: AppRouterClient | undefined;

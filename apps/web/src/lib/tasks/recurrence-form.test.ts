@@ -3,7 +3,7 @@ import {
   buildRecurrenceRule,
   parseRecurrenceRule,
   recurrenceSummary,
-} from "./recurrence-form";
+} from "@/lib/tasks/recurrence-form";
 
 describe("parseRecurrenceRule", () => {
   it("parses simple presets", () => {

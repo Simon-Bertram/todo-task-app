@@ -1,7 +1,7 @@
 ---
 import { initialsFromName } from "@todo-task-app/api/lib/avatars";
-import type { SessionUser } from "../../lib/session.server";
-import LogoutButton from "../islands/logout-button";
+import LogoutButton from "@/components/islands/auth/logout-button";
+import type { SessionUser } from "@/lib/auth/session.server";
 
 interface Props {
   user: SessionUser;

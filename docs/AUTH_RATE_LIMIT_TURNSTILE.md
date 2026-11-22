@@ -112,8 +112,8 @@ Those are public dummy credentials, not a dashboard widget. Production must repl
 
 ### Client (todo-web)
 
-1. Load Turnstile from Cloudflare CDN (not the island JS bundle): [`apps/web/src/lib/turnstile.ts`](../apps/web/src/lib/turnstile.ts)
-2. Explicit render in Preact: [`apps/web/src/components/islands/turnstile-widget.tsx`](../apps/web/src/components/islands/turnstile-widget.tsx)
+1. Load Turnstile from Cloudflare CDN (not the island JS bundle): [`apps/web/src/lib/auth/turnstile.ts`](../apps/web/src/lib/auth/turnstile.ts)
+2. Explicit render in Preact: [`apps/web/src/components/islands/auth/turnstile-widget.tsx`](../apps/web/src/components/islands/auth/turnstile-widget.tsx)
 3. On submit, send the token as header `x-captcha-response` (`CAPTCHA_RESPONSE_HEADER` from `@todo-task-app/auth/captcha`; Better Auth captcha contract), via `captchaFetchHeaders`
 4. Forms: sign-in, sign-up, forgot-password, check-email resend — **not** reset-password
 5. On captcha/auth error, remount the widget (`key` bump) so a fresh token is required
@@ -227,7 +227,7 @@ Tokens expire quickly and are single-use; validate immediately; reset the widget
 3. **Key by real client IP** — `cf-connecting-ip` only. Listing spoofable headers weakens limits.
 4. **Tighten sensitive paths** with `customRules` (auth + outbound email). Keep human-usable windows (e.g. 3–5 attempts per 60s).
 5. **Pair with Turnstile** on anonymous email/credential endpoints; rate limit alone is not enough against distributed bots.
-6. **Map `TOO_MANY_REQUESTS`** in the UI ([`apps/web/src/lib/auth-errors.ts`](../apps/web/src/lib/auth-errors.ts)).
+6. **Map `TOO_MANY_REQUESTS`** in the UI ([`apps/web/src/lib/auth/auth-errors.ts`](../apps/web/src/lib/auth/auth-errors.ts)).
 7. **Related pattern** — post-auth limits (e.g. avatar generate) can reuse the same D1 `rate_limit` table with app-defined keys; that is separate from Better Auth path rules.
 
 Better Auth docs: [Rate Limit](https://www.better-auth.com/docs/concepts/rate-limit). Captcha plugin: [Captcha](https://www.better-auth.com/docs/plugins/captcha).

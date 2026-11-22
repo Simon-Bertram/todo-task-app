@@ -1,7 +1,7 @@
 import type { JSX } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
-import { useAuthForm } from "../../lib/use-auth-form";
+import { useAuthForm } from "@/lib/auth/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
 
 const INPUT_CLASS =
@@ -74,7 +74,7 @@ export default function ResetPasswordForm(): JSX.Element {
       setBusy(true);
 
       try {
-        const { authClient } = await import("../../lib/auth-client");
+        const { authClient } = await import("@/lib/auth/auth-client");
         const { error: resetError } = await authClient.resetPassword({
           newPassword: password,
           token,

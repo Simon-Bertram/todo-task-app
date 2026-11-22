@@ -1,13 +1,13 @@
 ---
-import DesktopMatrixBoard from "../components/islands/desktop-matrix-board";
-import MobileMatrix from "../components/islands/mobile-matrix";
-import AppShell from "../layouts/app-shell.astro";
-import { loadAppBoardData } from "../lib/orpc.server";
+import DesktopMatrixBoard from "@/components/islands/matrix/desktop-matrix-board";
+import MobileMatrix from "@/components/islands/matrix/mobile-matrix";
+import { loadAppBoardData } from "@/lib/rpc/orpc.server";
 import {
   getTasksByQuadrant,
   getTodayPlannedMinutes,
   getTodayTasks,
-} from "../lib/task-helpers";
+} from "@/lib/tasks/task-helpers";
+import AppShell from "../layouts/app-shell.astro";
 
 const data = await loadAppBoardData(Astro.request, {
   requestId: Astro.locals.requestId,

@@ -3,9 +3,13 @@ import {
   getDueReminderColor,
   getDueReminderLabel,
   getDueReminderStatus,
-} from "../../lib/due-date";
-import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
-import type { Project, Task } from "../../lib/task-helpers";
+} from "@/lib/tasks/due-date";
+import {
+  formatMinutes,
+  getQuadrant,
+  QUADRANT_META,
+} from "@/lib/tasks/quadrant";
+import type { Project, Task } from "@/lib/tasks/task-helpers";
 
 function tintStyle(color: string): {
   backgroundColor: string;

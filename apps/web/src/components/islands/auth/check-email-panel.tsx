@@ -1,7 +1,7 @@
 import type { JSX } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { captchaFetchHeaders } from "../../lib/turnstile";
-import { useAuthForm } from "../../lib/use-auth-form";
+import { captchaFetchHeaders } from "@/lib/auth/turnstile";
+import { useAuthForm } from "@/lib/auth/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
 import { TurnstileWidget } from "./turnstile-widget";
 
@@ -81,7 +81,7 @@ export default function CheckEmailPanel(): JSX.Element {
       setBusy(true);
 
       try {
-        const { authClient } = await import("../../lib/auth-client");
+        const { authClient } = await import("@/lib/auth/auth-client");
         const { error: sendError } = await authClient.sendVerificationEmail({
           callbackURL: `${window.location.origin}/login`,
           email,

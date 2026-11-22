@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { orpc } from "./orpc";
+import { orpc } from "@/lib/rpc/orpc";
 
 export interface MilestoneRow {
   key: string;

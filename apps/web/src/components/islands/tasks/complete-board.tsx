@@ -1,18 +1,18 @@
 import { useMemo } from "preact/hooks";
-import type { CompletedRangeId } from "../../lib/completed-range";
+import TaskProgress from "@/components/islands/task/task-progress";
+import type { CompletedRangeId } from "@/lib/tasks/completed-range";
 import {
   COMPLETED_RANGE_OPTIONS,
   emptyStateForRange,
   formatCompletedAt,
-} from "../../lib/completed-range";
-import { getQuadrant, QUADRANT_META } from "../../lib/quadrant";
+} from "@/lib/tasks/completed-range";
+import { getQuadrant, QUADRANT_META } from "@/lib/tasks/quadrant";
 import type {
   Project,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
-import { getProject, isLongTask } from "../../lib/task-helpers";
-import TaskProgress from "./task-progress";
+} from "@/lib/tasks/task-helpers";
+import { getProject, isLongTask } from "@/lib/tasks/task-helpers";
 
 interface Props {
   projects: Project[];

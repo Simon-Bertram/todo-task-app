@@ -1,8 +1,8 @@
 import type { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { orpc } from "./orpc";
-import { showToast } from "./toast";
+import { orpc } from "@/lib/rpc/orpc";
+import { showToast } from "@/lib/ui/toast";
 
 /**
  * Shell buttons in Astro (FAB / header / sidenav) open via these DOM ids.

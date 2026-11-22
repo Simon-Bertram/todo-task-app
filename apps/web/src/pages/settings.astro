@@ -1,15 +1,15 @@
 ---
-import AvatarPicker from "../components/islands/avatar-picker";
-import CapacitySettings from "../components/islands/capacity-settings";
-import GamificationSettings from "../components/islands/gamification-settings";
-import SetupChecklist from "../components/islands/setup-checklist";
-import AppShell from "../layouts/app-shell.astro";
+import AvatarPicker from "@/components/islands/settings/avatar-picker";
+import CapacitySettings from "@/components/islands/settings/capacity-settings";
+import GamificationSettings from "@/components/islands/settings/gamification-settings";
+import SetupChecklist from "@/components/islands/settings/setup-checklist";
+import { loadSessionUser } from "@/lib/auth/session.server";
 import {
   createServerClient,
   isUnauthorized,
   loadAppBoardData,
-} from "../lib/orpc.server";
-import { loadSessionUser } from "../lib/session.server";
+} from "@/lib/rpc/orpc.server";
+import AppShell from "../layouts/app-shell.astro";
 
 const { requestId } = Astro.locals;
 const data = await loadAppBoardData(Astro.request, {

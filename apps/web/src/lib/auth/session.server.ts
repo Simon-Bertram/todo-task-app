@@ -1,8 +1,8 @@
-/// <reference path="../../cloudflare-env.d.ts" />
+/// <reference path="../../../cloudflare-env.d.ts" />
 
 import { env } from "cloudflare:workers";
 
-import { ENV } from "../env.public";
+import { ENV } from "@/env.public";
 
 const TRAILING_SLASH = /\/$/u;
 

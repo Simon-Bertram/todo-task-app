@@ -5,7 +5,7 @@ import {
   formatMinutes,
   getCapacityBucket,
   getQuadrant,
-} from "./quadrant";
+} from "@/lib/tasks/quadrant";
 
 describe("getQuadrant", () => {
   it("uses threshold >= 2 for urgent and important", () => {

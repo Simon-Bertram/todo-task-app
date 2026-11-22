@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
+import { orpc } from "@/lib/rpc/orpc";
 
 interface PersistProps {
   label?: string;

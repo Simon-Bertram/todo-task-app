@@ -5,7 +5,7 @@ import {
   resolveRequestId,
 } from "@todo-task-app/api/lib/app-error";
 
-import { loadSessionUser } from "./lib/session.server";
+import { loadSessionUser } from "@/lib/auth/session.server";
 
 const APP_PREFIXES = [
   "/today",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mapAuthClientError } from "./auth-errors";
+import { mapAuthClientError } from "@/lib/auth/auth-errors";
 
 const INCORRECT_CREDENTIALS = /Incorrect email or password/iu;
 const IF_ACCOUNT_EXISTS = /if an account exists/iu;

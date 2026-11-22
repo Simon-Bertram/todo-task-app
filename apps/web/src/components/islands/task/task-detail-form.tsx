@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
+import ProjectNotesDisclosure from "@/components/islands/projects/project-notes-disclosure";
+import TaskProgress from "@/components/islands/task/task-progress";
 import {
   capacityTone,
   formatMinutes,
   getQuadrant,
   QUADRANT_META,
-} from "../../lib/quadrant";
-import { RECURRENCE_WEEKDAYS } from "../../lib/recurrence-form";
+} from "@/lib/tasks/quadrant";
+import { RECURRENCE_WEEKDAYS } from "@/lib/tasks/recurrence-form";
 import type {
   Project,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
-import { isLongTask, openSubtaskCount } from "../../lib/task-helpers";
-import type { TaskDetailFormApi } from "../../lib/use-task-detail-form";
+} from "@/lib/tasks/task-helpers";
+import { isLongTask, openSubtaskCount } from "@/lib/tasks/task-helpers";
+import type { TaskDetailFormApi } from "@/lib/tasks/use-task-detail-form";
 import {
   TASK_DETAIL_ETC_PRESETS,
   TASK_DETAIL_RECURRENCE_MODES,
-} from "../../lib/use-task-detail-form";
+} from "@/lib/tasks/use-task-detail-form";
 import DayPicker from "./day-picker";
 import NotesEditor from "./notes-editor";
-import ProjectNotesDisclosure from "./project-notes-disclosure";
 import RatingRow from "./rating-row";
-import TaskProgress from "./task-progress";
 import TaskSubtasksEditor from "./task-subtasks-editor";
 
 /**

@@ -10,18 +10,18 @@ import {
   useRef,
   useState,
 } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
+import { TaskListRow } from "@/components/islands/task/task-list-row";
+import { orpc } from "@/lib/rpc/orpc";
 import type {
   Project,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
-import { showToast } from "../../lib/toast";
-import { useIsDesktopSm } from "../../lib/use-task-progress-sync";
+} from "@/lib/tasks/task-helpers";
+import { useIsDesktopSm } from "@/lib/tasks/use-task-progress-sync";
+import { showToast } from "@/lib/ui/toast";
 import type { PanelMode } from "./project-board-panel";
 import { BoardPanel } from "./project-board-panel";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
-import { TaskListRow } from "./task-list-row";
 
 function isProjectReorder(data: Record<string | symbol, unknown>): boolean {
   return data.type === "project-reorder" && typeof data.projectId === "string";

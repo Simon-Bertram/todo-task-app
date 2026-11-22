@@ -1,7 +1,7 @@
 ---
-import AvatarPicker from "../../components/islands/avatar-picker";
+import AvatarPicker from "@/components/islands/settings/avatar-picker";
+import { loadSessionUser } from "@/lib/auth/session.server";
 import Layout from "../../layouts/layout.astro";
-import { loadSessionUser } from "../../lib/session.server";
 
 const user = await loadSessionUser(Astro.request);
 if (!user) {
@@ -44,7 +44,7 @@ if (user.image) {
 </Layout>
 
 <script>
-  import type { ToastDetail } from "../../lib/toast";
+  import type { ToastDetail } from "@/lib/ui/toast";
 
   const toastHost = document.getElementById("plansage-toast-host");
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 
-import type { Task } from "./task-helpers";
-import type { TaskProgressUpdatedDetail } from "./task-progress";
-import { TASK_PROGRESS_UPDATED_EVENT } from "./task-progress";
+import type { Task } from "@/lib/tasks/task-helpers";
+import type { TaskProgressUpdatedDetail } from "@/lib/tasks/task-progress";
+import { TASK_PROGRESS_UPDATED_EVENT } from "@/lib/tasks/task-progress";
 
 /** Keep local task list in sync when progress islands persist. */
 export function useTaskProgressSync(

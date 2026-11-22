@@ -1,15 +1,19 @@
 ---
-import QuickAddDialog from "../components/islands/quick-add-dialog";
-import TaskDetailSheet from "../components/islands/task-detail-sheet";
-import BottomNav from "../components/shell/bottom-nav.astro";
-import MobileTopBar from "../components/shell/mobile-top-bar.astro";
-import SideNav from "../components/shell/side-nav.astro";
-import { loadSessionUser } from "../lib/session.server";
-import type { Project, Task, TaskProgressControl } from "../lib/task-helpers";
+import QuickAddDialog from "@/components/islands/task/quick-add-dialog";
+import TaskDetailSheet from "@/components/islands/task/task-detail-sheet";
+import { loadSessionUser } from "@/lib/auth/session.server";
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
+} from "@/lib/tasks/task-helpers";
 import {
   DEFAULT_DAILY_CAPACITY_MINUTES,
   getTodayPlannedMinutes,
-} from "../lib/task-helpers";
+} from "@/lib/tasks/task-helpers";
+import BottomNav from "../components/shell/bottom-nav.astro";
+import MobileTopBar from "../components/shell/mobile-top-bar.astro";
+import SideNav from "../components/shell/side-nav.astro";
 import Layout from "./layout.astro";
 
 interface Props {
@@ -79,9 +83,9 @@ const quickAddProjects = projects.map((project) => ({
 ></div>
 
 <script>
-  import { reportWindowError } from "../lib/orpc";
-  import { revalidateOnFocus } from "../lib/revalidate";
-  import type { ToastDetail } from "../lib/toast";
+  import { reportWindowError } from "@/lib/rpc/orpc";
+  import { revalidateOnFocus } from "@/lib/ui/revalidate";
+  import type { ToastDetail } from "@/lib/ui/toast";
 
   revalidateOnFocus();
 

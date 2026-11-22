@@ -5,7 +5,7 @@ import {
   mapOrpcErrorMessage,
   referenceIdForError,
   shouldReportOrpcError,
-} from "./orpc-errors";
+} from "@/lib/rpc/orpc-errors";
 
 describe("orpc-errors", () => {
   it("maps ORPC codes to safe copy", () => {

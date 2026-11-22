@@ -1,20 +1,24 @@
 import { useCallback, useMemo, useState } from "preact/hooks";
-import type { QuadrantId } from "../../lib/quadrant";
-import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
+import { TaskMetaChips } from "@/components/islands/task/task-meta-chips";
+import TaskProgress from "@/components/islands/task/task-progress";
+import type { QuadrantId } from "@/lib/tasks/quadrant";
+import {
+  formatMinutes,
+  getQuadrant,
+  QUADRANT_META,
+} from "@/lib/tasks/quadrant";
 import type {
   Project,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
-import { getLocalDateString, isLongTask } from "../../lib/task-helpers";
+} from "@/lib/tasks/task-helpers";
+import { getLocalDateString, isLongTask } from "@/lib/tasks/task-helpers";
 import {
   useMoveTaskToQuadrant,
   useOptimisticTaskUpdate,
   useTodayFlag,
-} from "../../lib/use-task-mutations";
-import { useTaskProgressSync } from "../../lib/use-task-progress-sync";
-import { TaskMetaChips } from "./task-meta-chips";
-import TaskProgress from "./task-progress";
+} from "@/lib/tasks/use-task-mutations";
+import { useTaskProgressSync } from "@/lib/tasks/use-task-progress-sync";
 
 interface Props {
   backlogCount: number;

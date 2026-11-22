@@ -1,6 +1,6 @@
 import type { JSX, RefObject } from "preact";
 
-import type { MappedAuthError } from "../../lib/auth-errors";
+import type { MappedAuthError } from "@/lib/auth/auth-errors";
 
 type AuthFormErrorVariant = "inline" | "plain" | "stack";
 

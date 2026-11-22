@@ -1,21 +1,21 @@
 import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { countDueReminders } from "../../lib/due-date";
+import { TaskListRow } from "@/components/islands/task/task-list-row";
+import { countDueReminders } from "@/lib/tasks/due-date";
 import type {
   Project,
   Subtask,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
+} from "@/lib/tasks/task-helpers";
 import {
   filterTasksList,
   getLocalDateString,
   hasActiveTasksBoardFilters,
   sortTasksList,
-} from "../../lib/task-helpers";
-import { useTasksBoardPrefs } from "../../lib/use-tasks-board-prefs";
-import { TaskListRow } from "./task-list-row";
+} from "@/lib/tasks/task-helpers";
+import { useTasksBoardPrefs } from "@/lib/tasks/use-tasks-board-prefs";
 
 interface Props {
   initialPrefs: TasksBoardPrefs;

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
+import { orpc } from "@/lib/rpc/orpc";
 
 const MIN = 120;
 const MAX = 480;

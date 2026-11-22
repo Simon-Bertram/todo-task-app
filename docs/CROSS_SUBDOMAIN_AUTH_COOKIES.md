@@ -35,8 +35,8 @@ Island (avatar picker, etc.)
        → protectedProcedure or 401
 ```
 
-- SSR session: [`apps/web/src/lib/session.server.ts`](../apps/web/src/lib/session.server.ts) forwards the incoming `Cookie` header over the service binding.
-- Browser session: [`apps/web/src/lib/orpc.ts`](../apps/web/src/lib/orpc.ts) calls `PUBLIC_SERVER_URL` with `credentials: "include"`.
+- SSR session: [`apps/web/src/lib/auth/session.server.ts`](../apps/web/src/lib/auth/session.server.ts) forwards the incoming `Cookie` header over the service binding.
+- Browser session: [`apps/web/src/lib/rpc/orpc.ts`](../apps/web/src/lib/rpc/orpc.ts) calls `PUBLIC_SERVER_URL` with `credentials: "include"`.
 
 Those paths can disagree if the **cookie jars visible to each host** disagree.
 

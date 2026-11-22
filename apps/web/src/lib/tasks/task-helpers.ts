@@ -6,8 +6,8 @@ import {
   tasksBoardSortSchema,
 } from "@todo-task-app/api/schemas/tasks-board-prefs";
 
-import type { CapacityBucket, QuadrantId } from "./quadrant";
-import { getCapacityBucket, getQuadrant } from "./quadrant";
+import type { CapacityBucket, QuadrantId } from "@/lib/tasks/quadrant";
+import { getCapacityBucket, getQuadrant } from "@/lib/tasks/quadrant";
 
 export interface Project {
   color: string;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { renderNotesMarkdown } from "../../lib/markdown";
+import { renderNotesMarkdown } from "@/lib/tasks/markdown";
 
 interface Props {
   onInput: (event: Event) => void;

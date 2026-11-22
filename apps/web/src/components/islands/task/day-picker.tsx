@@ -5,8 +5,8 @@ import {
   MONTH_LABELS,
   parseDateOnly,
   WEEKDAY_LABELS,
-} from "../../lib/due-date";
-import { getLocalDateString } from "../../lib/task-helpers";
+} from "@/lib/tasks/due-date";
+import { getLocalDateString } from "@/lib/tasks/task-helpers";
 
 interface Props {
   onChange: (next: string | null) => void;

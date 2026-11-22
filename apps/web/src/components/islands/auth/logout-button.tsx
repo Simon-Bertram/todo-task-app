@@ -1,7 +1,7 @@
 import type { JSX } from "preact";
 import { useCallback, useState } from "preact/hooks";
 
-import { authClient } from "../../lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 
 export default function LogoutButton(): JSX.Element {
   const [busy, setBusy] = useState(false);

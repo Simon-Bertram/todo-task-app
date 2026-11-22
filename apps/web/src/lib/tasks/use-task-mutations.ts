@@ -1,9 +1,9 @@
 import { useCallback } from "preact/hooks";
-import { orpc } from "./orpc";
-import type { QuadrantId } from "./quadrant";
-import { defaultRatingsForQuadrant } from "./quadrant";
-import type { Task } from "./task-helpers";
-import { showToast } from "./toast";
+import { orpc } from "@/lib/rpc/orpc";
+import type { QuadrantId } from "@/lib/tasks/quadrant";
+import { defaultRatingsForQuadrant } from "@/lib/tasks/quadrant";
+import type { Task } from "@/lib/tasks/task-helpers";
+import { showToast } from "@/lib/ui/toast";
 
 type SetTasks = (value: Task[] | ((current: Task[]) => Task[])) => void;
 

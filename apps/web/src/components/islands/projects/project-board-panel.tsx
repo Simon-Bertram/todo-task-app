@@ -1,6 +1,6 @@
 import { useCallback, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
-import type { Project } from "../../lib/task-helpers";
+import { orpc } from "@/lib/rpc/orpc";
+import type { Project } from "@/lib/tasks/task-helpers";
 import ProjectNotesDisclosure from "./project-notes-disclosure";
 
 export type PanelMode =

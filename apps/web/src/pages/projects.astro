@@ -1,7 +1,7 @@
 ---
-import ProjectBoard from "../components/islands/project-board";
+import ProjectBoard from "@/components/islands/projects/project-board";
+import { loadAppBoardData } from "@/lib/rpc/orpc.server";
 import AppShell from "../layouts/app-shell.astro";
-import { loadAppBoardData } from "../lib/orpc.server";
 
 const data = await loadAppBoardData(Astro.request, {
   requestId: Astro.locals.requestId,

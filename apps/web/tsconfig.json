@@ -6,6 +6,9 @@
     "jsxImportSource": "preact",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "types": ["node", "@cloudflare/workers-types"]
   },
   "include": [".astro/types.d.ts", "**/*"],

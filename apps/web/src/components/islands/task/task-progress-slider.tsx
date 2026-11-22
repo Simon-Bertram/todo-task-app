@@ -6,7 +6,7 @@ import {
   prefersReducedMotion,
   progressAriaLabel,
   progressFillCssVar,
-} from "../../lib/task-progress";
+} from "@/lib/tasks/task-progress";
 import type { ProgressSize } from "./task-progress-pie";
 
 interface Props {

@@ -11,13 +11,11 @@ import {
   useRef,
   useState,
 } from "preact/hooks";
-import {
-  celebrateTaskComplete,
-  completionIntensity,
-} from "../../lib/celebrate";
-import { countDueReminders } from "../../lib/due-date";
-import { orpc } from "../../lib/orpc";
-import type { CapacityBucket } from "../../lib/quadrant";
+import { TaskMetaChips } from "@/components/islands/task/task-meta-chips";
+import TaskProgress from "@/components/islands/task/task-progress";
+import { orpc } from "@/lib/rpc/orpc";
+import { countDueReminders } from "@/lib/tasks/due-date";
+import type { CapacityBucket } from "@/lib/tasks/quadrant";
 import {
   capacityTone,
   capacityToneBarClass,
@@ -25,13 +23,13 @@ import {
   formatMinutes,
   getCapacityBucket,
   QUADRANT_META,
-} from "../../lib/quadrant";
-import { stopPointerPropagation } from "../../lib/stop-pointer";
+} from "@/lib/tasks/quadrant";
+import { stopPointerPropagation } from "@/lib/tasks/stop-pointer";
 import type {
   Project,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
+} from "@/lib/tasks/task-helpers";
 import {
   getLocalDateString,
   getProject,
@@ -40,18 +38,17 @@ import {
   getTodayPlannedMinutes,
   getTodayTasks,
   isLongTask,
-} from "../../lib/task-helpers";
-import { showToast } from "../../lib/toast";
+} from "@/lib/tasks/task-helpers";
 import {
   useOptimisticTaskUpdate,
   useTodayFlag,
-} from "../../lib/use-task-mutations";
+} from "@/lib/tasks/use-task-mutations";
 import {
   useIsDesktopLg,
   useTaskProgressSync,
-} from "../../lib/use-task-progress-sync";
-import { TaskMetaChips } from "./task-meta-chips";
-import TaskProgress from "./task-progress";
+} from "@/lib/tasks/use-task-progress-sync";
+import { celebrateTaskComplete, completionIntensity } from "@/lib/ui/celebrate";
+import { showToast } from "@/lib/ui/toast";
 
 interface Props {
   budgetMinutes: number;

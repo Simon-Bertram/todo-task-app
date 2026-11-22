@@ -1,7 +1,7 @@
 ---
-import TodayBoard from "../components/islands/today-board";
+import TodayBoard from "@/components/islands/today/today-board";
+import { loadAppBoardData } from "@/lib/rpc/orpc.server";
 import AppShell from "../layouts/app-shell.astro";
-import { loadAppBoardData } from "../lib/orpc.server";
 
 const data = await loadAppBoardData(Astro.request, {
   includeCompleted: true,

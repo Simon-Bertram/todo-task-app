@@ -1,22 +1,26 @@
 import type { ComponentChildren } from "preact";
 import { useCallback, useEffect, useId, useState } from "preact/hooks";
+import TaskProgress from "@/components/islands/task/task-progress";
+import { orpc } from "@/lib/rpc/orpc";
 import {
   formatDueWithTime,
   getDueReminderColor,
   getDueReminderLabel,
   getDueReminderStatus,
-} from "../../lib/due-date";
-import { orpc } from "../../lib/orpc";
-import { formatMinutes, getQuadrant, QUADRANT_META } from "../../lib/quadrant";
+} from "@/lib/tasks/due-date";
+import {
+  formatMinutes,
+  getQuadrant,
+  QUADRANT_META,
+} from "@/lib/tasks/quadrant";
 import type {
   Project,
   Subtask,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
-import { getLocalDateString, isLongTask } from "../../lib/task-helpers";
-import { showToast } from "../../lib/toast";
-import TaskProgress from "./task-progress";
+} from "@/lib/tasks/task-helpers";
+import { getLocalDateString, isLongTask } from "@/lib/tasks/task-helpers";
+import { showToast } from "@/lib/ui/toast";
 
 interface TaskListRowProps {
   control: TaskProgressControl;

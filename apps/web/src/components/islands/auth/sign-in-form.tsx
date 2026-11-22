@@ -1,7 +1,7 @@
 import type { JSX } from "preact";
 import { useCallback, useState } from "preact/hooks";
-import { captchaFetchHeaders } from "../../lib/turnstile";
-import { useAuthForm } from "../../lib/use-auth-form";
+import { captchaFetchHeaders } from "@/lib/auth/turnstile";
+import { useAuthForm } from "@/lib/auth/use-auth-form";
 import { AuthFormError } from "./auth-form-error";
 import { TurnstileWidget } from "./turnstile-widget";
 
@@ -83,7 +83,7 @@ export default function SignInForm({
       setBusy(true);
 
       try {
-        const { authClient } = await import("../../lib/auth-client");
+        const { authClient } = await import("@/lib/auth/auth-client");
         await authClient.signIn.email(
           {
             email,
@@ -156,13 +156,6 @@ export default function SignInForm({
           />
         </div>
 
-        <TurnstileWidget
-          action="signin"
-          key={turnstileKey}
-          onExpire={handleCaptchaExpire}
-          onToken={handleCaptchaToken}
-        />
-
         <AuthFormError
           error={error}
           errorId={errorId}
@@ -197,6 +190,14 @@ export default function SignInForm({
           Sign up
         </a>
       </p>
+      <div className="mt-5">
+        <TurnstileWidget
+          action="signin"
+          key={turnstileKey}
+          onExpire={handleCaptchaExpire}
+          onToken={handleCaptchaToken}
+        />
+      </div>
     </div>
   );
 }

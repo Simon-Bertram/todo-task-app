@@ -28,8 +28,8 @@ Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). 
 | [`apps/web`](../apps/web)             | Middleware `locals.requestId`, SSR log + rethrow, `500.astro`, browser link interceptor + optional window reporters                                  |
 | [`packages/infra`](../packages/infra) | `observability.traces.enabled` on web + server Workers                                                                                               |
 
-Browser client: [`apps/web/src/lib/orpc.ts`](../apps/web/src/lib/orpc.ts).  
-SSR client: [`apps/web/src/lib/orpc.server.ts`](../apps/web/src/lib/orpc.server.ts).
+Browser client: [`apps/web/src/lib/rpc/orpc.ts`](../apps/web/src/lib/rpc/orpc.ts).  
+SSR client: [`apps/web/src/lib/rpc/orpc.server.ts`](../apps/web/src/lib/rpc/orpc.server.ts).
 
 ---
 
@@ -110,7 +110,7 @@ observability: {
 2. SSR client: forward `x-request-id` on service-binding fetch; on non-auth failure log `ssr.orpc.error` then rethrow (optionally stamp `requestId` onto `ORPCError.data`).
 3. Pass `requestId: Astro.locals.requestId` into board loaders / `createServerClient`.
 4. [`apps/web/src/pages/500.astro`](../apps/web/src/pages/500.astro): map error → safe copy + show reference ID from locals / error data.
-5. Browser [`orpc.ts`](../apps/web/src/lib/orpc.ts): link `onError` interceptor reports unexpected failures via `errors.report` (skip `errors.report` itself and auth codes). Helpers in [`orpc-errors.ts`](../apps/web/src/lib/orpc-errors.ts).
+5. Browser [`orpc.ts`](../apps/web/src/lib/rpc/orpc.ts): link `onError` interceptor reports unexpected failures via `errors.report` (skip `errors.report` itself and auth codes). Helpers in [`orpc-errors.ts`](../apps/web/src/lib/rpc/orpc-errors.ts).
 6. App shell: optional `window` `error` / `unhandledrejection` → same report helper (guard against loops).
 
 ---
@@ -144,7 +144,7 @@ Local: `pnpm run dev`, reproduce a bad SSR call, then inspect terminal / Workers
 - Leak stacks, Zod `issues`, or internal paths on `500.astro` or toasts.
 - Persist errors to D1 without a product decision.
 - Report every handled mutation failure (toasts already cover PRD rollback UX).
-- Spread `Headers` into a plain object when forwarding RPC (see [`rpc-fetch-headers.ts`](../apps/web/src/lib/rpc-fetch-headers.ts)).
+- Spread `Headers` into a plain object when forwarding RPC (see [`rpc-fetch-headers.ts`](../apps/web/src/lib/rpc/rpc-fetch-headers.ts)).
 
 ---
 

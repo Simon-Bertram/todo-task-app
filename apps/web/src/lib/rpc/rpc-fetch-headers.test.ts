@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeServiceBindingHeaders } from "./rpc-fetch-headers";
+import { mergeServiceBindingHeaders } from "@/lib/rpc/rpc-fetch-headers";
 
 describe("mergeServiceBindingHeaders", () => {
   it("preserves Content-Type from a Headers instance (object-spread would drop it)", () => {

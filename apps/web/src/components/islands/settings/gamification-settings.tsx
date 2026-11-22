@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
-import type { CelebrationsPref } from "../../lib/celebrate";
-import { setCelebrationsPref } from "../../lib/celebrate";
-import { orpc } from "../../lib/orpc";
-import type { TaskProgressControl } from "../../lib/task-helpers";
-import { useGamificationSettingsData } from "../../lib/use-gamification-settings-data";
+import { orpc } from "@/lib/rpc/orpc";
+import { useGamificationSettingsData } from "@/lib/settings/use-gamification-settings-data";
+import type { TaskProgressControl } from "@/lib/tasks/task-helpers";
+import type { CelebrationsPref } from "@/lib/ui/celebrate";
+import { setCelebrationsPref } from "@/lib/ui/celebrate";
 
 interface Props {
   initialCelebrations: CelebrationsPref;

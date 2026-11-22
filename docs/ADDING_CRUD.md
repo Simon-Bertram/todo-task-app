@@ -17,8 +17,8 @@ Product rules: [PRD.md](./PRD.md). Agent edit order: [AGENTS.md](../AGENTS.md). 
 | `packages/auth`  | Better Auth                                       | Session; do not invent a parallel users table   |
 | `packages/infra` | Alchemy (D1 + Workers)                            | Only for new Cloudflare resources               |
 
-Browser client: [`apps/web/src/lib/orpc.ts`](../apps/web/src/lib/orpc.ts) (`credentials: "include"`).  
-SSR client: [`apps/web/src/lib/orpc.server.ts`](../apps/web/src/lib/orpc.server.ts) (forwards cookies via the `SERVER` service binding).
+Browser client: [`apps/web/src/lib/rpc/orpc.ts`](../apps/web/src/lib/rpc/orpc.ts) (`credentials: "include"`).  
+SSR client: [`apps/web/src/lib/rpc/orpc.server.ts`](../apps/web/src/lib/rpc/orpc.server.ts) (forwards cookies via the `SERVER` service binding).
 
 ---
 
@@ -166,11 +166,11 @@ if (data === "unauthorized") {
 }
 ```
 
-See [`apps/web/src/lib/orpc.server.ts`](../apps/web/src/lib/orpc.server.ts) and [`apps/web/src/pages/projects.astro`](../apps/web/src/pages/projects.astro).
+See [`apps/web/src/lib/rpc/orpc.server.ts`](../apps/web/src/lib/rpc/orpc.server.ts) and [`apps/web/src/pages/projects.astro`](../apps/web/src/pages/projects.astro).
 
 ### Mutations
 
-- **Preact islands** for multi-field CRUD (create/edit sheets, filters)—e.g. [`project-board.tsx`](../apps/web/src/components/islands/project-board.tsx), [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx)
+- **Preact islands** for multi-field CRUD (create/edit sheets, filters)—e.g. [`project-board.tsx`](../apps/web/src/components/islands/projects/project-board.tsx), [`task-detail-sheet.tsx`](../apps/web/src/components/islands/task/task-detail-sheet.tsx)
 - **Vanilla `<script>`** for tiny one-shot forms (quick-add in [`app-shell.astro`](../apps/web/src/layouts/app-shell.astro))
 
 Call `orpc.<resource>.create|update|delete(...)` from the browser client, then `location.reload()` (current convention). Keep hit targets ≥ 44×44px; use bottom sheets on mobile.
@@ -190,7 +190,7 @@ Pass SSR props into islands with `client:load` (or a lighter directive if the is
    - Or a select of parents (quick-add / task detail → Inbox vs `#project`)
    - Move existing rows by updating the FK (`projectId: null` unassigns)
 
-Projects page patterns: filter chips + per-project **Add task** in [`project-board.tsx`](../apps/web/src/components/islands/project-board.tsx).
+Projects page patterns: filter chips + per-project **Add task** in [`project-board.tsx`](../apps/web/src/components/islands/projects/project-board.tsx).
 
 ---
 
@@ -250,7 +250,7 @@ pnpm --filter @todo-task-app/api test
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Project CRUD API                       | [`packages/api/src/routers/projects.ts`](../packages/api/src/routers/projects.ts)                                   |
 | Task CRUD + `projectId` list filter    | [`packages/api/src/routers/tasks.ts`](../packages/api/src/routers/tasks.ts)                                         |
-| Projects manage + filter + add-task UI | [`apps/web/src/components/islands/project-board.tsx`](../apps/web/src/components/islands/project-board.tsx)         |
-| Task edit title / project / complete   | [`apps/web/src/components/islands/task-detail-sheet.tsx`](../apps/web/src/components/islands/task-detail-sheet.tsx) |
+| Projects manage + filter + add-task UI | [`apps/web/src/components/islands/projects/project-board.tsx`](../apps/web/src/components/islands/projects/project-board.tsx)         |
+| Task edit title / project / complete   | [`apps/web/src/components/islands/task/task-detail-sheet.tsx`](../apps/web/src/components/islands/task/task-detail-sheet.tsx) |
 | Quick-add with optional project        | [`apps/web/src/layouts/app-shell.astro`](../apps/web/src/layouts/app-shell.astro)                                   |
 | Projects page entry                    | [`apps/web/src/pages/projects.astro`](../apps/web/src/pages/projects.astro)                                         |

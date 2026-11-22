@@ -1,6 +1,6 @@
 import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { describe, expect, it } from "vitest";
-import type { Project, Task } from "./task-helpers";
+import type { Project, Task } from "@/lib/tasks/task-helpers";
 import {
   filterTasksList,
   getLocalDateString,
@@ -14,7 +14,7 @@ import {
   mergeTasksBoardPrefs,
   prefsToSearchParams,
   sortTasksList,
-} from "./task-helpers";
+} from "@/lib/tasks/task-helpers";
 
 function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
   return {

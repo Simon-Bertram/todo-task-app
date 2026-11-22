@@ -1,4 +1,4 @@
-/// <reference path="../../cloudflare-env.d.ts" />
+/// <reference path="../../../cloudflare-env.d.ts" />
 
 import { env } from "cloudflare:workers";
 import { createORPCClient, ORPCError } from "@orpc/client";
@@ -17,9 +17,13 @@ import type { AppRouterClient } from "@todo-task-app/api/routers/index";
 import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { DEFAULT_TASKS_BOARD_PREFS } from "@todo-task-app/api/schemas/tasks-board-prefs";
 
-import { ENV } from "../env.public";
-import { mergeServiceBindingHeaders } from "./rpc-fetch-headers";
-import type { Project, Task, TaskProgressControl } from "./task-helpers";
+import { ENV } from "@/env.public";
+import { mergeServiceBindingHeaders } from "@/lib/rpc/rpc-fetch-headers";
+import type {
+  Project,
+  Task,
+  TaskProgressControl,
+} from "@/lib/tasks/task-helpers";
 
 new CloudflareTracer().enable();
 

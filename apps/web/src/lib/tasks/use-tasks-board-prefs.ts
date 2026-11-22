@@ -1,7 +1,7 @@
 import type { TasksBoardPrefs } from "@todo-task-app/api/schemas/tasks-board-prefs";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
-import { orpc } from "./orpc";
-import { prefsToSearchParams } from "./task-helpers";
+import { orpc } from "@/lib/rpc/orpc";
+import { prefsToSearchParams } from "@/lib/tasks/task-helpers";
 
 const DEBOUNCE_MS = 400;
 

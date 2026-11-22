@@ -3,11 +3,11 @@ import type {
   Project,
   Task,
   TaskProgressControl,
-} from "../../lib/task-helpers";
-import { isLongTask } from "../../lib/task-helpers";
-import { useTaskDetailForm } from "../../lib/use-task-detail-form";
-import { useTaskDetailMutations } from "../../lib/use-task-detail-mutations";
-import { useTaskDetailSheetController } from "../../lib/use-task-detail-sheet-controller";
+} from "@/lib/tasks/task-helpers";
+import { isLongTask } from "@/lib/tasks/task-helpers";
+import { useTaskDetailForm } from "@/lib/tasks/use-task-detail-form";
+import { useTaskDetailMutations } from "@/lib/tasks/use-task-detail-mutations";
+import { useTaskDetailSheetController } from "@/lib/tasks/use-task-detail-sheet-controller";
 import { TaskDetailForm } from "./task-detail-form";
 
 interface Props {

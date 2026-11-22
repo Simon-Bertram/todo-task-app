@@ -4,8 +4,8 @@ import type {
   AuthClientError,
   MapAuthClientErrorOptions,
   MappedAuthError,
-} from "./auth-errors";
-import { mapAuthClientError } from "./auth-errors";
+} from "@/lib/auth/auth-errors";
+import { mapAuthClientError } from "@/lib/auth/auth-errors";
 
 export interface UseAuthFormOptions {
   errorId: string;

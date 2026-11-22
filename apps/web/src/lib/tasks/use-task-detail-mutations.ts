@@ -1,12 +1,12 @@
 import { ORPCError } from "@orpc/client";
 import { useCallback, useState } from "preact/hooks";
-import { celebrateTaskComplete, completionIntensity } from "./celebrate";
-import { orpc } from "./orpc";
-import { buildRecurrenceRule } from "./recurrence-form";
-import type { Project, Task } from "./task-helpers";
-import { openSubtaskCount } from "./task-helpers";
-import { showToast } from "./toast";
-import type { TaskDetailFormApi } from "./use-task-detail-form";
+import { orpc } from "@/lib/rpc/orpc";
+import { buildRecurrenceRule } from "@/lib/tasks/recurrence-form";
+import type { Project, Task } from "@/lib/tasks/task-helpers";
+import { openSubtaskCount } from "@/lib/tasks/task-helpers";
+import type { TaskDetailFormApi } from "@/lib/tasks/use-task-detail-form";
+import { celebrateTaskComplete, completionIntensity } from "@/lib/ui/celebrate";
+import { showToast } from "@/lib/ui/toast";
 
 interface MutationOptions {
   baseTask: Task | null;

@@ -1,4 +1,4 @@
-import { getCapacityBucket } from "./quadrant";
+import { getCapacityBucket } from "@/lib/tasks/quadrant";
 
 export type CelebrationIntensity = "default" | "major" | "dayProtected";
 

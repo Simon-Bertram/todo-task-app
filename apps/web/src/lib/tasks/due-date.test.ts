@@ -8,7 +8,7 @@ import {
   getDueReminderLabel,
   getDueReminderStatus,
   parseDateOnly,
-} from "./due-date";
+} from "@/lib/tasks/due-date";
 
 describe("parseDateOnly / formatDateOnly", () => {
   it("round-trips a valid date", () => {

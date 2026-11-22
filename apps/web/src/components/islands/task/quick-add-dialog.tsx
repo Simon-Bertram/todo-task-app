@@ -4,9 +4,9 @@
  */
 import type { JSX } from "preact";
 
-import { formatMinutes } from "../../lib/quadrant";
-import { useQuickAddDialog } from "../../lib/use-quick-add-dialog";
-import { TASK_DETAIL_ETC_PRESETS } from "../../lib/use-task-detail-form";
+import { formatMinutes } from "@/lib/tasks/quadrant";
+import { useQuickAddDialog } from "@/lib/tasks/use-quick-add-dialog";
+import { TASK_DETAIL_ETC_PRESETS } from "@/lib/tasks/use-task-detail-form";
 import RatingRow from "./rating-row";
 
 export interface QuickAddProject {

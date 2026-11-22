@@ -4,10 +4,10 @@ import {
   monitorForElements,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
-import { orpc } from "../../lib/orpc";
-import type { Subtask } from "../../lib/task-helpers";
-import { showToast } from "../../lib/toast";
-import { useIsDesktopSm } from "../../lib/use-task-progress-sync";
+import { orpc } from "@/lib/rpc/orpc";
+import type { Subtask } from "@/lib/tasks/task-helpers";
+import { useIsDesktopSm } from "@/lib/tasks/use-task-progress-sync";
+import { showToast } from "@/lib/ui/toast";
 
 interface Props {
   onCountsChange: (counts: {

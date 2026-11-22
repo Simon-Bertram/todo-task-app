@@ -3,13 +3,13 @@ import type {
   RecurrenceFormState,
   RecurrenceMode,
   RecurrenceWeekday,
-} from "./recurrence-form";
+} from "@/lib/tasks/recurrence-form";
 import {
   buildRecurrenceRule,
   parseRecurrenceRule,
   recurrenceSummary,
-} from "./recurrence-form";
-import type { Task } from "./task-helpers";
+} from "@/lib/tasks/recurrence-form";
+import type { Task } from "@/lib/tasks/task-helpers";
 
 export const TASK_DETAIL_ETC_PRESETS = [15, 30, 60, 90, 120] as const;
 export const TASK_DETAIL_RATING = [0, 1, 2, 3] as const;

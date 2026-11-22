@@ -1,6 +1,6 @@
 import { useCallback } from "preact/hooks";
 
-import { TASK_DETAIL_RATING } from "../../lib/use-task-detail-form";
+import { TASK_DETAIL_RATING } from "@/lib/tasks/use-task-detail-form";
 
 /** 0–3 rating control shared by Urgency and Importance. */
 export default function RatingRow({

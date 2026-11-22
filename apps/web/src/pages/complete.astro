@@ -1,8 +1,8 @@
 ---
-import CompleteBoard from "../components/islands/complete-board";
+import CompleteBoard from "@/components/islands/tasks/complete-board";
+import { loadCompletedBoardData } from "@/lib/rpc/orpc.server";
+import { parseCompletedRange } from "@/lib/tasks/completed-range";
 import AppShell from "../layouts/app-shell.astro";
-import { parseCompletedRange } from "../lib/completed-range";
-import { loadCompletedBoardData } from "../lib/orpc.server";
 
 const range = parseCompletedRange(Astro.url.searchParams.get("range"));
 const timeZoneParam = Astro.url.searchParams.get("tz");

@@ -1,5 +1,5 @@
-import { orpc } from "./orpc";
-import { showToast } from "./toast";
+import { orpc } from "@/lib/rpc/orpc";
+import { showToast } from "@/lib/ui/toast";
 
 export type ProgressFillToken = "empty" | "low" | "mid" | "high" | "done";
 

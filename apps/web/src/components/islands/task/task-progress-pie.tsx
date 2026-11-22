@@ -8,7 +8,7 @@ import {
   prefersReducedMotion,
   progressAriaLabel,
   progressFillCssVar,
-} from "../../lib/task-progress";
+} from "@/lib/tasks/task-progress";
 
 export type ProgressSize = "compact" | "inline" | "sheet";
 
